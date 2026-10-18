@@ -1,0 +1,443 @@
+{
+  "version_esquema": 1,
+  "data_version": "5e95734e844b",
+  "generado_en": "2026-10-18T14:27:02-06:00",
+  "rango_fechas": {
+    "inicio": "2023-10",
+    "fin": "2026-09"
+  },
+  "excluye_datos_personales": false,
+  "entorno": {
+    "pandas": "3.0.6",
+    "pyarrow": "25.0.1"
+  },
+  "resumen": {
+    "n_meses": 36,
+    "n_viajes": 13621885,
+    "n_estaciones_nomenclatura": 484
+  },
+  "viajes_mensuales": [
+    {
+      "archivo": "datos_abiertos_2023_10.csv",
+      "ruta": "data/raw/datos_abiertos_2023_10.csv",
+      "sha256_crudo": "540d673e4c6cb56ab4737ffc1c23169a96a3a4d984be2a2fecfdef29cf5a0838",
+      "codificacion": "cp1252",
+      "n_filas": 383239,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2023_11.csv",
+      "ruta": "data/raw/datos_abiertos_2023_11.csv",
+      "sha256_crudo": "165a429e703727b3b84bd99ad25926db24f513bc4c7db30061b7b06067fba30f",
+      "codificacion": "cp1252",
+      "n_filas": 384464,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "dayfirst",
+      "estrategia_fecha_fin": "dayfirst"
+    },
+    {
+      "archivo": "datos_abiertos_2023_12.csv",
+      "ruta": "data/raw/datos_abiertos_2023_12.csv",
+      "sha256_crudo": "df5c65895f673a6de01c20b6d2d8d57790669cb7986de1c599ebc1719a29372d",
+      "codificacion": "cp1252",
+      "n_filas": 314164,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2024_01.csv",
+      "ruta": "data/raw/datos_abiertos_2024_01.csv",
+      "sha256_crudo": "01d1c136609df006410a2f8d9b925f20991e28cfe0c882ed67bca63b46b6d1a5",
+      "codificacion": "cp1252",
+      "n_filas": 391591,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2024_02.csv",
+      "ruta": "data/raw/datos_abiertos_2024_02.csv",
+      "sha256_crudo": "78254eb6b99b9b9fb46cc5bb58fd54bc9fed681d9c224143b99cf693deec8430",
+      "codificacion": "cp1252",
+      "n_filas": 383732,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2024_03.csv",
+      "ruta": "data/raw/datos_abiertos_2024_03.csv",
+      "sha256_crudo": "6c45a6ec1f136c58bfcb6fdd385c4e1ac2f4b887d0413dbf6e8b5c70a91da0d5",
+      "codificacion": "cp1252",
+      "n_filas": 390513,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2024_04.csv",
+      "ruta": "data/raw/datos_abiertos_2024_04.csv",
+      "sha256_crudo": "d60f68ebc083b0cea29d6e7a0e18eba95c4582220a79717df96365bf7dd33a11",
+      "codificacion": "cp1252",
+      "n_filas": 405308,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2024_05.csv",
+      "ruta": "data/raw/datos_abiertos_2024_05.csv",
+      "sha256_crudo": "21288117db70fad4e475cc5fb6acab174a84c09749170c0976337076aacc1b9e",
+      "codificacion": "cp1252",
+      "n_filas": 410806,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2024_06.csv",
+      "ruta": "data/raw/datos_abiertos_2024_06.csv",
+      "sha256_crudo": "cd073cecc62cd7a358b1a54f342ad78ca0fa6a94d039e97e1920ae3323cd91a5",
+      "codificacion": "cp1252",
+      "n_filas": 365000,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2024_07.csv",
+      "ruta": "data/raw/datos_abiertos_2024_07.csv",
+      "sha256_crudo": "0d6dab9e3c5d1ed6f43f5c3ce65aea9ea51cd151c62cd80d4e068668cb947748",
+      "codificacion": "utf-8",
+      "n_filas": 364177,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2024_08.csv",
+      "ruta": "data/raw/datos_abiertos_2024_08.csv",
+      "sha256_crudo": "4d6bd19355c8e8a0829b280ce8844bd2c1b82e5e3ffcfca3eee07e10d2efe796",
+      "codificacion": "cp1252",
+      "n_filas": 394894,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2024_09.csv",
+      "ruta": "data/raw/datos_abiertos_2024_09.csv",
+      "sha256_crudo": "d4f7653879861abb67ffda890dd79d0cc8b71edbb043162f19bb0125eaf60fd3",
+      "codificacion": "cp1252",
+      "n_filas": 390072,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "dayfirst",
+      "estrategia_fecha_fin": "dayfirst"
+    },
+    {
+      "archivo": "datos_abiertos_2024_10.csv",
+      "ruta": "data/raw/datos_abiertos_2024_10.csv",
+      "sha256_crudo": "9146623af19ea413a817a5077048b605ac5f4cd1bbe65f0d161ae39d2a9258c7",
+      "codificacion": "cp1252",
+      "n_filas": 418690,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "dayfirst",
+      "estrategia_fecha_fin": "dayfirst"
+    },
+    {
+      "archivo": "datos_abiertos_2024_11.csv",
+      "ruta": "data/raw/datos_abiertos_2024_11.csv",
+      "sha256_crudo": "85607feef22f75f1a1893ec5dbd3f8cfc1d01a2ef1c206418629ef672b2582ac",
+      "codificacion": "cp1252",
+      "n_filas": 391089,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2024_12.csv",
+      "ruta": "data/raw/datos_abiertos_2024_12.csv",
+      "sha256_crudo": "4541d595fb6c539007b9309d128036356c128f2f523fe8b009050e3bf633c7d0",
+      "codificacion": "cp1252",
+      "n_filas": 340049,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_01.csv",
+      "ruta": "data/raw/datos_abiertos_2025_01.csv",
+      "sha256_crudo": "90ee75701a69374926af0400d204f3280baed0e3c1a1f97d9e6c0b283757125a",
+      "codificacion": "cp1252",
+      "n_filas": 380184,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_02.csv",
+      "ruta": "data/raw/datos_abiertos_2025_02.csv",
+      "sha256_crudo": "f52f13f59eb2f1517e05c72f0a3d3d70c5b0fa6b86626c7325e8ca3b15ff74f8",
+      "codificacion": "cp1252",
+      "n_filas": 372529,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_03.csv",
+      "ruta": "data/raw/datos_abiertos_2025_03.csv",
+      "sha256_crudo": "e5aa1b5d197f294022d3f0ff1b55bf553fcbdb697b50d43deaddf8dca36fed64",
+      "codificacion": "utf-8",
+      "n_filas": 405110,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_04.csv",
+      "ruta": "data/raw/datos_abiertos_2025_04.csv",
+      "sha256_crudo": "630e637d6611aadc67aad321edcd541361220473bddf8e34ecba46c0e29d7341",
+      "codificacion": "utf-8",
+      "n_filas": 366193,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_05.csv",
+      "ruta": "data/raw/datos_abiertos_2025_05.csv",
+      "sha256_crudo": "e0a744412a1e840c1d24c24269565a123b35739c0bac494b9c0f53ba0a2c43c2",
+      "codificacion": "utf-8",
+      "n_filas": 395891,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_06.csv",
+      "ruta": "data/raw/datos_abiertos_2025_06.csv",
+      "sha256_crudo": "063e3523db00c90899f08fb134c4c382667eb0e4d8b6358890d426409c6f4c9e",
+      "codificacion": "utf-8",
+      "n_filas": 356611,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_07.csv",
+      "ruta": "data/raw/datos_abiertos_2025_07.csv",
+      "sha256_crudo": "a71a9e2a629ff91b021f57e302958e64fa545678d6373aaf0fed62dfc7bebd29",
+      "codificacion": "cp1252",
+      "n_filas": 368186,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_08.csv",
+      "ruta": "data/raw/datos_abiertos_2025_08.csv",
+      "sha256_crudo": "382e62f3eb878e13faf4c93d031c8efcf765c392b3402d27b264613f9ff4a56d",
+      "codificacion": "utf-8",
+      "n_filas": 374727,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_09.csv",
+      "ruta": "data/raw/datos_abiertos_2025_09.csv",
+      "sha256_crudo": "218bed1587a70ec5fc5e8589a04783532301f19c55acd3633fa219c96860e720",
+      "codificacion": "utf-8",
+      "n_filas": 376789,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_10.csv",
+      "ruta": "data/raw/datos_abiertos_2025_10.csv",
+      "sha256_crudo": "505d9b8b59f65fa223f7889189b74b9fe167c9dda11c7e7053536a360c611370",
+      "codificacion": "utf-8",
+      "n_filas": 420064,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_11.csv",
+      "ruta": "data/raw/datos_abiertos_2025_11.csv",
+      "sha256_crudo": "f5c4f1b0c0842339dfdfaac756607314bdf5b64d17cde58d754f5a5a2e1a5fbe",
+      "codificacion": "utf-8",
+      "n_filas": 380328,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2025_12.csv",
+      "ruta": "data/raw/datos_abiertos_2025_12.csv",
+      "sha256_crudo": "b9fbb7386666ac3d452e3d3ef40ab443c39eef349cd9c97207230371e1d2d001",
+      "codificacion": "utf-8",
+      "n_filas": 335420,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2026_01.csv",
+      "ruta": "data/raw/datos_abiertos_2026_01.csv",
+      "sha256_crudo": "c40d7a43eb1c0b1523d6267bcdfac1daad04179ef1f0a7cf93f09b2df82285c2",
+      "codificacion": "cp1252",
+      "n_filas": 357180,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2026_02.csv",
+      "ruta": "data/raw/datos_abiertos_2026_02.csv",
+      "sha256_crudo": "2d78fa9686477bdedbf333423e6aadc63b265aaef038eb0b09701746a155ae1f",
+      "codificacion": "utf-8",
+      "n_filas": 333756,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2026_03.csv",
+      "ruta": "data/raw/datos_abiertos_2026_03.csv",
+      "sha256_crudo": "97c273aa7465c99d509dfc58436122a979ad51af00bd527cef6144210375d16e",
+      "codificacion": "utf-8",
+      "n_filas": 376243,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2026_04.csv",
+      "ruta": "data/raw/datos_abiertos_2026_04.csv",
+      "sha256_crudo": "9165342d0169f2c0ba4fb2c944003147c8a95d77f9058361b451cadf141b2483",
+      "codificacion": "utf-8",
+      "n_filas": 351851,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2026_05.csv",
+      "ruta": "data/raw/datos_abiertos_2026_05.csv",
+      "sha256_crudo": "d0ac16ae3a75b8ac40565176e2e607c99c756a385860caa7e2ffb351082c9d45",
+      "codificacion": "utf-8",
+      "n_filas": 315895,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2026_06.csv",
+      "ruta": "data/raw/datos_abiertos_2026_06.csv",
+      "sha256_crudo": "a4d195786a3599b155829288a0432cd9e76c6780dc693c0e9579d11e11c49a27",
+      "codificacion": "utf-8",
+      "n_filas": 355303,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2026_07.csv",
+      "ruta": "data/raw/datos_abiertos_2026_07.csv",
+      "sha256_crudo": "3f9db9fed985977b175001a984302eae7c61326a75ed93afae9c8fc17bbdb922",
+      "codificacion": "utf-8",
+      "n_filas": 388257,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2026_08.csv",
+      "ruta": "data/raw/datos_abiertos_2026_08.csv",
+      "sha256_crudo": "e34f39b9ad204ae0b66f3538894a5f86ed03f46d98701169d3e4d95952d5f671",
+      "codificacion": "utf-8",
+      "n_filas": 393524,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    },
+    {
+      "archivo": "datos_abiertos_2026_09.csv",
+      "ruta": "data/raw/datos_abiertos_2026_09.csv",
+      "sha256_crudo": "00b5cf64cc31a502d01044d905f6e033f9bc1db962e771119742fd25c6cb58b3",
+      "codificacion": "utf-8",
+      "n_filas": 490056,
+      "n_fechas_invalidas": 0,
+      "n_inicio_fuera_del_periodo": 0,
+      "estrategia_fecha_inicio": "default",
+      "estrategia_fecha_fin": "default"
+    }
+  ],
+  "nomenclatura": [
+    {
+      "archivo": "nomenclatura_2026_09.csv",
+      "ruta": "data/raw/nomenclatura_2026_09.csv",
+      "sha256_crudo": "206e45fe633922b634d858142fa21e6fd9f4c421b6435c02980ef290cc2df90d",
+      "codificacion": "utf-8",
+      "n_filas": 484
+    }
+  ],
+  "salida": {
+    "ruta": "data/interim/viajes_unificados.parquet",
+    "n_filas": 13621885,
+    "columnas": [
+      "viaje_id",
+      "usuario_id",
+      "genero",
+      "anio_nacimiento",
+      "inicio_viaje",
+      "fin_viaje",
+      "origen_id",
+      "destino_id",
+      "fecha_archivo"
+    ],
+    "sha256": "618a1383721495de557051c3ece6fbcc7e4512e1508e46a878da7248b1251fd1",
+    "nota": "El hash del Parquet es informativo: puede variar entre versiones de pyarrow. La versión de datos usa los hashes crudos."
+  }
+}
