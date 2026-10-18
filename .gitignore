@@ -1,5 +1,8 @@
-# Data
+# Ignorar todo el contenido dentro de data/
 /data/
+
+# Pero NO ignorar los archivos .gitkeep para mantener la estructura de directorios
+!data/**/.gitkeep
 
 # Mac OS-specific storage files
 .DS_Store
