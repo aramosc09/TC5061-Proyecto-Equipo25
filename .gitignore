@@ -3,6 +3,13 @@
 
 # Pero NO ignorar los archivos .gitkeep para mantener la estructura de directorios
 !data/**/.gitkeep
+!data/data_manifest.json
+
+# Artefactos y bases de datos locales de MLFlow
+mlruns/
+*.db
+mlflow.dbs
+
 
 # Mac OS-specific storage files
 .DS_Store
