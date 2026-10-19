@@ -25,6 +25,7 @@ dependencies = [
     "notebook",
     "numpy",
     "pandas",
+    "pyarrow==19.0.0",
     "pip",
     "pytest",
     "python-dotenv",
@@ -48,4 +49,3 @@ extend-select = ["I"]  # Add import sorting
 [tool.ruff.lint.isort]
 known-first-party = ["proyecto_mibici"]
 force-sort-within-sections = true
-
