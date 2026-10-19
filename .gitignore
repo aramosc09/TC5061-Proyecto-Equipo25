@@ -22,10 +22,27 @@ data/raw/*
 # Permitir el manifiesto
 !data/data_manifest.json
 
-# Artefactos y bases de datos locales de MLFlow
+# ============================================
+# MLflow: experimentos y artefactos locales
+# ============================================
 mlruns/
+mlartifacts/
 *.db
-mlflow.dbs
+
+# ============================================
+# Modelos serializados
+# ============================================
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+*.h5
+*.keras
+*.pt
+*.pth
+
+# Archivos Parquet fuera de data/
+*.parquet
 
 
 # Mac OS-specific storage files
