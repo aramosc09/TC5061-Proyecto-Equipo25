@@ -221,6 +221,12 @@ mlartifacts/
 *.pkl
 *.pickle
 *.joblib
+*.onnx
+*.h5
+*.keras
+*.pt
+*.pth
+*.parquet
 /models/*
 !/models/.gitkeep
 /reports/runs/
