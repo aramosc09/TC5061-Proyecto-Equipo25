@@ -49,6 +49,16 @@ def git_commit(root):
     return result.stdout.strip() if result.returncode == 0 else "unavailable"
 
 
+def git_worktree_dirty(root):
+    """Whether the run includes source changes that are not in the recorded commit."""
+    result = subprocess.run(
+        ["git", "-C", str(root), "status", "--porcelain"],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0 and bool(result.stdout.strip())
+
+
 def tracking_uri(settings):
     database = settings.path("tracking", "database").resolve()
     database.parent.mkdir(parents=True, exist_ok=True)
@@ -204,7 +214,7 @@ def evaluate_clusters(pipeline, profiles, columns, settings, output, figure):
     }, {"descriptive": len(profiles), "mapped": len(located)}
 
 
-def train(settings, questions=("P1",)):
+def train(settings, questions=("P1",), *, candidates_only=False):
     """Registra una corrida por pregunta y tipo de modelo con parametros, metricas y artefactos."""
     supervised_path = settings.path("features", "supervised")
     profiles_path = settings.path("features", "profiles")
@@ -215,6 +225,7 @@ def train(settings, questions=("P1",)):
 
     configure_tracking(settings)
     commit = git_commit(settings.root)
+    dirty_worktree = git_worktree_dirty(settings.root)
     data_version = obtener_version_datos(settings.path("data", "manifest"))
     window = [settings.values["data"]["start_month"], settings.values["data"]["end_month"]]
 
@@ -232,9 +243,14 @@ def train(settings, questions=("P1",)):
                 frame = pd.read_parquet(supervised_path)
             # Los lags ya codifican la demanda; el id numerico no tiene orden natural.
             columns = [c for c in predictor_columns(frame) if c != "station_id"]
-        for candidate in (
-            [False, True] if settings.values["models"]["include_candidates"] else [False]
-        ):
+        candidates = (
+            [True]
+            if candidates_only
+            else [False, True]
+            if settings.values["models"]["include_candidates"]
+            else [False]
+        )
+        for candidate in candidates:
             pipeline = model_pipeline(question, settings, candidate)
             kind = "candidate" if candidate else "baseline"
             model_params = pipeline.named_steps["model"].get_params()
@@ -242,6 +258,7 @@ def train(settings, questions=("P1",)):
                 "team": settings.values["project"]["team"],
                 "question": question,
                 "git_commit": commit,
+                "git_worktree_dirty": str(dirty_worktree).lower(),
                 "target_semantics": "flow_pressure_proxy"
                 if question == "P2"
                 else "descriptive"

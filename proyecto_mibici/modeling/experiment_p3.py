@@ -17,6 +17,7 @@ from sklearn.metrics import silhouette_score
 import typer
 
 from proyecto_mibici.config import PROCESSED_DATA_DIR, PROJ_ROOT
+from proyecto_mibici.dataset import obtener_version_datos
 from proyecto_mibici.features_p3 import (
     EVENT_COLUMNS,
     PROFILE_COLUMNS,
@@ -246,6 +247,7 @@ def main(
         )
     ).hexdigest()
     data_digest = _sha256(data_path)
+    data_version = obtener_version_datos()
     run_name = "p3-baseline-weekend-median"
 
     with mlflow.start_run(run_name=run_name) as run:
@@ -272,6 +274,7 @@ def main(
                 if data_path.is_relative_to(PROJ_ROOT)
                 else data_path.name,
                 "data_sha256": data_digest,
+                "data_version": data_version,
                 "source_sha256": source_digest,
                 "batch_size": batch_size,
                 "weekend_days": "saturday,sunday",
