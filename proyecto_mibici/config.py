@@ -31,13 +31,21 @@ MANIFEST_PATH = DATA_DIR / "data_manifest.json"
 # ==========================================
 DATA_URL_ONLINE = 'https://www.mibici.net/es/datos-abiertos/'
 
-RANDOM_STATE = 42
+DEFAULT_RANDOM_STATE = 42
 
 # Ventana de tiempo predeterminada para el dataset
 DEFAULT_ANIO_INICIO = 2023
 DEFAULT_MES_INICIO = 10
 DEFAULT_ANIO_FIN = 2026
 DEFAULT_MES_FIN = 9
+
+
+# ==========================================
+# Configuración P2
+# ==========================================
+DEFAULT_DESFASE_HORAS = 2
+DEFAULT_PERCENTIL_UMBRAL = 0.90
+DEFAULT_FECHA_CORTE_SPLIT = '2026-04-01'
 
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135
