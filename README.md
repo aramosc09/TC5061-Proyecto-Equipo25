@@ -31,9 +31,8 @@ El ML Canvas y el diagrama de arquitectura están en `references/`.
 - **Nomenclatura:** 484 estaciones registradas, de las cuales 471 coinciden con los viajes y tienen capacidad y coordenadas válidas.
 - **Calidad de datos:** Se identificaron las estaciones 405 y 407 sin correspondencia en el catálogo, relacionadas con 3,954 viajes (0.0290%).
 - **Trazabilidad:** Los resultados de las verificaciones se documentan en `references/validacion_datos_mibici.md` y el manifiesto se encuentra en `data/data_manifest.json`.
-
 - **Partición temporal (sin mezcla aleatoria):** entrenamiento oct 2023 – mar 2026, validación abr – jun 2026, prueba jul – sep 2026. Las variables de una predicción en *t* solo usan información hasta *t*; τ, escaladores y clustering se ajustan solo con entrenamiento.
-- **Condiciones de uso:** pendiente confirmar la licencia exacta del portal (no se abrieron las URLs de origen por decisión del equipo); uso académico, con cita de la fuente.
+- **Condiciones de uso:** [COMPLETAR con la licencia y fecha de consulta del portal]. Uso académico, con cita de la fuente.
 - **Datos personales:** el Parquet intermedio conserva `usuario_id`, `genero` y `anio_nacimiento` **solo en local**. No se usan como variables de ningún modelo, no se suben a Git ni a MLflow y los resultados se reportan agregados. Con `--excluir-datos-personales` se genera una versión sin ellas, apta para compartir.
 
 ## 4. Estructura del repositorio
@@ -60,13 +59,14 @@ Generado con Cookiecutter Data Science (`ccds`, con `include_code_scaffold`).
 ├── proyecto_mibici/
 │   ├── config.py            # Rutas, fechas, semillas y parámetros (única fuente)
 │   ├── dataset.py           # Ingesta, Parquet y manifiesto de datos
-│   ├── features.py          # Feature engineering reutilizable (P1/P2) y perfiles (P3)
-│   ├── plots.py
+│   ├── features.py          # Feature engineering reutilizable [PENDIENTE]
+│   ├── plots.py             # Gráficas y mapas [PENDIENTE]
+│   ├── tracking.py          # Registro de runs en MLflow [PENDIENTE]
 │   └── modeling/
-│       ├── train.py         # Baselines y candidatos P1/P2/P3 con registro en MLflow
+│       ├── train.py         # Baselines y modelos candidatos [PENDIENTE]
 │       └── predict.py
-├── Makefile                 # requirements, data, features, train, ui, test, lint
-├── pyproject.toml           # Dependencias con versión fija
+├── Makefile                 # Comandos de la plantilla (ver `make help`)
+├── pyproject.toml           # Dependencias con versión fija [AJUSTAR si usaron otro archivo]
 └── README.md
 ```
 
@@ -78,10 +78,12 @@ El proyecto usa la plantilla Cookiecutter Data Science con **virtualenv** y las 
 git clone git@github.com:aramosc09/TC5061-Proyecto-Equipo25.git
 cd TC5061-Proyecto-Equipo25
 
-uv sync --frozen
+make create_environment
+
+make requirements
 ```
 
-Instalar `uv` como requisito previo. Verificar el entorno con `uv run --frozen python -c "import proyecto_mibici"` y ejecutar las pruebas con `uv run --frozen pytest -q`. Los comandos `make` requieren GNU Make; en Windows se pueden ejecutar directamente las instrucciones `uv run` del Makefile.
+Verificar la instalación con `make help` (lista los comandos disponibles) y con `python -c "import proyecto_mibici"`.
 
 Al agregar una dependencia, se instala **con versión exacta** y se actualiza el archivo de dependencias en el mismo Pull Request.
 
@@ -112,39 +114,10 @@ python -m proyecto_mibici.dataset verificar-parquet
 
 Solo una persona genera y sube el manifiesto oficial (por Pull Request). **Nunca** se suben datos al repositorio.
 
-## 7. Features y experimento base en MLflow
 
-Las features se incorporan en el PR #3 y el entrenamiento en el PR #4, apilado sobre el primero. Los comandos de entrenamiento requieren integrar ambos PRs.
+## 7. Organización del equipo y flujo de colaboración
 
-Cada etapa se ejecuta desde la terminal:
-
-```bash
-make data                        # CSV crudos -> Parquet unificado + manifiesto
-make features                    # Features estación-hora (P1/P2) y perfiles (P3)
-make train ARGS="--candidates"   # Baselines + candidatos de P1/P2/P3 en MLflow
-make ui                          # Interfaz de MLflow (http://127.0.0.1:5000)
-```
-
-`features` escribe dos tablas en `data/processed/` y el umbral de P2 aprendido
-**solo con entrenamiento** en `features_meta.json`.
-
-Cada corrida registra en MLflow (experimento `mibici-equipo25`): los parámetros
-para reproducirla (rango de fechas, `data_version` del manifiesto, semilla,
-cortes de partición, horizontes e hiperparámetros), métricas nombradas por
-partición (`test_*`, `validation_*`), etiquetas (`team`, `question`,
-`git_commit`) y artefactos (modelo, figura y tablas de la corrida).
-
-### Modelos y métricas por pregunta
-
-| Pregunta | Baseline | Candidato | Métricas |
-|---|---|---|---|
-| P1 | `DummyRegressor` (media) | `HistGradientBoostingRegressor` | MAE, RMSE, WAPE |
-| P2 | `DummyClassifier` (clase mayoritaria) | `HistGradientBoostingClassifier` | F1 macro, exactitud balanceada, recall por clase |
-| P3 | `KMeans` | `GaussianMixture` | Silueta, tamaño de los grupos |
-
-## 8. Organización del equipo y flujo de colaboración
-
-### 8.1. Integrantes
+### 7.1. Integrantes
 
 El proyecto MiBici es desarrollado por el Equipo 25 de la materia TC5061 - Operaciones de Aprendizaje Automático (MLOps).
 
@@ -157,7 +130,7 @@ El proyecto MiBici es desarrollado por el Equipo 25 de la materia TC5061 - Opera
 
 Las responsabilidades de implementación de P1, P2 y P3 deberán confirmarse entre los integrantes y documentarse conforme se integren sus contribuciones.
 
-### 8.2. Estrategia de control de versiones
+### 7.2. Estrategia de control de versiones
 
 El equipo utiliza Git y GitHub para gestionar el código, la documentación y la colaboración durante el desarrollo.
 
@@ -171,9 +144,7 @@ La estrategia de trabajo contempla:
 - Evitar commits y pushes directos a `main`.
 - Configurar y verificar la protección de la rama principal.
 
-Convenciones del proyecto: ramas `feat/<tema>`, `fix/<tema>`, `docs/<tema>` o `test/<tema>`; commits descriptivos con Conventional Commits (`feat: ...`, `fix: ...`, `docs: ...`).
-
-### 8.3. Ramas de trabajo
+### 7.3. Ramas de trabajo
 
 Durante la revisión del repositorio se identificaron las siguientes ramas:
 
@@ -186,7 +157,7 @@ Durante la revisión del repositorio se identificaron las siguientes ramas:
 
 La existencia de estas ramas no implica que todos sus cambios estén integrados en `main`.
 
-### 8.4. Flujo de colaboración mediante Pull Requests
+### 7.4. Flujo de colaboración mediante Pull Requests
 
 Para desarrollar una nueva funcionalidad o modificar documentación, se seguirá el siguiente procedimiento:
 
@@ -201,7 +172,7 @@ Para desarrollar una nueva funcionalidad o modificar documentación, se seguirá
 9. Atender las observaciones recibidas.
 10. Integrar los cambios únicamente después de las revisiones y verificaciones correspondientes.
 
-### 8.5. Evidencia de colaboración
+### 7.5. Evidencia de colaboración
 
 Para cumplir con los requisitos de la actividad, se deberá verificar y documentar lo siguiente:
 
@@ -213,7 +184,7 @@ Para cumplir con los requisitos de la actividad, se deberá verificar y document
 
 Estas actividades se consideran pendientes de verificación hasta confirmar su cumplimiento directamente en GitHub.
 
-### 8.6. Buenas prácticas de colaboración
+### 7.6. Buenas prácticas de colaboración
 
 Para mantener la reproducibilidad y evitar conflictos entre integrantes:
 
@@ -224,3 +195,77 @@ Para mantener la reproducibilidad y evitar conflictos entre integrantes:
 - Documentar los comandos utilizados para ejecutar los experimentos.
 - Vincular los resultados de MLflow con la versión de datos y el commit correspondiente.
 - Evitar modificar archivos desarrollados por otros integrantes sin coordinación previa.
+
+## 8. Implementacion de ingesta, features y entrenamiento
+
+Esta seccion complementa la documentacion anterior con los comandos y archivos de
+esta contribucion. La documentacion de arquitectura, validacion e integrantes del
+equipo se conserva. Los comandos siguientes corresponden al Makefile de esta rama.
+
+### 8.1. Entorno reproducible y comandos vigentes
+
+Instalar `uv` antes de preparar el entorno. Python se fija en `.python-version`;
+las dependencias se declaran en `pyproject.toml` y se resuelven con `uv.lock`.
+Para esta implementacion, usar estos comandos de entorno en lugar de
+`make create_environment` y `make help` mencionados en la seccion original:
+
+```bash
+uv sync --frozen
+uv run --frozen python -c "import proyecto_mibici"
+uv run --frozen pytest -q
+uv run --frozen ruff check proyecto_mibici
+```
+
+### 8.2. Archivos de esta contribucion
+
+- `proyecto_mibici/config.py`: rutas, fechas, semillas y parametros centralizados.
+- `proyecto_mibici/dataset.py`: ingesta, Parquet y manifiesto de datos.
+- `proyecto_mibici/features_p1.py`: modulo renombrado desde `features.py`; conserva
+  las funciones reutilizables, variables estacion-hora y perfiles ya implementados.
+- `proyecto_mibici/modeling/train.py`: pipelines, evaluacion y registro en MLflow.
+- `tests/test_data.py`: pruebas de variables temporales y exclusiones de predictores.
+
+Las referencias anteriores a `features.py` describen la arquitectura general;
+el archivo ejecutable de esta contribucion es `features_p1.py`. Las referencias
+anteriores a componentes pendientes deben leerse junto con esta implementacion.
+
+### 8.3. Ejecucion por etapa
+
+```bash
+make data
+make features
+make train ARGS="--candidates"
+make ui
+```
+
+En Windows, si GNU Make no esta instalado, usar los comandos equivalentes:
+
+```bash
+uv run --frozen python -m proyecto_mibici.dataset procesar-datos
+uv run --frozen python -m proyecto_mibici.features_p1
+uv run --frozen python -m proyecto_mibici.modeling.train --candidates
+uv run --frozen mlflow ui --backend-store-uri sqlite:///mlruns/tracking.db
+```
+
+Las features generan tablas en `data/processed/` y `features_meta.json`, con el
+umbral de P2 aprendido solo en entrenamiento. P1 pronostica un conteo horario a
+24 horas: la ventana `[t+24h,t+25h)` desde el origen `t`.
+
+### 8.4. Modelos, metricas y trazabilidad
+
+| Pregunta | Baseline | Candidato | Metricas |
+|---|---|---|---|
+| P1 | DummyRegressor (media) | HistGradientBoostingRegressor | MAE, RMSE, WAPE |
+| P2 | DummyClassifier (mayoritaria) | HistGradientBoostingClassifier | F1 macro, exactitud balanceada, recall por clase |
+| P3 | KMeans | GaussianMixture | Silueta, tamanos de grupos |
+
+MLflow registra parametros de datos/modelos, semilla, horizontes y cortes temporales;
+metricas por particion; etiquetas de equipo/pregunta/commit; modelos, figuras,
+tablas y configuracion. El experimento se llama `mibici-equipo25`.
+Los datos, modelos serializados y stores locales quedan excluidos por `.gitignore`.
+
+### 8.5. Convenciones de la contribucion
+
+Ramas `feat/<tema>`, `fix/<tema>`, `docs/<tema>` o `test/<tema>` y commits con
+Conventional Commits. La proteccion de main y las evidencias de colaboracion siguen
+sujetas a las verificaciones del equipo indicadas en la seccion 7.

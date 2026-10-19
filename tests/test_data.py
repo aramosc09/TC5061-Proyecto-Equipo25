@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from proyecto_mibici.config import load_settings
-from proyecto_mibici.features import predictor_columns, station_features, station_profile
+from proyecto_mibici.features_p1 import predictor_columns, station_features, station_profile
 
 
 def hourly_fixture(hours=900, seed=25):

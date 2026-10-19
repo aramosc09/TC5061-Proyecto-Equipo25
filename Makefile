@@ -9,7 +9,7 @@ data:
 
 ## Features estacion-hora de P1/P2 y perfiles de P3
 features:
-	uv run --frozen python -m proyecto_mibici.features $(ARGS)
+	uv run --frozen python -m proyecto_mibici.features_p1 $(ARGS)
 
 ## Baselines (y candidatos con --candidates) registrados en MLflow
 train:

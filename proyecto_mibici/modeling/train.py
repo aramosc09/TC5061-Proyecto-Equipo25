@@ -33,7 +33,7 @@ import typer
 
 from proyecto_mibici.config import load_settings
 from proyecto_mibici.dataset import obtener_version_datos
-from proyecto_mibici.features import predictor_columns
+from proyecto_mibici.features_p1 import predictor_columns
 
 app = typer.Typer(help="Entrena y registra los modelos de P1/P2/P3 en MLflow.")
 
