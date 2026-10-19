@@ -22,6 +22,12 @@ data/raw/*
 # Permitir el manifiesto
 !data/data_manifest.json
 
+# Entorno local y base de datos MLflow
+.env
+/mlflow.db
+/mlflow.db-shm
+/mlflow.db-wal
+
 # ============================================
 # MLflow: experimentos y artefactos locales
 # ============================================
@@ -43,7 +49,6 @@ mlartifacts/
 
 # Archivos Parquet fuera de data/
 *.parquet
-
 
 # Mac OS-specific storage files
 .DS_Store

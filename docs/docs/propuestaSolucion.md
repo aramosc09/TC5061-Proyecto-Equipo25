@@ -34,168 +34,255 @@ Opcionalmente podría normalizarse por capacidad solo si se valida que la capaci
 
 ##### Prediction Task
 
-- **¿Qué tipo de tarea es?** P1 es regresión supervisada de conteos; P2 está planteada en el contexto como clasificación del riesgo de falta de bicicletas o anclajes, pero no hay etiqueta observada para entrenar/validar esa tarea; P3 es clustering no supervisado y descriptivo.
-- **¿Sobre qué entidad se hacen las predicciones?** P1 y P2: cada entidad es una estación en una hora, con grano estación × hora. P3: cada entidad es una estación representada por un perfil de uso agregado.
-- **¿Cuáles son los resultados posibles?** P1: conteo no negativo de viajes iniciados en la siguiente hora por estación. P2: la salida de negocio sería la clase de riesgo de falta de bicicletas o anclajes; su etiqueta no existe en los datos actuales. Si se acuerda usar un proxy, la salida sería una clase de presión de flujo y deberá nombrarse y reportarse como tal, no como riesgo real. P3: asignación de grupo, perfil interpretativo y ubicación geográfica validada de las estaciones.
-- **¿Cuándo se observan los resultados?** P1: se produciría al cierre de cada hora para la hora siguiente (`t+1`) y el conteo real se obtendría después a partir de los viajes observados. P2: el evento real de falta tendría que observarse durante/después del horizonte futuro, pero los CSV actuales no lo registran. P3 no tiene horizonte futuro: resume el periodo de octubre de 2025 a septiembre de 2026 y solo puede interpretarse una vez agregados los datos del periodo.
+- **¿Qué tipo de tarea es?** P1 es regresión supervisada de conteos; P2 está planteada en el contexto como clasificación del riesgo de falta de bicicletas o anclajes; P3 es clustering no supervisado y descriptivo.
+- **¿Sobre qué entidad se hacen las predicciones?** P1 y P2: cada entidad es una estación en una hora, con granularidad estación × hora. P3: cada entidad es una estación representada por un perfil de uso agregado.
+- **¿Cuáles son los resultados posibles?** P1: conteo no negativo de viajes iniciados en la siguiente hora por estación. P2: la salida de negocio sería la clase de riesgo de falta de bicicletas o anclajes. P3: asignación de grupo, perfil interpretativo y ubicación geográfica validada de las estaciones.
+- **¿Cuándo se observan los resultados?** P1: se produciría al cierre de cada hora para la hora siguiente (`t+1`) y el conteo real se obtendría después a partir de los viajes observados. P2: el evento real de falta tendría que observarse durante/después del horizonte futuro. P3 no tiene horizonte futuro.
 - **P2 — etiqueta y alcance:** no se puede definir una etiqueta supervisada de riesgo real a partir de los CSV disponibles. Solo si el equipo lo aprueba se derivaría un proxy basado en el balance de salidas y llegadas, con clases de presión claramente diferenciadas del objetivo de negocio. La normalización por capacidad y el umbral requieren justificación y validación; el proxy no debe presentarse como predicción de una estación vacía/llena.
 
 ##### Decisions
 
-- **¿Cómo se convierten las predicciones en recomendaciones o decisiones accionables?** Para P1, el prototipo mostraría conteos previstos y estaciones priorizables para revisión; no enviaría instrucciones ni movería bicicletas automáticamente. Para P2, solo si se consigue la etiqueta real se podría priorizar la verificación de estaciones en riesgo; un proxy de flujo no basta para recomendar un rebalanceo. Personal de operación tendría que contrastar cualquier señal con el estado real del sistema.
+- **¿Cómo se convierten las predicciones en recomendaciones o decisiones accionables?** P1 permitirá priorizar estaciones con mayor demanda prevista para planear el rebalanceo. P2 generará alertas ordenadas por probabilidad y gravedad para priorizar intervenciones. P3 permitirá identificar perfiles de estaciones y zonas que podrían requerir ajustes de capacidad o expansión. Las recomendaciones deberán considerar inventario, capacidad, distancia, costos y disponibilidad de personal; los umbrales operativos deberán definirse con MiBici.
 - **¿Qué parámetros del proceso usaría quien decide?** Como salida útil se propone ordenar estaciones por viajes previstos (P1). Para P2, solo si se obtiene y valida la etiqueta real, se podrían mostrar la clase de riesgo, el horizonte y la confianza del modelo; un eventual proxy se mostraría aparte como presión de flujo y no como riesgo. Umbrales de operación, capacidad real, rutas, costos y límites de recursos no están en los CSV y tendrían que ser definidos con MiBici.
 - **¿Cómo se integra en el flujo de trabajo o interfaz?** Para la entrega académica, informes, tablas y artefactos del experimento. Una interfaz de operación no forma parte del alcance implementado. A futuro podría ser un tablero consultado por operación/planeación, sujeto a aprobación y a disponibilidad de datos operativos.
 
 ##### Value Proposition
 
-- **¿Quién es beneficiario final y qué problema concreto se atiende?** Personas usuarias de MiBici se beneficiarían indirectamente si el sistema ayuda a planear disponibilidad; los usuarios directos son operación para P1, rebalanceo para la pregunta P2 si se obtienen etiquetas reales, y planeación urbana/expansión para P3. El problema planteado es anticipar demanda, investigar riesgo de falta de bicicletas/anclajes y resumir patrones de uso entre estaciones.
-- **¿Cómo encaja la solución en su flujo?** P1 podría apoyar la priorización de revisiones y planificación de recursos. P2 solo podría apoyar decisiones una vez que se valide con observaciones reales de disponibilidad; sin ellas, el proxy de flujo se limita a análisis exploratorio. P3 proporcionaría grupos, perfiles y ubicaciones comparables para análisis de cobertura y expansión. No se propone automatizar decisiones ni sustituir la información operativa de campo.
+- **¿Quién es beneficiario final y qué problema concreto se atiende?** Los beneficiarios son los usuarios de MiBici y los equipos responsables de su operación y planeación. P1 (regresión) busca anticipar la demanda para distribuir mejor las bicicletas; P2 (clasificación) busca identificar estaciones con riesgo de desabasto o saturación; y P3 (clustering) busca agrupar estaciones con patrones de uso similares para orientar decisiones de capacidad y expansión.
+- **¿Cómo encaja la solución en su flujo?** P1 podría apoyar la priorización de revisiones y planificación de recursos. P2 solo podría apoyar decisiones una vez que se valide con observaciones reales de disponibilidad; sin ellas, el proxy de flujo se limita a análisis exploratorio. P3 proporciona grupos, perfiles y ubicaciones comparables para análisis de cobertura y expansión. Los resultados se podrían presentar en tableros de visualización y servirán como apoyo para los operadores, sin automatizar inicialmente los movimientos de bicicletas.
 - **¿Qué valor se espera?** Mejor información para priorizar atención y planeación. Ahorros, aumento de disponibilidad, reducción de viajes fallidos y otros beneficios son hipótesis: los datos disponibles no permiten cuantificarlos ni atribuirles causalidad.
 
 ##### Data Collection
 
-- **¿Cómo se obtiene el conjunto inicial de entidades y resultados?** Descarga por lotes de los archivos CSV mensuales de viajes del rango confirmado y de la nomenclatura disponible; el procesamiento derivaría entidades estación-hora y los conteos observados. No se realizará etiquetado manual. La etiqueta de riesgo real de P2 no viene en estos datos y se tendría que conseguir de una fuente operativa; no debe reemplazarse silenciosamente por el proxy de flujo.
+- **¿Cómo se obtiene el conjunto inicial de entidades y resultados?** Descarga por lotes de los archivos CSV mensuales de viajes del rango confirmado y de la nomenclatura disponible; para P1, el procesamiento derivaría entidades estación-hora y los conteos observados. No se realizará etiquetado manual. La etiqueta de riesgo real de P2 no viene en estos datos, por lo que se determinará a partir de la “presión” o “flujo” sobre la estación; en un futuro, sería ideal determinar el inventario de bicicletas y registrar incidentes reales para mejorar estos modelos. P3 construirá perfiles de uso por estación sin necesidad de etiquetas.
 - **¿Cómo se actualizarán los datos controlando costo y frescura?** Para el proyecto, una ingesta local reproducible de los archivos descargados es suficiente. Si MiBici publica un nuevo mes, se podría añadir en una actualización mensual y regenerar agregados/versiones. No se requiere ni se ha comprobado una API o transmisión en tiempo real; la frescura depende de la publicación del proveedor.
 
 ##### Data Sources
 
-- **¿Dónde se obtienen entidades y resultados observados?** En la página oficial de [Datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/): archivos mensuales `datos_abiertos_AAAA_MM.csv` y `nomenclatura_2026_09.csv`. Los enlaces directos para el rango elegido constan en el punto 2. La nomenclatura es una instantánea de septiembre de 2026 y su validez para meses anteriores no está garantizada.
-- **¿Hay fuentes internas?** No se cuenta en el repositorio con una tabla interna de inventario, disponibilidad, incidencias, rebalanceo ni decisiones del operador. Por tanto, esos resultados reales no se pueden usar como etiquetas.
+- **¿Dónde se obtienen entidades y resultados observados?** En la página oficial de Datos abiertos de MiBici: https://www.mibici.net/es/datos-abiertos/
+Son archivos mensuales `datos_abiertos_AAAA_MM.csv`, además de un archivo para las nomenclaturas y ubicaciones de las estaciones `nomenclatura_2026_09.csv`. Se utilizarán inicio_viaje, fin_viaje, origen_id y destino_id para construir variables de demanda y uso.
+El primer mes del que se tiene registro es de Diciembre del 2014.
 
 ##### Features
 
-- **¿Qué representaciones se usan para las entidades en el momento de predecir?** P1: vector por estación-hora con calendario y conteos pasados. P2: para responder la pregunta original se necesitaría una etiqueta observada de falta de bicicletas/anclajes; dicha etiqueta no está disponible. Solo en un análisis proxy se usaría un vector por estación-hora con calendario y flujos pasados. P3: vector por estación con un perfil de demanda agregado (por ejemplo, actividad por hora/día de semana), junto con latitud/longitud validadas para mostrar dónde se ubican los grupos.
-- **¿Qué agregaciones o transformaciones se aplican?** `Origen_Id` se agregaría como salidas y `Destino_Id` como llegadas por hora. Se completarían horas sin viajes para estaciones activas. Para P1 se usaría como objetivo el número de salidas en la siguiente hora. Para P2, una clasificación real requiere registros de disponibilidad/eventos; si no se obtienen, el balance de salidas y llegadas puede servir únicamente para crear una etiqueta proxy de presión, sin llamarla riesgo observado. Los predictores temporales candidatos incluyen calendario, rezagos de 1 h, 3 h, 24 h y 7 días, y promedios móviles calculados únicamente con observaciones ya disponibles. Para P3 se normalizarían perfiles para que el volumen no domine inadvertidamente la forma horaria, sujeto a exploración.
+- **¿Qué representaciones se usan para las entidades en el momento de predecir?** P1: vector por estación-hora con calendario y conteos pasados.En P2, cada observación será una estación en un instante determinado, con información de demanda reciente, entradas, salidas. P3: vector por estación con un perfil de demanda agregado (por ejemplo, actividad por hora/día de semana). La latitud/longitud complementarán el análisis descriptivo de los grupos.
+- **¿Qué agregaciones o transformaciones se aplican?** `Origen_Id` se agregaría como salidas y `Destino_Id` como llegadas por hora. Se completarán horas sin viajes para estaciones activas. Para P1 se usaría como objetivo el número de salidas en la siguiente hora. Para P2, el balance de salidas y llegadas puede servir únicamente para crear una etiqueta proxy de presión, y bajo ciertos umbrales se definirán niveles de riesgo. Los predictores temporales candidatos incluyen calendario, rezagos de 1 h, 3 h, 24 h y 7 días, y promedios móviles calculados únicamente con observaciones ya disponibles. Para P3 se normalizarán perfiles para que el volumen no domine inadvertidamente la forma horaria, sujeto a exploración.
 - **¿Qué se excluye?** `Usuario_Id`, `Genero` y `Año_de_nacimiento` no son necesarios para estas preguntas iniciales y se excluirán del modelado. No se usarán valores de viajes posteriores al corte para predecir P1/P2.
 
 ##### Making Predictions
 
-- **¿Batch o tiempo real?** La propuesta académica es procesamiento por lotes e inferencia retrospectiva. La interpretación operacional sería una predicción horaria para P1 y, si se consiguen etiquetas reales de disponibilidad, P2; no se dispone de flujo de viajes en vivo para producirla en tiempo real.
-- **¿Con qué frecuencia?** Entrenamiento y evaluación se ejecutarán cuando se prepare el experimento; una operación futura podría generar P1 cada hora cuando estén disponibles los datos. P2 requeriría además una fuente operativa con etiquetas reales y actualizaciones compatibles con el horizonte. P3 se actualizaría cuando se disponga de un nuevo periodo completo o cuando planeación requiera revisar los perfiles.
-- **¿Cuánto tiempo hay para featurización y decisión?** No existe un SLA ni una medición de latencia. Para la entrega, los procesos pueden ejecutarse fuera de línea; tiempos y requisitos de una operación real se deben acordar con MiBici antes de desplegar.
-- **¿Qué recursos computacionales se usarían?** Para explorar y entrenar con los archivos del proyecto se propone una computadora local con Python y las librerías fijadas en el repositorio; no se ha medido consumo ni se justifica aún un servicio en la nube o hardware especializado.
+- **¿Batch o tiempo real?** P1 y P3 funcionarán por lotes. P2 también funcionará inicialmente por lotes, pero podría operar con mayor frecuencia si se dispone de inventario actualizado.
+- **¿Con qué frecuencia?** P1 generará pronósticos por hora. P2 se ejecutará por hora. P3 actualizará los grupos trimestralmente.
+- **¿Cuánto tiempo hay para featurización y decisión?** Se propone un máximo inicial de cinco minutos por ejecución diaria de P1 y P2, y de 15 minutos por actualización trimestral de P3. El tiempo humano necesario para revisar y ejecutar las recomendaciones se medirá por separado.
+- **¿Qué recursos computacionales se usarían?** Los modelos se ejecutarán en CPU mediante procesos programados en Python. Los resultados se almacenarán en archivos o bases de datos y se visualizarán en un tablero. Si este proyecto se llevara a producción, se podrían emplear APIs para consumir los modelos y tomar decisiones más precisas.
 
 ##### Building Models
 
-- **¿Cuántos modelos se necesitan en producción?** No se propone ningún modelo listo para producción. Para comparar en la entrega se necesita al menos un baseline por pregunta y se podrá evaluar un candidato por tarea; P3 tendrá un método de clustering y una referencia sencilla, no un modelo supervisado de producción.
-- **¿Cuándo se actualizan?** No se fija periodicidad de reentrenamiento antes de evaluar estabilidad. Como criterio futuro, revisar tras incorporar datos nuevos y ante cambios persistentes en error, distribución de demanda o composición de estaciones.
+- **¿Cuántos modelos se necesitan en producción?** Se proponen tres modelos principales: uno de regresión para P1, uno de clasificación para P2 y uno de clustering para P3. Se utilizarán modelos de referencia para comparar el rendimiento. Por tener fines académicos, no se tiene contemplado que entren en producción.
+- **¿Cuándo se actualizan?** Se podría proponer que P1 se evalúe mensualmente y se reentrenará si disminuye su precisión. P2 se revisará mensualmente o cuando cambien los patrones de incidentes. P3 actualizará sus grupos trimestralmente o cuando existan cambios importantes en las estaciones.
 - **¿Cuánto tiempo hay para construirlos?** No hay plazo de inferencia/modelado operacional establecido. La entrega se hará como experimento reproducible fuera de línea.
-- **¿Qué recursos se usan?** Python local y librerías de análisis/modelado del entorno del proyecto. La selección final dependerá del costo computacional medido y de que los resultados se puedan reproducir.
+- **¿Qué recursos se usan?** Python local y librerías de análisis/modelado del entorno del proyecto. La selección final dependerá del costo computacional medido y de que los resultados se puedan reproducir. Posteriormente, se podría buscar escalar el proyecto para desplegar en la nube y facilitar entornos de predicción tiempo real.
+
 
 ##### Impact Simulation
 
-- **¿Cuánto cuestan o valen las decisiones correctas e incorrectas?** No se conocen costos monetarios ni consecuencias cuantificadas de una estación con presión, una alerta errónea o un movimiento de bicicleta. No se inventarán valores; operación tendría que proporcionarlos.
-- **¿Qué datos simularían el impacto antes del despliegue?** Se necesitarían, como mínimo, inventario por estación y hora, disponibilidad de anclajes, eventos de estaciones vacías/llenas, acciones de rebalanceo, demanda no satisfecha y costos/tiempos de operación. Esos datos no están en los CSV disponibles. Por ahora solo se puede evaluar desempeño predictivo retrospectivo, no impacto causal.
+- **¿Cuánto cuestan o valen las decisiones correctas e incorrectas?** No se conocen costos monetarios ni consecuencias cuantificadas de una estación con presión, una alerta errónea o un movimiento de bicicleta.
+- **¿Qué datos simularían el impacto antes del despliegue?** Inventario por estación y hora, disponibilidad de anclajes, eventos de estaciones vacías/llenas, acciones de rebalanceo, demanda no satisfecha y costos/tiempos de operación. Esos datos no están en los CSV disponibles. Por ahora solo se puede evaluar desempeño predictivo retrospectivo, no impacto causal.
 - **¿Qué criterios permitirían desplegar?** Como mínimo: desempeño en prueba temporal frente al baseline, ausencia de fuga temporal, robustez por estación/periodo, revisión por operación y validación con inventario/impacto real. Los umbrales de aceptación numéricos se definirán cuando se acuerden métricas y consecuencias de error.
 - **¿Hay restricciones de equidad?** No se usarían atributos demográficos de usuarios. Se debe revisar cobertura y error por estación/zona para detectar sistemáticamente áreas mal representadas o desatendidas. El equipo debe definir criterios de equidad con las personas responsables de las decisiones urbanas y operativas; no se pueden inferir solo de los CSV.
 
 ##### Monitoring
 
-- **¿Qué métricas y KPIs medirían el impacto?** Para P1, error de conteos y sesgo por estación/periodo; para P2, solo después de obtener etiquetas de riesgo reales se medirían recall/F1 de esa tarea y la tasa de alertas. Si se evalúa el proxy, recall/F1 y matriz de confusión medirán exclusivamente clases de presión de flujo. Para P3, estabilidad de grupos, calidad estadística e interpretabilidad. KPIs operativos futuros incluirían disponibilidad de bicicletas/anclajes y eventos de falta, que requieren datos adicionales. Las métricas predictivas no deben presentarse como impacto en servicio.
+- **¿Qué métricas y KPIs medirían el impacto?** Para P1, error de conteos y sesgo por estación/periodo; para P2, solo después de obtener etiquetas de riesgo reales se medirían recall/F1 de esa tarea y la tasa de alertas. Si se evalúa el proxy, recall/F1 y matriz de confusión medirán exclusivamente clases de presión de flujo. Para P3, estabilidad de grupos, calidad estadística e interpretabilidad. KPIs operativos futuros incluirían disponibilidad de bicicletas/anclajes y eventos de falta, que requieren datos adicionales. Las métricas predictivas no deben presentarse como impacto en el servicio.
 - **¿Con qué frecuencia se revisan?** No hay un despliegue ni cadencia acordada. En el prototipo se revisarán en cada evaluación temporal. Si se desplegara, se propone revisión periódica (por ejemplo, mensual) y adicional ante cambios de datos o alertas de deriva; la periodicidad definitiva corresponde al equipo operativo.
-
-**Supuestos y acuerdos pendientes de validación del equipo:** grano y horizonte propuestos de P1/P2; fuente de etiquetas reales para P2 y, solo si no se consigue, decisión explícita sobre hacer un análisis proxy de presión (incluidas sus clases y umbral `τ`); validez histórica de capacidades; conjunto final de variables de P3 y validez de las coordenadas para representar la ubicación en el periodo; y alcance del uso operacional. Estas propuestas se apoyan en [las preguntas del contexto](./context.md) y en [los acuerdos técnicos preliminares del plan](./Plan_de_trabajo_MiBici_4_integrantes.pdf), los cuales el propio plan indica que requieren validación del equipo.
 
 ### 2. Definir los datos
 
 #### Rango de fechas propuesto
 
-**Propuesta:** utilizar los viajes de **octubre de 2025 a septiembre de 2026**, ambos meses incluidos.
+**Decisión actual:** utilizar los archivos mensuales desde **octubre de 2023 hasta septiembre de 2026**, ambos meses incluidos (36 meses consecutivos).
 
 **Justificación:**
 
-- Es una ventana reciente de 12 meses completos, lo que permite cubrir un ciclo anual y observar variaciones estacionales sin mezclar de entrada toda la historia del sistema.
-- El inventario local contiene archivos mensuales consecutivos desde `datos_abiertos_2025_10.csv` hasta `datos_abiertos_2026_09.csv`, por lo que la ventana propuesta está disponible. Esto confirma la presencia de los archivos, pero no sustituye la revisión de su integridad ni el conteo de viajes.
-- El rango coincide con la ventana propuesta en el [plan de trabajo](./Plan_de_trabajo_MiBici_4_integrantes.pdf). La validez de la nomenclatura de estaciones de septiembre de 2026 para representar estaciones y capacidades en meses anteriores deberá comprobarse antes de cerrar la selección de datos.
+- Tres años completos permiten observar varios ciclos estacionales y aportan más ejemplos para las agregaciones estación-hora y los perfiles de uso que una sola anualidad.
+- Los 36 archivos mensuales del rango están presentes consecutivamente en `data/raw`; el inventario total del repositorio abarca 142 meses, desde diciembre de 2014 hasta septiembre de 2026. Se elige el subconjunto reciente para acotar el análisis y mantener relevancia temporal.
+- La ventana está definida por los archivos mensuales publicados. En la preparación se verificarán las fechas registradas en cada archivo; los conteos de este documento corresponden a las filas de esos 36 archivos, no a un filtro independiente por cada timestamp.
 
-**Estado:** rango confirmado por el usuario para continuar la propuesta. La aprobación del resto del equipo aún se deberá verificar.
+**Estado:** rango decidido por el usuario para la propuesta; aprobación del resto del equipo pendiente.
 
 #### 1. Fuente
 
-Los archivos se publican en la página oficial de [Datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/), que ofrece descargas mensuales en CSV y un archivo de nomenclatura de estaciones. Se verificó que los enlaces directos siguientes respondían correctamente el 15 de octubre de 2026.
+Los archivos se publican en la página oficial de [Datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/), que anuncia descargas CSV clasificadas por mes y año y muestra los enlaces siguientes. La página presenta los datos con la invitación “Explora, experimenta y comparte los datos de uso de Mi Bici”.
 
-**Viajes mensuales del periodo seleccionado:**
+**Archivos de viajes del periodo seleccionado y filas leídas:**
 
-| Mes | Archivo CSV oficial |
-| --- | --- |
-| 2025-10 | [datos_abiertos_2025_10.csv](https://www.mibici.net/site/assets/files/115104/datos_abiertos_2025_10.csv) |
-| 2025-11 | [datos_abiertos_2025_11.csv](https://www.mibici.net/site/assets/files/116773/datos_abiertos_2025_11.csv) |
-| 2025-12 | [datos_abiertos_2025_12.csv](https://www.mibici.net/site/assets/files/118153/datos_abiertos_2025_12.csv) |
-| 2026-01 | [datos_abiertos_2026_01.csv](https://www.mibici.net/site/assets/files/120163/datos_abiertos_2026_01.csv) |
-| 2026-02 | [datos_abiertos_2026_02.csv](https://www.mibici.net/site/assets/files/121761/datos_abiertos_2026_02.csv) |
-| 2026-03 | [datos_abiertos_2026_03.csv](https://www.mibici.net/site/assets/files/123236/datos_abiertos_2026_03.csv) |
-| 2026-04 | [datos_abiertos_2026_04.csv](https://www.mibici.net/site/assets/files/124927/datos_abiertos_2026_04.csv) |
-| 2026-05 | [datos_abiertos_2026_05.csv](https://www.mibici.net/site/assets/files/125943/datos_abiertos_2026_05.csv) |
-| 2026-06 | [datos_abiertos_2026_06.csv](https://www.mibici.net/site/assets/files/127734/datos_abiertos_2026_06.csv) |
-| 2026-07 | [datos_abiertos_2026_07.csv](https://www.mibici.net/site/assets/files/129006/datos_abiertos_2026_07.csv) |
-| 2026-08 | [datos_abiertos_2026_08.csv](https://www.mibici.net/site/assets/files/130362/datos_abiertos_2026_08.csv) |
-| 2026-09 | [datos_abiertos_2026_09.csv](https://www.mibici.net/site/assets/files/131825/datos_abiertos_2026_09.csv) |
+| Mes de archivo | Filas de viajes | Archivo CSV oficial |
+| --- | ---: | --- |
+| 2023-10 | 383,239 | [datos_abiertos_2023_10.csv](https://www.mibici.net/site/assets/files/54935/datos_abiertos_2023_10.csv) |
+| 2023-11 | 384,464 | [datos_abiertos_2023_11.csv](https://www.mibici.net/site/assets/files/57344/datos_abiertos_2023_11.csv) |
+| 2023-12 | 314,164 | [datos_abiertos_2023_12.csv](https://www.mibici.net/site/assets/files/58715/datos_abiertos_2023_12.csv) |
+| 2024-01 | 391,591 | [datos_abiertos_2024_01.csv](https://www.mibici.net/site/assets/files/61450/datos_abiertos_2024_01.csv) |
+| 2024-02 | 383,732 | [datos_abiertos_2024_02.csv](https://www.mibici.net/site/assets/files/77251/datos_abiertos_2024_02.csv) |
+| 2024-03 | 390,513 | [datos_abiertos_2024_03.csv](https://www.mibici.net/site/assets/files/77252/datos_abiertos_2024_03.csv) |
+| 2024-04 | 405,308 | [datos_abiertos_2024_04.csv](https://www.mibici.net/site/assets/files/80028/datos_abiertos_2024_04.csv) |
+| 2024-05 | 410,806 | [datos_abiertos_2024_05.csv](https://www.mibici.net/site/assets/files/81663/datos_abiertos_2024_05.csv) |
+| 2024-06 | 365,000 | [datos_abiertos_2024_06.csv](https://www.mibici.net/site/assets/files/83901/datos_abiertos_2024_06.csv) |
+| 2024-07 | 364,177 | [datos_abiertos_2024_07.csv](https://www.mibici.net/site/assets/files/85500/datos_abiertos_2024_07.csv) |
+| 2024-08 | 394,894 | [datos_abiertos_2024_08.csv](https://www.mibici.net/site/assets/files/87665/datos_abiertos_2024_08.csv) |
+| 2024-09 | 390,072 | [datos_abiertos_2024_09.csv](https://www.mibici.net/site/assets/files/89736/datos_abiertos_2024_09.csv) |
+| 2024-10 | 418,690 | [datos_abiertos_2024_10.csv](https://www.mibici.net/site/assets/files/91758/datos_abiertos_2024_10.csv) |
+| 2024-11 | 391,089 | [datos_abiertos_2024_11.csv](https://www.mibici.net/site/assets/files/93516/datos_abiertos_2024_11.csv) |
+| 2024-12 | 340,049 | [datos_abiertos_2024_12.csv](https://www.mibici.net/site/assets/files/94962/datos_abiertos_2024_12.csv) |
+| 2025-01 | 380,184 | [datos_abiertos_2025_01.csv](https://www.mibici.net/site/assets/files/97653/datos_abiertos_2025_01.csv) |
+| 2025-02 | 372,529 | [datos_abiertos_2025_02.csv](https://www.mibici.net/site/assets/files/99879/datos_abiertos_2025_02.csv) |
+| 2025-03 | 405,110 | [datos_abiertos_2025_03.csv](https://www.mibici.net/site/assets/files/101986/datos_abiertos_2025_03.csv) |
+| 2025-04 | 366,193 | [datos_abiertos_2025_04.csv](https://www.mibici.net/site/assets/files/103813/datos_abiertos_2025_04.csv) |
+| 2025-05 | 395,891 | [datos_abiertos_2025_05.csv](https://www.mibici.net/site/assets/files/105513/datos_abiertos_2025_05.csv) |
+| 2025-06 | 356,611 | [datos_abiertos_2025_06.csv](https://www.mibici.net/site/assets/files/107088/datos_abiertos_2025_06.csv) |
+| 2025-07 | 368,186 | [datos_abiertos_2025_07.csv](https://www.mibici.net/site/assets/files/108898/datos_abiertos_2025_07.csv) |
+| 2025-08 | 374,727 | [datos_abiertos_2025_08.csv](https://www.mibici.net/site/assets/files/111021/datos_abiertos_2025_08.csv) |
+| 2025-09 | 376,789 | [datos_abiertos_2025_09.csv](https://www.mibici.net/site/assets/files/113216/datos_abiertos_2025_09.csv) |
+| 2025-10 | 420,064 | [datos_abiertos_2025_10.csv](https://www.mibici.net/site/assets/files/115104/datos_abiertos_2025_10.csv) |
+| 2025-11 | 380,328 | [datos_abiertos_2025_11.csv](https://www.mibici.net/site/assets/files/116773/datos_abiertos_2025_11.csv) |
+| 2025-12 | 335,420 | [datos_abiertos_2025_12.csv](https://www.mibici.net/site/assets/files/118153/datos_abiertos_2025_12.csv) |
+| 2026-01 | 357,180 | [datos_abiertos_2026_01.csv](https://www.mibici.net/site/assets/files/120163/datos_abiertos_2026_01.csv) |
+| 2026-02 | 333,756 | [datos_abiertos_2026_02.csv](https://www.mibici.net/site/assets/files/121761/datos_abiertos_2026_02.csv) |
+| 2026-03 | 376,243 | [datos_abiertos_2026_03.csv](https://www.mibici.net/site/assets/files/123236/datos_abiertos_2026_03.csv) |
+| 2026-04 | 351,851 | [datos_abiertos_2026_04.csv](https://www.mibici.net/site/assets/files/124927/datos_abiertos_2026_04.csv) |
+| 2026-05 | 315,895 | [datos_abiertos_2026_05.csv](https://www.mibici.net/site/assets/files/125943/datos_abiertos_2026_05.csv) |
+| 2026-06 | 355,303 | [datos_abiertos_2026_06.csv](https://www.mibici.net/site/assets/files/127734/datos_abiertos_2026_06.csv) |
+| 2026-07 | 388,257 | [datos_abiertos_2026_07.csv](https://www.mibici.net/site/assets/files/129006/datos_abiertos_2026_07.csv) |
+| 2026-08 | 393,524 | [datos_abiertos_2026_08.csv](https://www.mibici.net/site/assets/files/130362/datos_abiertos_2026_08.csv) |
+| 2026-09 | 490,056 | [datos_abiertos_2026_09.csv](https://www.mibici.net/site/assets/files/131825/datos_abiertos_2026_09.csv) |
 
 **Nomenclatura de estaciones:** [nomenclatura_2026_09.csv](https://www.mibici.net/site/assets/files/1118/nomenclatura_2026_09.csv). Este archivo corresponde a septiembre de 2026; su aplicabilidad a todo el periodo se analizará junto con las variables y la calidad de los datos.
 
-**Avance del punto 2:**
-
-1. Fuente y enlaces oficiales: documentados.
-2. Tamaño real: calculado en la auditoría inicial.
-3. Variables originales y construcción de objetivos: pendiente.
-4. Condiciones de uso y tratamiento de datos personales: pendiente.
-5. Partición temporal y prevención de fuga de información: pendiente.
-
-Los incisos pendientes se completarán de manera incremental.
-
 #### 2. Tamaño real
 
-La lectura inicial de los 12 archivos mensuales encontró **4,497,877 filas de viajes**. La distribución mensual fue:
+La lectura de los **36 archivos mensuales** encontró **13,621,885 filas de viajes**:
 
-| Mes | Filas leídas |
-| --- | ---: |
-| 2025-10 | 420,064 |
-| 2025-11 | 380,328 |
-| 2025-12 | 335,420 |
-| 2026-01 | 357,180 |
-| 2026-02 | 333,756 |
-| 2026-03 | 376,243 |
-| 2026-04 | 351,851 |
-| 2026-05 | 315,895 |
-| 2026-06 | 355,303 |
-| 2026-07 | 388,257 |
-| 2026-08 | 393,524 |
-| 2026-09 | 490,056 |
-| **Total** | **4,497,877** |
+| Periodo dentro del rango | Meses | Viajes leídos |
+| --- | ---: | ---: |
+| 2023-10 a 2023-12 | 3 | 1,081,867 |
+| 2024-01 a 2024-12 | 12 | 4,645,921 |
+| 2025-01 a 2025-12 | 12 | 4,532,032 |
+| 2026-01 a 2026-09 | 9 | 3,362,065 |
+| **Total** | **36** | **13,621,885** |
 
-En cuanto a estaciones:
+Los campos `Origen_Id` y `Destino_Id` presentan **473 IDs de estación distintos** cada uno y **473 en su unión** a lo largo del periodo. La nomenclatura de septiembre de 2026 contiene **484 filas y 484 IDs distintos**: 471 de esos IDs aparecen en los viajes del periodo; 2 IDs de viaje no aparecen en esa nomenclatura y 13 IDs de la nomenclatura no aparecen en los viajes de estos 36 meses. Por tanto, 473 es el número de estaciones observadas en viajes, no una afirmación de que todas operaron durante los 36 meses. La nomenclatura es una instantánea actual, no un catálogo histórico.
 
-- Los archivos de viajes contienen **471 IDs de estación distintos** en los campos de origen o destino.
-- La nomenclatura de septiembre de 2026 contiene **484 filas y 484 IDs distintos**.
-- **2 IDs observados en los viajes no aparecen en la nomenclatura**. Por ello, los conteos de estaciones de viajes y de nomenclatura no son intercambiables; la correspondencia debe revisarse antes de cerrar la integración de ambos datos.
+Los conteos son de filas leídas, no todavía de viajes válidos después de depuración. Se contrastó la suma de las filas de los CSV seleccionados con los registros del Parquet completo filtrados por `mes_archivo`; ambas sumas coinciden en 13,621,885. La auditoría está en [1.0-eq25-auditoria-tamano-datos.ipynb](../../notebooks/1.0-eq25-auditoria-tamano-datos.ipynb).
 
-Estos son conteos iniciales de filas e IDs leídos, no un conteo depurado de viajes válidos: aún no se revisaron duplicados, registros inválidos ni la cobertura histórica de las estaciones. La auditoría está en [1.0-eq25-auditoria-tamano-datos.ipynb](../../notebooks/1.0-eq25-auditoria-tamano-datos.ipynb); lee únicamente columnas de estaciones y presenta resultados agregados, no datos personales.
+**Auditoría de fechas del Parquet:** los archivos fuente de noviembre de 2023, septiembre de 2024 y octubre de 2024 escriben `Inicio_del_viaje` y `Fin_del_viaje` como `DD/MM/YYYY H:mm`; los demás meses usan `YYYY-MM-DD HH:MM:SS`. Esto afecta 1,193,226 filas en cada columna de fecha. La comparación de las 39,078,984 filas confirmó que el Parquet previo conservaba exactamente las cadenas de los CSV: no se encontró evidencia de que la escritura Parquet hubiera intercambiado los componentes de fecha. Sin embargo, la mezcla sí podía provocar interpretaciones ambiguas o incorrectas al parsear fechas automáticamente. El notebook ahora aplica cada formato de entrada de forma explícita y normaliza ambas columnas a `YYYY-MM-DD HH:MM:SS` al regenerar el Parquet.
+
+#### 3. Variables originales y construcción de objetivos
+
+| Variable original | Uso propuesto |
+| --- | --- |
+| `Viaje_Id` | Identificador del registro; solo para auditorías de duplicados/integridad. No será predictor ni se incluirá en las tablas analíticas o resultados publicados. |
+| `Usuario_Id` | Identificador de usuario; se conserva únicamente en el Parquet local de datos de origen solicitado. Se excluye de predictores, tablas derivadas de modelado, MLflow y reportes. |
+| `Genero`, `Año_de_nacimiento` | Datos demográficos; se conservan únicamente en el Parquet local de origen. No se usarán como predictores ni se expondrán en reportes. |
+| `Inicio_del_viaje` | Fecha-hora de inicio; sirve para agregaciones temporales de viajes iniciados y variables de calendario. |
+| `Fin_del_viaje` | Fecha-hora de fin; sirve para calcular llegadas a estaciones por hora. |
+| `Origen_Id`, `Destino_Id` | Estación donde inicia y termina cada viaje; se usan para construir flujos por estación-hora y unir atributos de estación después de validar IDs. |
+| `id`, `name`, `latitude`, `longitude`, `dpcapacity` de nomenclatura | Identificador, nombre, ubicación y capacidad nominal de la estación. Coordenadas y capacidad se usarían solo tras validar la correspondencia y las limitaciones temporales de la nomenclatura de septiembre de 2026. |
+
+**Objetivos por pregunta:**
+
+- **P1 — demanda:** para estación `s` y hora objetivo `h`, `viajes_inicio(s,h)` es el número de registros con `Origen_Id = s` y `Inicio_del_viaje` dentro de `h`. El objetivo de regresión es ese conteo en la siguiente hora (`h=t+1`). Las horas sin viajes se completarán con cero solo para estaciones activas en ese momento, cuya vigencia se debe verificar; no se supondrá que el catálogo de 2026 describe estaciones de 2023.
+- **P2 — riesgo aproximado de falta de bicicletas o anclajes:** los archivos no observan ocupación ni eventos reales de estaciones vacías/llenas. En coherencia con el Canvas editado, se propone estimar el riesgo indirectamente mediante presión de flujo en la hora futura. Para estación `s`, hora `h` y capacidad nominal positiva `C_s`, definir `salidas(s,h)` como los viajes cuyo `Origen_Id` es `s` y `Inicio_del_viaje` ocurre en `h`; definir `llegadas(s,h)` como los viajes cuyo `Destino_Id` es `s` y `Fin_del_viaje` ocurre en `h`. Luego `balance(s,h) = salidas(s,h) - llegadas(s,h)` y `presion_relativa(s,h) = balance(s,h) / C_s`. Un valor positivo apunta a presión de salidas (posible falta de bicicletas); uno negativo, a presión de llegadas (posible falta de anclajes). Como punto de partida reproducible, se propone establecer en entrenamiento los percentiles 75 y 90 de `abs(presion_relativa)` como límites entre niveles bajo, moderado y alto; la dirección del balance diferencia la presión de salidas y de llegadas. Estos umbrales se congelan antes de validación/prueba y se reportan junto con las probabilidades de clase del clasificador. Esta etiqueta mide desequilibrio de viajes relativo a capacidad; **no confirma un faltante real**, porque no incluye inventario inicial, ocupación ni rebalanceo. La capacidad debe ser válida y estar conciliada históricamente; estaciones sin capacidad utilizable no tendrán etiqueta normalizada.
+- **P3 — clustering:** no tiene variable objetivo etiquetada. Cada estación se representará con un perfil agregado de uso (por ejemplo, salidas/llegadas según hora y día de semana durante el periodo) y coordenadas para ubicar los grupos. La membresía del grupo y el perfil resultante son la salida del algoritmo no supervisado; no se utilizarán `Usuario_Id` ni atributos demográficos.
+
+Las variables predictoras temporales para P1 y P2 serán conocidas al corte de predicción: calendario y rezagos/promedios históricos de salidas y llegadas. No incluirán el conteo de la hora objetivo ni información posterior al corte. `mes_archivo`, añadido al consolidar las fuentes, identifica el CSV mensual de origen y ayuda a auditar el rango; no sustituye las fechas de inicio/fin observadas. La construcción final se afinará después de la auditoría de calidad.
+
+#### 4. Condiciones de uso y tratamiento de datos personales
+
+La página de [Datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/) invita a explorar, experimentar y compartir los datos y publica archivos descargables por mes. En la página consultada no se identificó una licencia de reutilización específica ni términos separados que definan atribución, redistribución o uso comercial del CSV. Por ello, se citará a MiBici como fuente, se conservará el nombre y periodo de los archivos, y no se afirmará una licencia abierta específica ni se redistribuirán los datos fila a fila sin confirmar antes las condiciones con MiBici.
+
+Los [Términos y condiciones](https://www.mibici.net/es/termino-y-condiciones/) publicados se refieren principalmente a la suscripción y uso del servicio (por ejemplo, requisitos y uso personal/intransferible de la bicicleta); no se interpretan aquí como licencia de los archivos de datos. El [Aviso de privacidad integral de la Agencia Metropolitana](https://www.mibici.net/es/aviso-de-privacidad/) indica que la Agencia es responsable del tratamiento de los datos personales que recaba y que dicho tratamiento se sujeta a la normativa de protección de datos aplicable y a finalidades institucionales. Estas páginas se consultaron el 18 de octubre de 2026.
+
+Aunque los CSV se ofrecen públicamente, contienen `Usuario_Id` y atributos demográficos que pueden relacionarse con personas. El equipo aplicará estas medidas:
+
+1. Mantener intactas las ocho columnas originales en `data/processed/raw_data.parquet` solo como copia local de análisis, que permanece excluida de Git por `.gitignore`; no subirla a GitHub, MLflow, servicios externos ni compartirla como artefacto.
+2. Para modelado, crear un conjunto analítico que excluya `Usuario_Id`, `Genero` y `Año_de_nacimiento`; `Viaje_Id` se usará solo para control de calidad y también se excluirá de features y artefactos.
+3. No imprimir ni publicar filas individuales, identificadores, trayectorias por usuario ni cruces que permitan reidentificación. Compartir únicamente agregados por estación y periodo con tamaño suficiente para reducir riesgo de identificación.
+4. Restringir el uso a los objetivos académicos documentados, limitar copias/acceso y revisar cada artefacto, notebook y captura antes de compartirlo.
+
+La publicación abierta no elimina la responsabilidad del equipo de minimizar exposición y revisar las condiciones de reutilización vigentes.
+
+#### 5. Partición temporal y prevención de información futura
+
+Para P1 y P2 se propone una partición cronológica de las **horas objetivo**:
+
+| Conjunto | Fechas de las horas objetivo | Uso |
+| --- | --- | --- |
+| Entrenamiento | 2023-10-01 a 2025-06-30 | Ajustar modelos y, para P2, calcular los umbrales de intensidad de la etiqueta proxy. |
+| Validación | 2025-07-01 a 2025-09-30 | Seleccionar hiperparámetros/decisiones de modelado sin volver a ajustar umbrales con validación. |
+| Prueba final | 2025-10-01 a 2026-09-30 | Una evaluación final sobre 12 meses completos que no se usa para elegir modelos, umbrales ni variables. |
+
+Tras seleccionar el modelo con validación, se podrá reentrenar usando entrenamiento más validación y evaluar una sola vez en prueba; el cálculo de los umbrales de P2 se hará entonces con entrenamiento+validación, nunca con prueba. Para simular predicciones horarias en prueba se usará una evaluación de origen rodante: al predecir cada hora solo se emplean observaciones que ya habrían estado disponibles antes de esa hora. Las horas iniciales de entrenamiento sin historial suficiente para los rezagos se excluyen o se les asigna una regla definida sin mirar horas futuras.
+
+Para P3, se ajustarán transformaciones y grupos usando perfiles construidos únicamente con el periodo de entrenamiento; validación y prueba se asignarán a los grupos ya definidos para revisar estabilidad. Ningún escalador, imputador, selección de variables, umbral o centroide se ajustará con datos de prueba.
+
+El objetivo es medir el desempeño en periodos posteriores a los de ajuste y evitar que ventanas móviles, agregaciones, imputaciones o etiquetas usen información futura. La partición y la ventana de análisis deberán centralizarse después en `config.py`, conforme a las buenas prácticas del repositorio.
 
 ### 3. Diseñar el pipeline de ML
 
-**Estado: diseño inicial; falta completar tras cerrar los incisos de datos y validar las decisiones del equipo.**
+**Estado:** pipeline P3 diseñado inicialmente con el rango acordado y exploración del Parquet; pendiente validar las decisiones con el equipo. P1 y P2 siguen a cargo de sus responsables. La selección formal de modelos y métricas se documentará en el punto 4.
 
-Propuesta común: leer los CSV mensuales, normalizar encabezados/codificación/fechas y tipos, auditar registros inválidos y estaciones no conciliadas, agregar viajes por hora y estación, crear las variables con cortes temporales correctos, ajustar cada transformación solo con entrenamiento, generar predicciones y evaluar en periodos posteriores. La ingesta y las transformaciones finales deberán vivir en el módulo del proyecto; los notebooks serán para exploración.
+Las etapas se detallan por pregunta para conservar los requisitos propios de cada tarea. Para P3, el Parquet ya consolidado es la entrada de exploración; la lógica reutilizable se trasladará al módulo del proyecto y el notebook se mantendrá como evidencia exploratoria.
 
 | Pregunta | Etapas específicas propuestas |
 | --- | --- |
 | **P1** | Usar `Inicio_del_viaje` y `Origen_Id` para contar viajes iniciados por estación-hora; completar horas sin salidas para estaciones activas. Construir objetivo de salidas en `t+1` y predictores de calendario y rezagos históricos. Entrenar regresor y comparar con baseline temporal; evaluar en partición cronológica. |
 | **P2** | Para contestar la pregunta de negocio literalmente, primero se requieren datos etiquetados de disponibilidad o eventos de estaciones sin bicicletas/anclajes. Los CSV actuales no los contienen, por lo que la clasificación de riesgo no puede entrenarse ni evaluarse con verdad de terreno. Si el equipo acepta un análisis alternativo, agregar salidas y llegadas por estación-hora, completar ceros y calcular un proxy de presión de flujo en `t+1`; evaluar un clasificador de ese proxy y reportarlo expresamente como presión, no como riesgo de desabasto. |
-| **P3** | Agregar por estación perfiles comparables de uso durante el periodo (por ejemplo, distribución de actividad por hora/día de semana). Tratar faltantes, escalar variables si el método lo requiere, agrupar estaciones e interpretar los grupos con sus ubicaciones y perfiles. Evitar que volumen, escala o coordenadas dominen sin justificación; documentar sensibilidad a la selección de variables. |
+| **P3** | Leer del Parquet solo las fechas, estaciones y mes de archivo del periodo octubre de 2023–septiembre de 2026; validar fechas e IDs y auditar estaciones no conciliadas. Convertir cada viaje en eventos de salida (estación origen, hora de inicio) y llegada (estación destino, hora de fin), y agregarlos por estación × dirección × día de semana × hora. Crear para cada estación un perfil de 336 tasas (salidas y llegadas para 7 × 24 intervalos), corregidas por el número de ocurrencias de cada franja en el periodo y normalizadas para comparar patrones sin que el volumen bruto domine. Ajustar un agrupador en entrenamiento, seleccionar sus decisiones con validación y evaluar la estabilidad temporal en prueba; después interpretar los perfiles y presentar los grupos en un mapa mediante coordenadas conciliadas que no se usan para agrupar. |
 
-Las columnas originales candidatas, la construcción formal de objetivos y las reglas de limpieza se especificarán en el inciso 3 del punto 2 después de revisar calidad y tratamiento de datos.
+#### Pipeline P3: grupos de estaciones por patrón de uso
+
+**Alcance de esta iteración:** se desarrolla únicamente P3. Las decisiones de P1 y P2 quedan para sus responsables; no se cambian aquí las formulaciones de los puntos 1 y 2.
+
+| Etapa | Procedimiento propuesto para P3 | Variables y pertinencia |
+| --- | --- | --- |
+| Entrada y privacidad | Leer `data/processed/raw_data.parquet`, filtrar `mes_archivo` de 2023-10 a 2026-09 y seleccionar solo `Inicio_del_viaje`, `Fin_del_viaje`, `Origen_Id`, `Destino_Id` y `mes_archivo`. No cargar `Usuario_Id`, `Genero` ni `Año_de_nacimiento`; `Viaje_Id` no es feature. | Las fechas y estaciones bastan para describir cuándo y dónde ocurre el uso por estación, sin datos personales. |
+| Limpieza y conciliación | Verificar formato y parseo de fechas, IDs vacíos, viajes con fin anterior al inicio y cobertura mensual. Normalizar IDs como texto para unirlos con `id` de la nomenclatura. No convertir la ausencia de actividad en cero para una estación/periodo sin observaciones; registrar el caso como falta de cobertura. | La auditoría exploratoria en el rango encontró 13,621,885 filas; ninguna tuvo fecha no interpretable, ID de estación vacío o fin anterior al inicio. Se observan 473 IDs en los viajes; 2 no aparecen en la nomenclatura de septiembre de 2026 y 13 IDs de esa nomenclatura no aparecen en los viajes del rango. |
+| Eventos y agregación | Por viaje válido, generar una salida en la hora de `Inicio_del_viaje` para `Origen_Id` y una llegada en la hora de `Fin_del_viaje` para `Destino_Id`. Asignar cada evento al periodo temporal correspondiente y agregar los conteos por estación, dirección, día de semana y hora (168 intervalos semanales por dirección). Los eventos se asignan por su propia marca de tiempo y solo cuentan dentro de octubre de 2023–septiembre de 2026. En el rango auditado, 17 viajes iniciados en septiembre de 2026 terminan después del límite del 1 de octubre; sus llegadas quedan fuera del periodo, mientras que sus salidas sí se incluyen. | `salidas` y `llegadas` separan patrones de origen/destino; día de semana y hora capturan rutinas semanales recurrentes. No se usan conteos de usuarios ni trayectorias individuales. |
+| Feature engineering | Formar una fila por estación con 336 features: salidas/llegadas para cada día de semana y hora. Primero dividir cada conteo por el número de veces que ocurre esa franja en el periodo (tasa media por ocurrencia); luego normalizar las 336 tasas para que sumen uno. Conservar volumen total y meses con actividad solo como descriptores externos para interpretar cobertura, no para calcular similitud. Tratar un intervalo sin eventos como cero únicamente cuando la estación sí tiene actividad observada en ese periodo; una estación sin actividad tiene perfil indefinido. | Las tasas corrigen diferencias en cuántos lunes, martes, etc. hay en cada ventana. La normalización posterior permite comparar forma temporal y mezcla entre salidas/llegadas sin que el volumen total domine. La normalización conjunta mantiene la información relativa entre direcciones. |
+| Metadatos geográficos | Unir después del agrupamiento `name`, `latitude`, `longitude` y `dpcapacity` desde `nomenclatura_2026_09.csv`, validando la llave y reportando IDs sin correspondencia. Usar coordenadas para visualizar/interpretar dónde están los grupos; no incluirlas en el vector de clustering. No usar capacidad como feature en esta primera definición. | Separar ubicación del perfil evita que la distancia geográfica fuerce grupos de comportamiento. El catálogo actual es una instantánea de septiembre de 2026, no un historial de ubicaciones/capacidad. |
+| Ajuste y selección | Ajustar escalamiento o cualquier transformación aprendida solo con el periodo de entrenamiento (2023-10 a 2025-06). Como agrupador inicial se probará un método particional como K-Means sobre los perfiles normalizados, sin escalado por columna por defecto, ya que las features comparten unidades y cada vector suma uno. Seleccionar el número de grupos y cualquier variante con validación (2025-07 a 2025-09), no con prueba. | No hay etiqueta objetivo para entrenamiento supervisado. El agrupador asigna estaciones a perfiles similares; la elección del número de grupos debe permitir perfiles entendibles y tamaños útiles para planeación. |
+| Evaluación temporal e interpretación | Mantener fijos los centros/transformaciones ajustados en entrenamiento y asignar perfiles de validación (2025-07 a 2025-09) y prueba (2025-10 a 2026-09). Revisar silhouette y tamaños/perfiles de cada grupo; comparar asignaciones de los mismos centros entre periodos con Adjusted Rand Index (ARI) solo para estaciones observadas en ambos, e informar cuántas quedan fuera por cobertura. Interpretar los grupos con tablas de actividad y un mapa de coordenadas disponibles. | La estabilidad entre periodos comprueba si los patrones son recurrentes; silhouette, ARI e inspección experta son diagnósticos, no exactitud contra una verdad de terreno. No se reportará accuracy/recall como si hubiera etiquetas reales. |
+
+#### Cobertura de estaciones
+
+El número de estaciones con viajes observados varía por periodo: 371 en entrenamiento, 367 en validación y 471 en prueba; 367 aparecen en los tres. En la ventana completa hay 473 IDs de estación, y 104 tienen actividad en 12 meses o menos de los 36. Estos conteos describen presencia en los viajes, no prueban por sí solos el alta/baja operacional de una estación. El pipeline reportará los meses observados por estación y tratará por separado las de baja cobertura, para comprobar si afectan la forma de los grupos.
+
+No se crearán perfiles vacíos para los 13 IDs de la nomenclatura sin viajes observados. Los 2 IDs que sí aparecen en viajes, pero no coinciden con el catálogo de septiembre de 2026, podrán tener perfil de uso; no se les asignará nombre ni coordenadas desconocidos.
+
+#### Evaluación temporal y uso descriptivo
+
+Para evaluar estabilidad sin fuga temporal, los perfiles de entrenamiento se usarán para ajustar los centros del agrupador. Esos mismos centros asignarán las estaciones de validación y prueba, sin reajustarse con sus datos. La comparación se hará sobre las estaciones con perfiles definidos en ambos periodos y se reportará cuántas quedan fuera por falta de actividad. Las métricas de agrupamiento describen separación y estabilidad; no miden exactitud contra etiquetas verdaderas, que no existen para P3.
+
+Si se necesita mostrar una segmentación final basada en los 36 meses, se podrá reajustar el agrupador con todo el periodo después de cerrar la evaluación temporal. Esa segmentación se presentará como descripción del conjunto completo, separada de los resultados de prueba; no se le atribuirán métricas de generalización.
+
+#### Implementación de features de P3
+
+La ingeniería de variables de esta pregunta está implementada en [features_p3.py](../../proyecto_mibici/features_p3.py), separada del módulo de otras preguntas para que su propósito sea claro. `prepare_p3_trips` limpia las columnas requeridas y devuelve conteos de auditoría; `aggregate_p3_events` genera conteos de salidas/llegadas por estación y franja semanal; `build_p3_station_profiles` produce el vector de 336 features y descriptores de volumen/cobertura; `attach_p3_station_metadata` añade el catálogo para interpretación, sin mezclar ubicación en las features del agrupador. Los intervalos se corrigen por el número de veces que ocurre cada día-hora en el periodo antes de normalizar el perfil, evitando sesgos por diferencias de calendario.
+
+El notebook [1.1-eq25-p3-perfiles-estaciones.ipynb](../../notebooks/1.1-eq25-p3-perfiles-estaciones.ipynb) documenta la exploración de datos y la validación de conteos; la lógica reusable queda en el módulo. La propuesta de baseline, algoritmo candidato y métricas se presenta en el punto 4 y deberá confirmarse después de revisar los resultados en entrenamiento y validación.
 
 ### 4. Proponer modelos y métricas
 
-**Estado: propuestas iniciales basadas en el plan; pendientes de acordar y ejecutar.**
+**Estado:** propuesta metodológica de P3 para revisión del equipo; P1 y P2 quedan a cargo de sus responsables. Ninguna métrica de experimento se ha calculado todavía y la exploración visual existente no valida por sí sola el baseline.
 
 | Pregunta | Baseline propuesto | Modelo candidato propuesto | Métricas de evaluación |
 | --- | --- | --- | --- |
 | **P1 — Regresión** | Usar como predicción las salidas de la misma estación para la misma hora de la semana anterior. | Regresión de conteos con variables de calendario y rezagos; seleccionar el algoritmo candidato después de validar la distribución y los datos de entrenamiento. | MAE de prueba como métrica principal, por su interpretación en viajes de error promedio; RMSE de prueba como apoyo para penalizar errores grandes. Reportar también por estación o segmento operativo. |
 | **P2 — Clasificación del riesgo solicitado** | No se puede establecer un baseline supervisado válido sin etiquetas históricas de falta de bicicletas/anclajes. | No se debe presentar un clasificador entrenado con viajes como si predijera el riesgo real. Si el equipo aprueba explícitamente el proxy, `DummyClassifier` y `LogisticRegression` podrían comparar la clasificación de presión de flujo. | Para la tarea real: pendiente de obtener etiquetas y acordar métrica. Para el proxy solamente: recall/F1 por clase y macro, matriz de confusión; estos resultados miden presión de flujo, no faltantes reales. |
-| **P3 — Clustering** | Segmentación interpretable de referencia en baja/alta actividad según la mediana del volumen de viajes; sirve para comparar con grupos más informativos, no como solución final de clustering. | `KMeans` sobre perfiles de estación normalizados, con número de grupos seleccionado usando entrenamiento/exploración y criterio interpretable. | Silhouette para particiones con más de un grupo, tamaños de grupos y análisis descriptivo/espacial. Ninguna métrica interna sustituye la interpretación de planeación. |
+| **P3 — Clustering** | Heurística de referencia: calcular por estación la proporción de actividad que ocurre sábado y domingo, sumar salidas y llegadas, y separar en dos grupos con la mediana calculada en entrenamiento. Mantener ese umbral al asignar validación y prueba. Se elige por ser una regla simple y explicable basada en una dimensión temporal del perfil; es una hipótesis de contraste, no una segmentación validada ni un resultado de la exploración actual. | `KMeans` sobre las 336 features del perfil semanal normalizado, para considerar el patrón completo de día, hora y dirección. Explorar `k` de 2 a 8, con varias inicializaciones y semilla fija; elegir usando validación e interpretabilidad, sin consultar prueba. | Calcular silhouette para baseline y candidato sobre los mismos perfiles de validación, para contrastar cohesión y separación; usarlo también como criterio interno al seleccionar `k`. Reportar tamaños y perfiles de grupos para valorar si son interpretables y útiles para planeación. Tras congelar las decisiones, calcular esas métricas en prueba una sola vez y medir estabilidad temporal con ARI entre asignaciones de periodos para estaciones comunes. No hay etiquetas verdaderas: las métricas no son exactitud ni demuestran utilidad operativa por sí solas. |
 
-El baseline P1 y K-Means para P3 siguen las sugerencias del plan. Para P2, el plan contempla un baseline de clasificación, pero solo será metodológicamente válido si se obtiene una etiqueta real o se aprueba y nombra explícitamente una etiqueta proxy. Los algoritmos, estrategias y métricas finales se fijarán al diseñar el experimento, sin ajustar usando el conjunto de prueba.
+La regla de referencia resume una hipótesis plausible —que la proporción de uso en fin de semana distingue una dimensión sencilla de los patrones de estación— y sirve como comparación transparente con K-Means, que considera el perfil semanal completo. La figura exploratoria actual muestra promedios agregados por día y hora, no la distribución de esa proporción entre estaciones; por tanto, no es evidencia de que la división por mediana produzca grupos separados o útiles. Antes de cerrar el baseline se revisará esa distribución en entrenamiento y se comprobará que ambos grupos sean no vacíos; si la regla no genera una partición informativa, se documentará y revisará en validación en lugar de asumir su utilidad.
+
+Para que la comparación sea justa, silhouette se calculará para ambas particiones usando las mismas features de perfil y la misma distancia, y solo cuando haya al menos dos grupos no vacíos y menos grupos que estaciones evaluadas. Un valor mayor describe grupos más compactos y separados según esa representación, pero no identifica por sí solo el mejor resultado para operación. Se reportarán también cantidades de estaciones y resúmenes de perfiles por grupo; estos permiten interpretar si los patrones podrían orientar decisiones de capacidad o expansión, sin afirmar impacto no medido. El ARI entre asignaciones de periodos mide si las estaciones compartidas conservan agrupación similar en el tiempo, no su calidad absoluta. La selección y cualquier ajuste se harán con entrenamiento y validación; una vez congelados se evaluará prueba una sola vez. P1 y P2 siguen en definición por sus responsables.
 
 ### 5. Proponer la arquitectura del sistema
 
@@ -219,15 +306,19 @@ La propuesta reutiliza la estructura existente del repositorio: `data/` para dat
 
 ### 6. Ejecutar el experimento base en MLflow
 
-**Estado: pendiente de implementación y ejecución.** No hay resultados que reportar todavía.
+**Estado: completado.** El comando reproducible `PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.modeling.experiment_baselines` ejecuta los baselines de P1, P2 y P3 desde el código del repositorio y los registra en el experimento `mibici-equipo25`. Usa el entorno fijado para P1, con MLflow `2.21.3`, y una única base SQLite en `mlruns/mibici-equipo25/tracking.db`. Los archivos de datos y artefactos se mantienen localmente y están excluidos de Git.
 
-Se registrará un experimento cuyo nombre incluya `equipo25` y al menos un run reproducible por P1, P2 y P3. Cada run deberá registrar rango de fechas, versión/hash de datos, semilla y parámetros del modelo; métricas con el conjunto indicado en su nombre (por ejemplo, `test_mae`); etiquetas de equipo, pregunta y commit de Git; y al menos un artefacto agregado relevante. Los runs se ejecutarán desde código del repositorio, no exclusivamente desde notebooks.
+El ejecutor proyecta desde `data/processed/raw_data.parquet` solo los campos de viaje necesarios para P1/P2; no copia el identificador de usuario, género ni año de nacimiento a los datos de modelado. La proyección generada contiene 13,621,885 viajes de octubre de 2023 a septiembre de 2026. P3 lee por lotes solo sus cinco campos operativos. Los runs registran `data_version=5e95734e844b`, el rango de fechas, las particiones, los parámetros del modelo, las métricas, al menos un artefacto y tags `team`, `question` y `git_commit` (`23f2eda`). P3 incluye además el hash del Parquet y la huella de los módulos usados. Los tags `git_worktree_dirty=true` señalan que las corridas se ejecutaron con cambios locales todavía sin commit; las versiones exactas de esos archivos no están representadas por el hash del commit.
 
-| Pregunta | Run | Resultado |
+| Pregunta | Run (ID) | Resultados de validación y prueba |
 | --- | --- | --- |
-| P1 | Pendiente | Se llenará tras ejecutar y validar el baseline. |
-| P2 | Pendiente | Se llenará tras definir la etiqueta y ejecutar el baseline. |
-| P3 | Pendiente | Se llenará tras construir perfiles, ajustar grupos y evaluar su interpretación. |
+| P1 | Baseline `P1-baseline-2023-10-2026-09` (`730e61d3df5544709aa27ce8b7ed6067`); candidato `P1-candidate-2023-10-2026-09` (`29797ac3fde54a36951fad425a37883a`). | `DummyRegressor` vs. `HistGradientBoostingRegressor`. En prueba, el candidato mejora MAE de 1.5905 a 0.8457, RMSE de 2.5203 a 1.5984 y WAPE de 1.2661 a 0.6732. La misma dirección se observa en validación. El candidato supera esta referencia inicial, aunque todavía debe evaluarse con otros criterios y contra variaciones temporales. |
+| P2 | Baseline `P2-baseline-2023-10-2026-09` (`663b180da45244a8b2a77579326d5d2a`); candidato `P2-candidate-2023-10-2026-09` (`0ae4213f5074464294d269872038d323`). | `DummyClassifier` vs. `HistGradientBoostingClassifier`. En prueba, la exactitud balanceada mejora de 0.3333 a 0.6927 y macro-F1 de 0.3207 a 0.4320. El candidato obtiene recall 0.6949 para `balanced`, 0.6716 para `bike_pressure` y 0.7117 para `dock_pressure`; el baseline solo detecta la clase mayoritaria. Sigue siendo una etiqueta proxy de flujo, no inventario observado. |
+| P3 | `p3-baseline-weekend-median` (`53061616b92d4b2d933cda33cbcd73ec`) | Mediana de proporción de actividad de fin de semana en entrenamiento: 0.1995. Silhouette: 0.0366 en validación (367 estaciones; grupos 177/190) y 0.0421 en prueba (471 estaciones; grupos 167/304). Entrenamiento: 371 estaciones; grupos 186/185. Artefacto `figures/p3-baseline-weekend-share.png`. |
+
+La WAPE de P1 mayor que 1 significa que el error absoluto total de este baseline supera la demanda real agregada; el promedio global sirve como punto de comparación, pero no es un pronóstico operacional satisfactorio. Para P2, aunque el candidato mejora estas métricas, queda pendiente validar el proxy frente a eventos reales de disponibilidad. Para P3, los valores de silhouette cercanos a cero indican poca separación de los grupos en los perfiles medidos y no prueban la existencia de tipos naturales de estación. Los resultados de P1/P2 son una primera comparación de candidatos contra sus baselines, no una selección definitiva ni evidencia de utilidad operacional por sí solos.
+
+La base se consulta con `PYTHONPATH=. uv run --project environments/p1 mlflow ui --backend-store-uri sqlite:///mlruns/mibici-equipo25/tracking.db`. Para registrar los candidatos P1/P2 que se compararán con esos baselines, se ejecuta `PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.modeling.experiment_baselines --candidates-only`; este modo conserva la misma base, versión de datos y particiones, y no vuelve a crear runs P3. Para P1/P2 los cortes son entrenamiento hasta 2026-04-01, validación hasta 2026-07-01 y prueba hasta 2026-10-01; P3 conserva su propia partición temporal documentada en el run. Por ello, las métricas de una pregunta no deben compararse directamente con las de otra.
 
 ### 7. Capturar la evidencia
 
