@@ -1,248 +1,158 @@
 # MiBici ML · Equipo 25
 
-Propuesta de solución de Machine Learning para el sistema de bicicleta pública MiBici (Área Metropolitana de Guadalajara): demanda de viajes, riesgo de desabasto o saturación de estaciones y perfiles de uso. Primera entrega del proyecto integrador.
+Proyecto académico de Machine Learning y MLOps para analizar datos abiertos del sistema de bicicleta pública MiBici del Área Metropolitana de Guadalajara. El repositorio contiene la ingesta y validación de datos, la construcción de variables, experimentos reproducibles para tres preguntas operativas y el registro de resultados con MLflow.
 
-## 1. Propósito
+## Propósito y preguntas
 
-Resolver con ML tres preguntas sobre la operación de MiBici y dejar montada la base técnica del proyecto: ingesta reproducible y versionada, módulo de feature engineering reutilizable y una línea base registrada en MLflow Tracking.
+| Pregunta | Tarea y unidad | Objetivo implementado | Horizonte / uso esperado |
+|---|---|---|---|
+| **P1 — Demanda** | Regresión por estación y hora | Predecir el conteo de viajes que inician en una estación. | Conteo de la hora que comienza 24 horas después del origen de predicción. Puede apoyar la planeación de flota y rebalanceo. |
+| **P2 — Presión de flujo** | Clasificación por estación y hora | Clasificar la presión futura como `balanced`, `bike_pressure` o `dock_pressure`, usando el balance de viajes normalizado por capacidad como proxy. | Ventana de dos horas. Puede orientar la priorización de estaciones para revisión o rebalanceo. |
+| **P3 — Perfiles de estaciones** | Agrupamiento por estación | Agrupar estaciones por perfiles semanales normalizados de salidas y llegadas. Las coordenadas se reservan para visualización, no son variables del agrupamiento. | Descripción histórica de patrones de uso que puede apoyar análisis y planeación de cobertura. |
 
-## 2. Preguntas del proyecto
+**Limitación importante de P2:** los datos abiertos contienen viajes y capacidad de catálogo, pero no inventario por hora ni eventos de desabasto o saturación. Por tanto, la etiqueta es un proxy de presión de flujo y no una observación del riesgo real de quedarse sin bicicletas o anclajes. La capacidad usada proviene de la nomenclatura de septiembre de 2026.
 
-Unidad de análisis común: **estación × hora**, zona horaria `America/Mexico_City`. Horizontes y umbrales se parametrizan en `config.py`.
+## Datos
 
-| # | Pregunta | Tarea | Qué se predice o agrupa | Horizonte | Usuario y decisión |
-|---|---|---|---|---|---|
-| P1 | ¿Cuántos viajes se iniciarán en una estación? | Regresión | Viajes iniciados por estación y hora | 24 h | Operador: dimensionar flota y rebalanceo del día siguiente |
-| P2 | ¿Una estación estará en riesgo de quedarse sin bicicletas o sin anclajes? | Clasificación (normal / sin bicicletas / sin anclajes) | Clase de riesgo en la ventana [t, t+2 h) | 2 h | Rebalanceo: a qué estaciones enviar camión |
-| P3 | ¿Qué grupos de estaciones comparten patrones de uso? | Clustering | Estaciones según su perfil de uso (una fila por estación) | Histórico (train) | Planeación urbana: dónde ampliar o ubicar estaciones |
+- **Fuente:** [Datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/). Se usan archivos mensuales `datos_abiertos_AAAA_MM.csv` y el catálogo de estaciones `nomenclatura_2026_09.csv`.
+- **Ventana documentada:** octubre de 2023 a septiembre de 2026 (36 meses).
+- **Volumen:** 13,621,885 viajes; el manifiesto registra 484 filas de nomenclatura.
+- **Estaciones:** 473 identificadores aparecen en los viajes; 471 tienen correspondencia con capacidad y coordenadas válidas en la nomenclatura. La validación de datos documenta 3,954 viajes vinculados con los IDs 405 y 407, que no tienen correspondencia en ese catálogo.
+- **Trazabilidad:** `data/data_manifest.json` identifica la versión de los datos (`5e95734e844b` en la versión documentada), cuenta los registros y guarda hashes de los archivos de origen. Más detalles en [validacion_datos_mibici.md](references/validacion_datos_mibici.md).
+- **Particiones supervisadas P1/P2:** entrenamiento hasta el 31 de marzo de 2026; validación abril–junio de 2026; prueba julio–septiembre de 2026. Se usa partición temporal, no aleatoria.
+- **Partición P3:** entrenamiento octubre de 2023–junio de 2025; validación julio–septiembre de 2025; prueba octubre de 2025–septiembre de 2026.
+- **Datos personales:** los CSV originales pueden contener identificadores y características personales. No se utilizan como predictores ni se registran en MLflow; los datos y resultados se mantienen localmente y no se suben a Git. El ejecutor de MLflow proyecta únicamente las columnas necesarias para modelar P1/P2.
+- **Uso:** consultar las condiciones vigentes en el [portal de datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/) y citar la fuente. Este repositorio académico no redistribuye los archivos de datos.
 
-**Aproximación del riesgo en P2** (los datos no incluyen inventario): balance normalizado `b = (llegadas − salidas) / capacidad` en la ventana; riesgo de vacío si `b ≤ −τ`, de saturación si `b ≥ +τ`. El umbral τ se calcula **solo con entrenamiento** y se congela. Limitaciones: el rebalanceo real no aparece en los datos, la demanda se censura cuando la estación está vacía y la capacidad proviene de una sola nomenclatura (sep 2026).
+## Estructura del repositorio
 
-En P3 las coordenadas **no** entran al clustering; solo se usan para mapear los grupos.
-
-El ML Canvas y el diagrama de arquitectura están en `references/`.
-
-## 3. Datos
-
-- **Fuente:** [Datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/): `datos_abiertos_AAAA_MM.csv` (viajes) y `nomenclatura_2026_09.csv` (estaciones).
-- **Rango:** octubre 2023 a septiembre 2026 (36 meses). Excluye la pandemia y refleja la red actual.
-- **Tamaño del conjunto seleccionado:** 13,621,885 registros de viajes correspondientes a 36 meses.
-- **Estaciones identificadas:** 473 estaciones distintas en los viajes.
-- **Nomenclatura:** 484 estaciones registradas, de las cuales 471 coinciden con los viajes y tienen capacidad y coordenadas válidas.
-- **Calidad de datos:** Se identificaron las estaciones 405 y 407 sin correspondencia en el catálogo, relacionadas con 3,954 viajes (0.0290%).
-- **Trazabilidad:** Los resultados de las verificaciones se documentan en `references/validacion_datos_mibici.md` y el manifiesto se encuentra en `data/data_manifest.json`.
-- **Partición temporal (sin mezcla aleatoria):** entrenamiento oct 2023 – mar 2026, validación abr – jun 2026, prueba jul – sep 2026. Las variables de una predicción en *t* solo usan información hasta *t*; τ, escaladores y clustering se ajustan solo con entrenamiento.
-- **Condiciones de uso:** [COMPLETAR con la licencia y fecha de consulta del portal]. Uso académico, con cita de la fuente.
-- **Datos personales:** el Parquet intermedio conserva `usuario_id`, `genero` y `anio_nacimiento` **solo en local**. No se usan como variables de ningún modelo, no se suben a Git ni a MLflow y los resultados se reportan agregados. Con `--excluir-datos-personales` se genera una versión sin ellas, apta para compartir.
-
-## 4. Estructura del repositorio
-
-Generado con Cookiecutter Data Science (`ccds`, con `include_code_scaffold`).
-
-```
-├── data/
-│   ├── external/
-│   ├── raw/                 # CSV de MiBici (no versionados)
-│   ├── interim/             # Parquet intermedio (no versionado)
-│   ├── processed/           # Tablas finales (no versionadas)
-│   └── data_manifest.json   # Manifiesto de datos (sí versionado)
-├── docs/
-├── models/                  # Modelos serializados (no versionados)
-├── notebooks/               # Solo exploración: 1.0-iniciales-descripcion.ipynb
-├── references/              # ML Canvas y diagrama de arquitectura
-│   ├── ml_canvas_mibici.pdf
-│   ├── arquitectura_mibici.md
-│   ├── arquitectura_mibici.pdf
-│   └── validacion_datos_mibici.md
-├── reports/figures/         # Gráficas y mapas generados por código
-├── tests/
-├── proyecto_mibici/
-│   ├── config.py            # Rutas, fechas, semillas y parámetros (única fuente)
-│   ├── dataset.py           # Ingesta, Parquet y manifiesto de datos
-│   ├── features.py          # Feature engineering reutilizable [PENDIENTE]
-│   ├── plots.py             # Gráficas y mapas [PENDIENTE]
-│   ├── tracking.py          # Registro de runs en MLflow [PENDIENTE]
-│   └── modeling/
-│       ├── train.py         # Baselines y modelos candidatos [PENDIENTE]
-│       └── predict.py
-├── Makefile                 # Comandos de la plantilla (ver `make help`)
-├── pyproject.toml           # Dependencias con versión fija [AJUSTAR si usaron otro archivo]
-└── README.md
+```text
+data/
+├── raw/                   # CSV de origen y catálogo (locales, no versionados)
+├── interim/               # Parquet de trabajo (local, no versionado)
+├── processed/             # Datos derivados (locales, no versionados)
+└── data_manifest.json     # Manifiesto de versión y hashes, versionado
+docs/docs/                 # Contexto, propuesta y documentación del proyecto
+environments/p1/           # Entorno reproducible y lockfile de P1/MLflow
+notebooks/                 # Exploración y auditoría; no es la fuente del pipeline
+references/                # ML Canvas, diagramas y validación de datos
+reports/figures/           # Figuras producidas localmente
+tests/                     # Pruebas de datos, features y flujos
+proyecto_mibici/
+├── config.py              # Configuración general y rutas
+├── config_p1.py           # Fechas, particiones y parámetros P1/P2
+├── dataset.py             # Ingesta, Parquet y manifiesto
+├── features_p1.py         # Features y objetivos horarios P1/P2; perfiles semanales
+├── features_p2.py         # Features de la implementación P2 existente
+├── features_p3.py         # Agregaciones y perfiles P3
+└── modeling/
+    ├── experiment_baselines.py # Ejecutor integrado de P1/P2/P3 y candidatos P1/P2
+    ├── experiment_p3.py        # Ejecutor del baseline P3
+    ├── train_p1.py             # Entrenamiento y tracking integrado P1/P2/P3
+    ├── p1/, p2/, p3/           # Entrenadores y módulos de predicción
+    └── ...
 ```
 
-## 5. Instalación
+Los CSV, Parquet, bases de tracking, artefactos de MLflow y modelos serializados son locales y están excluidos de Git. Solo se versiona el manifiesto, que no incluye las filas de viajes.
 
-El proyecto usa la plantilla Cookiecutter Data Science con **virtualenv** y las dependencias se declaran en **pyproject.toml**, con versiones fijas.
+## Instalación
+
+Se necesita Git, Python 3.13 y [`uv`](https://docs.astral.sh/uv/). Desde la raíz del repositorio:
 
 ```bash
-git clone git@github.com:aramosc09/TC5061-Proyecto-Equipo25.git
+git clone https://github.com/aramosc09/TC5061-Proyecto-Equipo25.git
 cd TC5061-Proyecto-Equipo25
-
-make create_environment
-
-make requirements
-```
-
-Verificar la instalación con `make help` (lista los comandos disponibles) y con `python -c "import proyecto_mibici"`.
-
-Al agregar una dependencia, se instala **con versión exacta** y se actualiza el archivo de dependencias en el mismo Pull Request.
-
-## 6. Ingesta y versionado de datos
-
-La ingesta normaliza codificación (UTF-8 / cp1252), nombres de columnas, tipos y fechas, y guarda los datos en Parquet. Genera `data/data_manifest.json` con el conteo de registros y el hash SHA-256 de cada archivo, más una `data_version` global que se registra en MLflow.
-
-**Descarga:** Colocar los CSV y la nomenclatura en `data/raw/`.
-
-```bash
-# Procesa los CSV, guarda el Parquet y genera el manifiesto
-python -m proyecto_mibici.dataset procesar-datos
-
-# Comprueba que los CSV y el Parquet locales coinciden con el manifiesto
-python -m proyecto_mibici.dataset verificar-manifiesto
-
-# Valida solo el Parquet (sin necesitar los CSV)
-python -m proyecto_mibici.dataset verificar-parquet
-```
-
-### Cómo validar que todos usamos los mismos datos
-
-1. `git pull` para obtener el manifiesto oficial.
-2. Colocar los datos en `data/raw/` (o el Parquet compartido en `data/interim/`).
-3. Si se procesa localmente, usar un manifiesto propio para no sobrescribir el oficial:
-   `procesar-datos --manifiesto-path data/interim/manifest_local.json`
-4. Ejecutar `verificar-manifiesto` (con CSV) o `verificar-parquet` (solo Parquet). Sin errores, los datos coinciden.
-
-Solo una persona genera y sube el manifiesto oficial (por Pull Request). **Nunca** se suben datos al repositorio.
-
-
-## 7. Organización del equipo y flujo de colaboración
-
-### 7.1. Integrantes
-
-El proyecto MiBici es desarrollado por el Equipo 25 de la materia TC5061 - Operaciones de Aprendizaje Automático (MLOps).
-
-| Integrante | Matrícula |
-|---|---|
-| Alejandro Ramos Contreras | A01747461 |
-| Ángel Alexis Anaya Alamea | A01741351 |
-| Erick Fernando Carrillo Pineda | A01840029 |
-| Jose Rigoberto Cibrian Jacobo | A01740550 |
-
-Las responsabilidades de implementación de P1, P2 y P3 deberán confirmarse entre los integrantes y documentarse conforme se integren sus contribuciones.
-
-### 7.2. Estrategia de control de versiones
-
-El equipo utiliza Git y GitHub para gestionar el código, la documentación y la colaboración durante el desarrollo.
-
-La estrategia de trabajo contempla:
-
-- Utilizar `main` como rama principal del proyecto.
-- Desarrollar nuevas funcionalidades mediante ramas independientes.
-- Realizar commits descriptivos.
-- Abrir Pull Requests para proponer cambios.
-- Solicitar revisiones de otros integrantes antes de integrar modificaciones.
-- Evitar commits y pushes directos a `main`.
-- Configurar y verificar la protección de la rama principal.
-
-### 7.3. Ramas de trabajo
-
-Durante la revisión del repositorio se identificaron las siguientes ramas:
-
-| Rama | Descripción |
-|---|---|
-| `main` | Rama principal del proyecto |
-| `desarrolloP3` | Desarrollo de componentes asociados a P3 |
-| `testing_branch` | Rama de pruebas y desarrollo inicial |
-| `feature/documentacion-arquitectura` | Documentación de arquitectura, validación de datos y mejoras del README |
-
-La existencia de estas ramas no implica que todos sus cambios estén integrados en `main`.
-
-### 7.4. Flujo de colaboración mediante Pull Requests
-
-Para desarrollar una nueva funcionalidad o modificar documentación, se seguirá el siguiente procedimiento:
-
-1. Actualizar la información del repositorio remoto.
-2. Crear una rama de trabajo a partir de `main`.
-3. Realizar los cambios únicamente en la rama correspondiente.
-4. Verificar los archivos modificados y ejecutar las pruebas aplicables.
-5. Registrar los cambios mediante commits descriptivos.
-6. Publicar la rama en GitHub.
-7. Crear un Pull Request dirigido a `main`.
-8. Solicitar la revisión de otro integrante.
-9. Atender las observaciones recibidas.
-10. Integrar los cambios únicamente después de las revisiones y verificaciones correspondientes.
-
-### 7.5. Evidencia de colaboración
-
-Para cumplir con los requisitos de la actividad, se deberá verificar y documentar lo siguiente:
-
-- [ ] Rama `main` protegida mediante reglas de GitHub.
-- [ ] Commits atribuibles a los cuatro integrantes.
-- [ ] Al menos un Pull Request abierto por integrante.
-- [ ] Al menos una revisión de Pull Request realizada por cada integrante.
-- [ ] Evidencia de los cambios y revisiones en el historial del repositorio.
-
-Estas actividades se consideran pendientes de verificación hasta confirmar su cumplimiento directamente en GitHub.
-
-### 7.6. Buenas prácticas de colaboración
-
-Para mantener la reproducibilidad y evitar conflictos entre integrantes:
-
-- No subir archivos de datos originales ni procesados de MiBici.
-- No publicar carpetas locales de MLflow ni modelos serializados.
-- Mantener actualizado `.gitignore`.
-- Registrar modificaciones a dependencias y configuraciones.
-- Documentar los comandos utilizados para ejecutar los experimentos.
-- Vincular los resultados de MLflow con la versión de datos y el commit correspondiente.
-- Evitar modificar archivos desarrollados por otros integrantes sin coordinación previa.
-
-## 8. Contribucion P1 aislada: ejecucion y validacion
-
-Esta seccion agrega las instrucciones de P1 sin sustituir los comandos ni la
-configuracion compartida de las secciones anteriores. Los archivos existentes de
-main, incluidos config.py, dataset.py, features.py, modeling/train.py, Makefile,
-pyproject.toml, tests/test_data.py y el notebook, se conservan sin cambios.
-
-### 8.1. Entorno independiente
-
-Instalar `uv` y ejecutar desde la raiz del repositorio:
-
-```bash
 uv sync --project environments/p1 --frozen
-uv run --project environments/p1 --frozen python -m pytest -c environments/p1/pyproject.toml tests/test_features_p1.py tests/test_workflow_p1.py -q
 ```
 
-Python 3.13.2, dependencias y lockfile de P1 viven en `environments/p1/`.
-Su entorno virtual se crea ahi; no se cambia el entorno ni el pyproject del equipo.
-En Windows ARM64 puede ser necesario instalar Python x64 con uv y pasar su ruta
-mediante `--python` para utilizar las ruedas cientificas disponibles.
-
-### 8.2. Entradas y comandos
-
-Se reutilizan, solo para lectura, `data/interim/viajes_unificados.parquet`,
-`data/raw/nomenclatura_2026_09.csv` y `data/data_manifest.json`, generados por la
-ingesta compartida. No se modifica el API ni el comportamiento de dataset.py.
+El entorno bloqueado de `environments/p1/` fija MLflow 2.21.3, compatible con la base SQLite de tracking descrita abajo. Para comprobar la instalación:
 
 ```bash
-uv run --project environments/p1 --frozen python -m proyecto_mibici.features_p1
-uv run --project environments/p1 --frozen python -m proyecto_mibici.modeling.train_p1 --candidates
-uv run --project environments/p1 --frozen mlflow ui --backend-store-uri sqlite:///mlruns/p1/tracking.db
+PYTHONPATH=. uv run --project environments/p1 python --version
+PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.dataset --help
 ```
 
-`features_p1.py` es el modulo propio de esta contribucion; el `features.py` que ya
-existe en main se conserva. `config_p1.py` contiene las opciones de esta ejecucion.
-`train_p1.py` entrena P1 por defecto. No se cambian los comandos del Makefile compartido.
-P1 pronostica el conteo de una hora a 24 horas: `[t+24h,t+25h)` desde el origen t.
+## Ingesta y validación
 
-### 8.3. Salidas propias y evaluacion
+Descarga desde el portal los archivos mensuales del rango elegido y `nomenclatura_2026_09.csv`; colócalos en `data/raw/`. El comando procesa los CSV locales (no los descarga), normaliza nombres y tipos, crea `data/interim/viajes_unificados.parquet` y genera o actualiza el manifiesto.
 
-- Features/metadatos: `data/processed/p1/`.
-- Tracking: `mlruns/p1/tracking.db`; artefactos: `mlartifacts/p1/`.
-- Figuras: `reports/figures/p1/`; experimento: `mibici-equipo25-p1`.
-- Baseline: DummyRegressor; candidato: HistGradientBoostingRegressor.
-- Metricas: MAE, RMSE y WAPE de validacion/prueba; parametros, modelo, configuracion,
-  tablas, figuras, version de datos y commit en MLflow.
+```bash
+PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.dataset procesar-datos
+PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.dataset verificar-manifiesto
+PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.dataset verificar-parquet
+```
 
-Las funciones auxiliares de presion y perfiles se mantienen en el modulo propio;
-no reemplazan implementaciones de P2/P3 de otros integrantes. Las pruebas indicadas
-son exclusivamente de esta contribucion; la suite compartida conserva su estado.
+Por defecto el Parquet local conserva `usuario_id`, `genero` y `anio_nacimiento`; no compartas ni subas ese archivo. Para generar una salida sin esos campos agrega `--excluir-datos-personales` al comando `procesar-datos`. El contenido de columnas influye en `data_version`, por lo que una nueva versión del manifiesto debe revisarse y coordinarse antes de reemplazar la versión compartida.
+
+## Ejecutar los experimentos MLflow
+
+El ejecutor integrado usa los baselines de P1/P2 y el baseline de P3, y registra parámetros, métricas, tags y artefactos en un único experimento `mibici-equipo25`.
+
+**Pre-requisitos locales:** además de los CSV, el runner requiere `data/processed/raw_data.parquet` con las columnas originales de MiBici (`Viaje_Id`, `Inicio_del_viaje`, `Fin_del_viaje`, `Origen_Id`, `Destino_Id`, `mes_archivo`) y `data/raw/nomenclatura_2026_09.csv`. `dataset.py procesar-datos` genera el Parquet normalizado `data/interim/viajes_unificados.parquet`, no ese Parquet fuente. El Parquet fuente no se versiona; el runner selecciona las columnas estrictamente necesarias y excluye los campos personales antes de producir la tabla P1/P2.
+
+Desde la raíz, ejecuta una vez los tres baselines:
+
+```bash
+PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.modeling.experiment_baselines
+```
+
+Para registrar solo los modelos candidatos de P1 y P2 y compararlos con sus baselines existentes, ejecuta:
+
+```bash
+PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.modeling.experiment_baselines --candidates-only
+```
+
+El segundo comando no vuelve a ejecutar P3. MLflow conserva los runs previos y añade los nuevos, por lo que al repetirlo se acumulan runs en el experimento. La base y artefactos locales se guardan en `mlruns/mibici-equipo25/tracking.db` y `mlartifacts/mibici-equipo25/`.
+
+Abre la interfaz con:
+
+```bash
+PYTHONPATH=. uv run --project environments/p1 mlflow ui \
+  --backend-store-uri sqlite:///mlruns/mibici-equipo25/tracking.db
+```
+
+Visita <http://127.0.0.1:5000>, abre el experimento `mibici-equipo25` y selecciona dos o más runs para usar **Compare**. Para una comparación justa, compara runs de la misma pregunta y revisa métricas del mismo conjunto (validación o prueba). En cada run verifica `data_version`, parámetros, métricas, tags (`team`, `question`, `git_commit`) y artefactos. P3 tiene particiones distintas a P1/P2, por lo que sus métricas no deben compararse directamente con las de las preguntas supervisadas.
+
+## Equipo y roles
+
+Equipo 25, TC5061 — Operaciones de Aprendizaje Automático (MLOps).
+
+| Integrante | Matrícula | Rol / contribución principal |
+|---|---|---|
+| Alejandro Ramos Contreras | A01747461 | P3; integración del experimento y seguimiento de MLflow. |
+| Ángel Alexis Anaya Alamea | A01741351 | P2: clasificación de la etiqueta proxy de presión de flujo. |
+| Erick Fernando Carrillo Pineda | A01840029 | P1: predicción de demanda de viajes. |
+| Jose Rigoberto Cibrian Jacobo | A01740550 | Diagrama y documentación de arquitectura. |
+
+## Flujo de trabajo con Git y GitHub
+
+`main` es la rama de integración. El equipo trabaja con ramas cortas, Pull Requests y revisión por otro integrante; no se deben integrar cambios directamente a `main`.
+
+1. Actualiza la rama principal y crea una rama con nombre descriptivo:
+
+   ```bash
+   git switch main
+   git pull --ff-only
+   git switch -c feature/p1-descripcion
+   ```
+
+   Convenciones recomendadas: `feature/p1-...`, `feature/p2-...`, `feature/p3-...`, `docs/...` y `fix/...`.
+2. Haz cambios pequeños, ejecuta las pruebas pertinentes y crea commits con [Conventional Commits](https://www.conventionalcommits.org/), por ejemplo `feat(p1): agregar baseline de demanda` o `docs(readme): actualizar instrucciones`.
+3. Publica la rama y abre un Pull Request hacia `main`:
+
+   ```bash
+   git push -u origin feature/p1-descripcion
+   gh pr create --base main
+   ```
+
+4. Solicita revisión a otro integrante, atiende comentarios y verifica las comprobaciones antes de integrar el Pull Request.
+
+La configuración de protección de `main`, las revisiones requeridas y la evidencia de contribuciones individuales deben confirmarse en GitHub; este README no presupone que las reglas estén activadas.
+
+## Referencias
+
+- [Contexto y requisitos del proyecto](docs/docs/context.md).
+- [Propuesta de solución y resultados](docs/docs/propuestaSolucion.md).
+- [ML Canvas](references/ml_canvas_mibici.pdf).
+- [Arquitectura](references/arquitectura_mibici.md) y [diagrama PDF](references/arquitectura_mibici.pdf).
+- [Validación del conjunto de datos](references/validacion_datos_mibici.md).
