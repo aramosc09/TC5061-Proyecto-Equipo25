@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import typer
 
-from proyecto_mibici.config import load_settings
+from proyecto_mibici.config_p1 import load_settings
 
 app = typer.Typer(help="Construye las features de P1/P2 y los perfiles de P3.")
 

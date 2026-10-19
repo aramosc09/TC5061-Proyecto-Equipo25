@@ -22,6 +22,28 @@ data/raw/*
 # Permitir el manifiesto
 !data/data_manifest.json
 
+# ============================================
+# MLflow: experimentos y artefactos locales
+# ============================================
+mlruns/
+mlartifacts/
+*.db
+
+# ============================================
+# Modelos serializados
+# ============================================
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+*.h5
+*.keras
+*.pt
+*.pth
+
+# Archivos Parquet fuera de data/
+*.parquet
+
 
 # Mac OS-specific storage files
 .DS_Store
@@ -212,49 +234,17 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-# Local experiment stores and outputs (never commit source data or models)
-mlruns/
-mlartifacts/
-*.db
+# P1-specific generated output and local working files
+/reports/figures/p1/
+/environments/p1/.venv/
+/tmp/
 *.db-shm
 *.db-wal
-*.pkl
-*.pickle
-*.joblib
-*.onnx
-*.h5
-*.keras
-*.pt
-*.pth
-*.parquet
-/models/*
-!/models/.gitkeep
-/reports/runs/
-/reports/figures/generated/
-/tmp/
-.env.*
-!.env.example
-
-# Data supplied at repository root must also stay out of Git.
 /datos_abiertos_*.csv
 /nomenclatura_*.csv
-/viajes_unificados.parquet
-
-# Agent/session bookkeeping - kept on disk for the team, never shipped to GitHub.
+.env.*
+!.env.example
 /AGENTS.md
 /proyecto_mibici/AGENTS.md
 /PROJECT_STATUS.md
 /SESSION_LOG.md
-/.claude/
-
-# Assignment source material, not a deliverable.
-/Construye*.pdf
-
-# Internal audit-trail/draft notes inside references/; the PDF only requires the
-# ML Canvas and the architecture diagram from this directory.
-/references/repository_audit.md
-/references/upstream_changes.md
-/references/upstream_data_manifest.json
-/references/validation.md
-/references/proposal.md
-/references/data_versions/
