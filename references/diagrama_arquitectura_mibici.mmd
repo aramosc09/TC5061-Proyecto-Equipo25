@@ -1,0 +1,55 @@
+flowchart TB
+    portal["Portal de Datos Abiertos MiBici"]
+    csv["CSV mensuales de viajes<br/>descarga y colocación local"]
+    catalog["nomenclatura_2026_09.csv<br/>catálogo de estaciones"]
+    portal --> csv
+    portal --> catalog
+
+    subgraph ingest["Ingesta y versionado"]
+        dataset["proyecto_mibici/dataset.py<br/>normaliza CSV y genera manifiesto"]
+        unified["data/interim/viajes_unificados.parquet"]
+        manifest["data/data_manifest.json<br/>data_version + conteos + hashes"]
+        dataset --> unified
+        dataset --> manifest
+    end
+    csv --> dataset
+    catalog --> dataset
+
+    raw["data/processed/raw_data.parquet<br/>Parquet fuente local con esquema original"]
+
+    subgraph prep["Preparación para experimento"]
+        runner["modeling/experiment_baselines.py"]
+        projection["Proyección por columnas<br/>sin atributos personales"]
+        trips["data/interim/viajes_p1_p2.parquet"]
+        features["features_p1.build_features()<br/>limpieza, agregación horaria,<br/>objetivos y variables"]
+        runner --> projection --> trips --> features
+    end
+    raw --> runner
+    catalog --> features
+
+    subgraph questions["Entrenamiento y evaluación"]
+        p1["P1 · DummyRegressor<br/>HistGradientBoostingRegressor<br/>MAE · RMSE · WAPE"]
+        p2["P2 · DummyClassifier<br/>HistGradientBoostingClassifier<br/>balanced accuracy · macro-F1 · recall"]
+        p3["P3 · Regla mediana de fin de semana<br/>silhouette · conteos de grupos"]
+        features --> p1
+        features --> p2
+        raw -->|"lectura por lotes de columnas operativas"| p3
+    end
+
+    subgraph tracking["Registro local de experimentos"]
+        mlflow["MLflow Tracking<br/>experimento mibici-equipo25"]
+        sqlite["mlruns/mibici-equipo25/tracking.db<br/>parámetros · métricas · tags"]
+        artifacts["mlartifacts/mibici-equipo25/<br/>figuras · tablas · modelos"]
+        mlflow --> sqlite
+        mlflow --> artifacts
+    end
+    p1 --> mlflow
+    p2 --> mlflow
+    p3 --> mlflow
+    manifest -. "data_version registrada en cada run" .-> mlflow
+
+    git["Git y GitHub<br/>código · configuración · manifiesto<br/>Pull Requests y revisiones"]
+    git -. "versiona código y manifiesto;<br/>no los datos ni el tracking local" .-> runner
+
+    warning["Límite actual: el runner experimental lee raw_data.parquet,<br/>un archivo local ya existente. dataset.py genera viajes_unificados.parquet;<br/>el runner no convierte automáticamente uno en el otro."]
+    raw -.-> warning
