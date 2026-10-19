@@ -26,9 +26,9 @@ El ML Canvas y el diagrama de arquitectura están en `references/`.
 
 - **Fuente:** [Datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/): `datos_abiertos_AAAA_MM.csv` (viajes) y `nomenclatura_2026_09.csv` (estaciones).
 - **Rango:** octubre 2023 a septiembre 2026 (36 meses). Excluye la pandemia y refleja la red actual.
-- **Tamaño:** [COMPLETAR] viajes, [COMPLETAR] estaciones (salida de la ingesta; ver `data/data_manifest.json`).
+- **Tamaño:** 13,621,885 viajes, 484 estaciones (salida real de la ingesta; ver `references/data_versions/`).
 - **Partición temporal (sin mezcla aleatoria):** entrenamiento oct 2023 – mar 2026, validación abr – jun 2026, prueba jul – sep 2026. Las variables de una predicción en *t* solo usan información hasta *t*; τ, escaladores y clustering se ajustan solo con entrenamiento.
-- **Condiciones de uso:** [COMPLETAR con la licencia y fecha de consulta del portal]. Uso académico, con cita de la fuente.
+- **Condiciones de uso:** pendiente confirmar la licencia exacta del portal (no se abrieron las URLs de origen por decisión del equipo); uso académico, con cita de la fuente.
 - **Datos personales:** el Parquet intermedio conserva `usuario_id`, `genero` y `anio_nacimiento` **solo en local**. No se usan como variables de ningún modelo, no se suben a Git ni a MLflow y los resultados se reportan agregados. Con `--excluir-datos-personales` se genera una versión sin ellas, apta para compartir.
 
 ## 4. Estructura del repositorio
@@ -51,14 +51,13 @@ Generado con Cookiecutter Data Science (`ccds`, con `include_code_scaffold`).
 ├── proyecto_mibici/
 │   ├── config.py            # Rutas, fechas, semillas y parámetros (única fuente)
 │   ├── dataset.py           # Ingesta, Parquet y manifiesto de datos
-│   ├── features.py          # Feature engineering reutilizable [PENDIENTE]
-│   ├── plots.py             # Gráficas y mapas [PENDIENTE]
-│   ├── tracking.py          # Registro de runs en MLflow [PENDIENTE]
+│   ├── features.py          # Feature engineering reutilizable (P1/P2) y perfiles (P3)
+│   ├── plots.py
 │   └── modeling/
-│       ├── train.py         # Baselines y modelos candidatos [PENDIENTE]
+│       ├── train.py         # Baselines y candidatos P1/P2/P3 con registro en MLflow
 │       └── predict.py
-├── Makefile                 # Comandos de la plantilla (ver `make help`)
-├── pyproject.toml           # Dependencias con versión fija [AJUSTAR si usaron otro archivo]
+├── Makefile                 # requirements, data, features, train, ui, test, lint
+├── pyproject.toml           # Dependencias con versión fija
 └── README.md
 ```
 
@@ -105,3 +104,42 @@ python -m proyecto_mibici.dataset verificar-parquet
 4. Ejecutar `verificar-manifiesto` (con CSV) o `verificar-parquet` (solo Parquet). Sin errores, los datos coinciden.
 
 Solo una persona genera y sube el manifiesto oficial (por Pull Request). **Nunca** se suben datos al repositorio.
+
+## 7. Features y experimento base en MLflow
+
+Tres pasos, cada uno ejecutable desde la terminal:
+
+```bash
+make data                        # CSV crudos -> Parquet unificado + manifiesto
+make features                    # Features estación-hora (P1/P2) y perfiles (P3)
+make train ARGS="--candidates"   # Baselines + candidatos de P1/P2/P3 en MLflow
+make ui                          # Interfaz de MLflow (http://127.0.0.1:5000)
+```
+
+`features` escribe dos tablas en `data/processed/` y el umbral de P2 aprendido
+**solo con entrenamiento** en `features_meta.json`.
+
+Cada corrida registra en MLflow (experimento `mibici-equipo25`): los parámetros
+para reproducirla (rango de fechas, `data_version` del manifiesto, semilla,
+cortes de partición, horizontes e hiperparámetros), métricas nombradas por
+partición (`test_*`, `validation_*`), etiquetas (`team`, `question`,
+`git_commit`) y artefactos (modelo, figura y tablas de la corrida).
+
+### Modelos y métricas por pregunta
+
+| Pregunta | Baseline | Candidato | Métricas |
+|---|---|---|---|
+| P1 | `DummyRegressor` (media) | `HistGradientBoostingRegressor` | MAE, RMSE, WAPE |
+| P2 | `DummyClassifier` (clase mayoritaria) | `HistGradientBoostingClassifier` | F1 macro, exactitud balanceada, recall por clase |
+| P3 | `KMeans` | `GaussianMixture` | Silueta, tamaño de los grupos |
+
+## 8. Flujo de trabajo con Git/GitHub
+
+Rama principal protegida; todo cambio entra por Pull Request siguiendo GitHub Flow.
+Convención de ramas: `feat/<tema>`, `fix/<tema>`, `docs/<tema>`, `test/<tema>`.
+Convención de commits: Conventional Commits (`feat: ...`, `fix: ...`, `docs: ...`).
+Cada integrante debe tener commits propios, al menos un Pull Request abierto y al
+menos una revisión a otro integrante.
+
+**Nunca** se sube a Git: datos de MiBici, la carpeta `mlruns/`/`mlartifacts/`,
+modelos serializados ni credenciales (ver `.gitignore`).

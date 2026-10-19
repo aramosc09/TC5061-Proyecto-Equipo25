@@ -1,7 +1,7 @@
-import hashlib
-import json
 from datetime import datetime
+import hashlib
 from importlib import metadata
+import json
 from pathlib import Path
 import re
 
@@ -12,14 +12,11 @@ import typer
 
 from proyecto_mibici import config
 
-app = typer.Typer(help = "Ingesta reproducible y versionada de los datos de MiBici.")
+app = typer.Typer(help="Ingesta reproducible y versionada de los datos de MiBici.")
 
 COLUMNAS_PERSONALES = ["usuario_id", "genero", "anio_nacimiento"]
 
 
-# ---------------------------------------------------------------------------
-# Utilidades de hash de archivos
-# ---------------------------------------------------------------------------
 def calcular_sha256(ruta: Path, tamano_bloque: int = 1 << 20) -> str:
     """Calcula el hash SHA-256 de un archivo leyéndolo por bloques de 1 MB.
 
@@ -44,9 +41,6 @@ def _ruta_relativa(ruta: Path) -> str:
         return Path(ruta).name
 
 
-# ---------------------------------------------------------------------------
-# Cargador
-# ---------------------------------------------------------------------------
 class MibiciDataLoader:
     """Clase para cargar y procesar los archivos históricos mensuales de MiBici,
 
@@ -70,9 +64,7 @@ class MibiciDataLoader:
     def __init__(self, ruta_datos: str | Path = config.RAW_DATA_DIR):
         self.ruta_datos = Path(ruta_datos)
         if not self.ruta_datos.exists():
-            raise FileNotFoundError(
-                f"No se encontró la ruta de datos: {self.ruta_datos}."
-            )
+            raise FileNotFoundError(f"No se encontró la ruta de datos: {self.ruta_datos}.")
         self.registros: list[dict] = []
         self.rango: dict = {}
 
@@ -102,9 +94,7 @@ class MibiciDataLoader:
             raise ValueError(f"No se pudo identificar el periodo de {archivo.name}")
         return int(match.group(1)), int(match.group(2))
 
-    def _convertir_fechas(
-        self, serie: pd.Series, archivo: Path
-    ) -> tuple[pd.Series, str]:
+    def _convertir_fechas(self, serie: pd.Series, archivo: Path) -> tuple[pd.Series, str]:
         anio_esperado, mes_esperado = self._obtener_periodo_archivo(archivo)
         opciones = {}
 
@@ -118,9 +108,7 @@ class MibiciDataLoader:
                 "coincidencias": coincide_periodo.sum(),
             }
 
-        mejor_estrategia = max(
-            opciones, key=lambda x: opciones[x]["coincidencias"]
-        )
+        mejor_estrategia = max(opciones, key=lambda x: opciones[x]["coincidencias"])
         return opciones[mejor_estrategia]["fechas"], mejor_estrategia
 
     def _castear_tipos(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -129,9 +117,9 @@ class MibiciDataLoader:
         df = df.copy()
 
         # Castear anio_nacimiento a entero nullable
-        df["anio_nacimiento"] = pd.to_numeric(
-            df["anio_nacimiento"], errors="coerce"
-        ).astype("Int64")
+        df["anio_nacimiento"] = pd.to_numeric(df["anio_nacimiento"], errors="coerce").astype(
+            "Int64"
+        )
 
         # Castear identificadores a entero
         df["viaje_id"] = pd.to_numeric(df["viaje_id"], errors="coerce").astype("Int64")
@@ -155,12 +143,8 @@ class MibiciDataLoader:
         n_filas_crudas = len(df)
 
         df = self._normalizar_columnas(df)
-        df["inicio_viaje"], estrategia_inicio = self._convertir_fechas(
-            df["inicio_viaje"], archivo
-        )
-        df["fin_viaje"], estrategia_fin = self._convertir_fechas(
-            df["fin_viaje"], archivo
-        )
+        df["inicio_viaje"], estrategia_inicio = self._convertir_fechas(df["inicio_viaje"], archivo)
+        df["fin_viaje"], estrategia_fin = self._convertir_fechas(df["fin_viaje"], archivo)
 
         # Agregar columna con la fecha del archivo
         anio, mes = self._obtener_periodo_archivo(archivo)
@@ -224,9 +208,7 @@ class MibiciDataLoader:
                 periodos_encontrados.append(periodo_actual)
 
         if not dfs:
-            raise ValueError(
-                "No se encontraron archivos en la ventana de tiempo especificada."
-            )
+            raise ValueError("No se encontraron archivos en la ventana de tiempo especificada.")
 
         # Determinar el rango de fechas reales procesadas
         periodo_min = min(periodos_encontrados)
@@ -256,9 +238,6 @@ class MibiciDataLoader:
         return registros
 
 
-# ---------------------------------------------------------------------------
-# Manifiesto de INGESTA (CSV crudos -> Parquet intermedio)
-# ---------------------------------------------------------------------------
 class DataManifest:
     """Construye, guarda, carga y verifica el manifiesto de datos de ingesta.
 
@@ -324,9 +303,7 @@ class DataManifest:
             "resumen": {
                 "n_meses": len(registros_viajes),
                 "n_viajes": int(sum(r["n_filas"] for r in registros_viajes)),
-                "n_estaciones_nomenclatura": int(
-                    sum(r["n_filas"] for r in registros_estaciones)
-                ),
+                "n_estaciones_nomenclatura": int(sum(r["n_filas"] for r in registros_estaciones)),
             },
             "viajes_mensuales": registros_viajes,
             "nomenclatura": registros_estaciones,
@@ -392,20 +369,15 @@ class DataManifest:
 
         errores: list[str] = []
 
-        # 1. Estructura
         pf = pq.ParquetFile(ruta)
         if pf.metadata.num_rows != salida["n_filas"]:
-            errores.append(
-                f"Filas: {pf.metadata.num_rows} vs {salida['n_filas']} esperadas."
-            )
+            errores.append(f"Filas: {pf.metadata.num_rows} vs {salida['n_filas']} esperadas.")
         if pf.schema_arrow.names != salida["columnas"]:
             errores.append("Las columnas no coinciden con el manifiesto.")
-        if m["excluye_datos_personales"] and set(COLUMNAS_PERSONALES) & set(
-            pf.schema_arrow.names
-        ):
+        if m["excluye_datos_personales"] and set(COLUMNAS_PERSONALES) & set(pf.schema_arrow.names):
             errores.append("El Parquet contiene columnas personales.")
 
-        # 2. Contenido: conteos por mes (independiente de la versión de pyarrow)
+        # Contenido: conteos por mes (independiente de la versión de pyarrow)
         df = pd.read_parquet(ruta, columns=["fecha_archivo", "viaje_id"])
         obtenidos = df["fecha_archivo"].value_counts().to_dict()
         for registro in m["viajes_mensuales"]:
@@ -416,7 +388,6 @@ class DataManifest:
                     f"{mes}: {obtenidos.get(mes)} viajes vs {registro['n_filas']} esperados."
                 )
 
-        # 3. Informativo
         if df["viaje_id"].duplicated().any():
             logger.warning("Hay viaje_id duplicados (revisar si es esperado).")
         if calcular_sha256(ruta) != salida["sha256"]:
@@ -433,9 +404,6 @@ def obtener_version_datos(ruta: str | Path = config.MANIFEST_PATH) -> str:
     return DataManifest(ruta).cargar()["data_version"]
 
 
-# ---------------------------------------------------------------------------
-# Comandos de terminal
-# ---------------------------------------------------------------------------
 @app.command()
 def procesar_datos(
     anio_inicio: int = config.DEFAULT_ANIO_INICIO,
@@ -480,7 +448,6 @@ def procesar_datos(
     df_procesado.to_parquet(output_path, index=False, compression="snappy")
     logger.success(f"Archivo intermedio guardado correctamente en: {output_path}")
 
-    # Generar y guardar el manifiesto
     gestor = DataManifest(manifiesto_path)
     manifiesto = gestor.construir(
         rango=cargador.rango,
@@ -528,4 +495,15 @@ def verificar_parquet(
 
 
 if __name__ == "__main__":
-    app()
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] in {
+        "procesar-datos",
+        "verificar-manifiesto",
+        "verificar-parquet",
+    }:
+        app()
+    else:
+        from proyecto_mibici.cli import main
+
+        main()
