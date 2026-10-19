@@ -1,10 +1,54 @@
-# Data
-/data/
+# Ignorar todo el contenido de data/
+data/*
+
+# Permitir los directorios de la estructura
+!data/external/
+!data/interim/
+!data/processed/
+!data/raw/
+
+# Ignorar todo dentro de cada directorio
+data/external/*
+data/interim/*
+data/processed/*
+data/raw/*
+
+# Permitir únicamente los archivos .gitkeep
+!data/external/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!data/raw/.gitkeep
+
+# Permitir el manifiesto
+!data/data_manifest.json
+
+# Entorno local y base de datos MLflow
+.env
 /mlflow.db
 /mlflow.db-shm
 /mlflow.db-wal
-/mlartifacts/
-/mlruns/
+
+# ============================================
+# MLflow: experimentos y artefactos locales
+# ============================================
+mlruns/
+mlartifacts/
+*.db
+
+# ============================================
+# Modelos serializados
+# ============================================
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+*.h5
+*.keras
+*.pt
+*.pth
+
+# Archivos Parquet fuera de data/
+*.parquet
 
 # Mac OS-specific storage files
 .DS_Store
@@ -194,3 +238,18 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# P1-specific generated output and local working files
+/reports/figures/p1/
+/environments/p1/.venv/
+/tmp/
+*.db-shm
+*.db-wal
+/datos_abiertos_*.csv
+/nomenclatura_*.csv
+.env.*
+!.env.example
+/AGENTS.md
+/proyecto_mibici/AGENTS.md
+/PROJECT_STATUS.md
+/SESSION_LOG.md
