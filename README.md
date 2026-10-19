@@ -26,7 +26,12 @@ El ML Canvas y el diagrama de arquitectura están en `references/`.
 
 - **Fuente:** [Datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/): `datos_abiertos_AAAA_MM.csv` (viajes) y `nomenclatura_2026_09.csv` (estaciones).
 - **Rango:** octubre 2023 a septiembre 2026 (36 meses). Excluye la pandemia y refleja la red actual.
-- **Tamaño:** 13,621,885 viajes, 484 estaciones (salida real de la ingesta; ver `references/data_versions/`).
+- **Tamaño del conjunto seleccionado:** 13,621,885 registros de viajes correspondientes a 36 meses.
+- **Estaciones identificadas:** 473 estaciones distintas en los viajes.
+- **Nomenclatura:** 484 estaciones registradas, de las cuales 471 coinciden con los viajes y tienen capacidad y coordenadas válidas.
+- **Calidad de datos:** Se identificaron las estaciones 405 y 407 sin correspondencia en el catálogo, relacionadas con 3,954 viajes (0.0290%).
+- **Trazabilidad:** Los resultados de las verificaciones se documentan en `references/validacion_datos_mibici.md` y el manifiesto se encuentra en `data/data_manifest.json`.
+
 - **Partición temporal (sin mezcla aleatoria):** entrenamiento oct 2023 – mar 2026, validación abr – jun 2026, prueba jul – sep 2026. Las variables de una predicción en *t* solo usan información hasta *t*; τ, escaladores y clustering se ajustan solo con entrenamiento.
 - **Condiciones de uso:** pendiente confirmar la licencia exacta del portal (no se abrieron las URLs de origen por decisión del equipo); uso académico, con cita de la fuente.
 - **Datos personales:** el Parquet intermedio conserva `usuario_id`, `genero` y `anio_nacimiento` **solo en local**. No se usan como variables de ningún modelo, no se suben a Git ni a MLflow y los resultados se reportan agregados. Con `--excluir-datos-personales` se genera una versión sin ellas, apta para compartir.
@@ -46,6 +51,10 @@ Generado con Cookiecutter Data Science (`ccds`, con `include_code_scaffold`).
 ├── models/                  # Modelos serializados (no versionados)
 ├── notebooks/               # Solo exploración: 1.0-iniciales-descripcion.ipynb
 ├── references/              # ML Canvas y diagrama de arquitectura
+│   ├── ml_canvas_mibici.pdf
+│   ├── arquitectura_mibici.md
+│   ├── arquitectura_mibici.pdf
+│   └── validacion_datos_mibici.md
 ├── reports/figures/         # Gráficas y mapas generados por código
 ├── tests/
 ├── proyecto_mibici/
@@ -66,15 +75,13 @@ Generado con Cookiecutter Data Science (`ccds`, con `include_code_scaffold`).
 El proyecto usa la plantilla Cookiecutter Data Science con **virtualenv** y las dependencias se declaran en **pyproject.toml**, con versiones fijas.
 
 ```bash
-git clone [URL_DEL_REPOSITORIO]
-cd [CARPETA]
+git clone git@github.com:aramosc09/TC5061-Proyecto-Equipo25.git
+cd TC5061-Proyecto-Equipo25
 
-make create_environment
-
-make requirements
+uv sync --frozen
 ```
 
-Verificar la instalación con `make help` (lista los comandos disponibles) y con `python -c "import proyecto_mibici"`.
+Instalar `uv` como requisito previo. Verificar el entorno con `uv run --frozen python -c "import proyecto_mibici"` y ejecutar las pruebas con `uv run --frozen pytest -q`. Los comandos `make` requieren GNU Make; en Windows se pueden ejecutar directamente las instrucciones `uv run` del Makefile.
 
 Al agregar una dependencia, se instala **con versión exacta** y se actualiza el archivo de dependencias en el mismo Pull Request.
 
@@ -107,7 +114,9 @@ Solo una persona genera y sube el manifiesto oficial (por Pull Request). **Nunca
 
 ## 7. Features y experimento base en MLflow
 
-Tres pasos, cada uno ejecutable desde la terminal:
+Las features se incorporan en el PR #3 y el entrenamiento en el PR #4, apilado sobre el primero. Los comandos de entrenamiento requieren integrar ambos PRs.
+
+Cada etapa se ejecuta desde la terminal:
 
 ```bash
 make data                        # CSV crudos -> Parquet unificado + manifiesto
@@ -133,13 +142,85 @@ partición (`test_*`, `validation_*`), etiquetas (`team`, `question`,
 | P2 | `DummyClassifier` (clase mayoritaria) | `HistGradientBoostingClassifier` | F1 macro, exactitud balanceada, recall por clase |
 | P3 | `KMeans` | `GaussianMixture` | Silueta, tamaño de los grupos |
 
-## 8. Flujo de trabajo con Git/GitHub
+## 8. Organización del equipo y flujo de colaboración
 
-Rama principal protegida; todo cambio entra por Pull Request siguiendo GitHub Flow.
-Convención de ramas: `feat/<tema>`, `fix/<tema>`, `docs/<tema>`, `test/<tema>`.
-Convención de commits: Conventional Commits (`feat: ...`, `fix: ...`, `docs: ...`).
-Cada integrante debe tener commits propios, al menos un Pull Request abierto y al
-menos una revisión a otro integrante.
+### 8.1. Integrantes
 
-**Nunca** se sube a Git: datos de MiBici, la carpeta `mlruns/`/`mlartifacts/`,
-modelos serializados ni credenciales (ver `.gitignore`).
+El proyecto MiBici es desarrollado por el Equipo 25 de la materia TC5061 - Operaciones de Aprendizaje Automático (MLOps).
+
+| Integrante | Matrícula |
+|---|---|
+| Alejandro Ramos Contreras | A01747461 |
+| Ángel Alexis Anaya Alamea | A01741351 |
+| Erick Fernando Carrillo Pineda | A01840029 |
+| Jose Rigoberto Cibrian Jacobo | A01740550 |
+
+Las responsabilidades de implementación de P1, P2 y P3 deberán confirmarse entre los integrantes y documentarse conforme se integren sus contribuciones.
+
+### 8.2. Estrategia de control de versiones
+
+El equipo utiliza Git y GitHub para gestionar el código, la documentación y la colaboración durante el desarrollo.
+
+La estrategia de trabajo contempla:
+
+- Utilizar `main` como rama principal del proyecto.
+- Desarrollar nuevas funcionalidades mediante ramas independientes.
+- Realizar commits descriptivos.
+- Abrir Pull Requests para proponer cambios.
+- Solicitar revisiones de otros integrantes antes de integrar modificaciones.
+- Evitar commits y pushes directos a `main`.
+- Configurar y verificar la protección de la rama principal.
+
+Convenciones del proyecto: ramas `feat/<tema>`, `fix/<tema>`, `docs/<tema>` o `test/<tema>`; commits descriptivos con Conventional Commits (`feat: ...`, `fix: ...`, `docs: ...`).
+
+### 8.3. Ramas de trabajo
+
+Durante la revisión del repositorio se identificaron las siguientes ramas:
+
+| Rama | Descripción |
+|---|---|
+| `main` | Rama principal del proyecto |
+| `desarrolloP3` | Desarrollo de componentes asociados a P3 |
+| `testing_branch` | Rama de pruebas y desarrollo inicial |
+| `feature/documentacion-arquitectura` | Documentación de arquitectura, validación de datos y mejoras del README |
+
+La existencia de estas ramas no implica que todos sus cambios estén integrados en `main`.
+
+### 8.4. Flujo de colaboración mediante Pull Requests
+
+Para desarrollar una nueva funcionalidad o modificar documentación, se seguirá el siguiente procedimiento:
+
+1. Actualizar la información del repositorio remoto.
+2. Crear una rama de trabajo a partir de `main`.
+3. Realizar los cambios únicamente en la rama correspondiente.
+4. Verificar los archivos modificados y ejecutar las pruebas aplicables.
+5. Registrar los cambios mediante commits descriptivos.
+6. Publicar la rama en GitHub.
+7. Crear un Pull Request dirigido a `main`.
+8. Solicitar la revisión de otro integrante.
+9. Atender las observaciones recibidas.
+10. Integrar los cambios únicamente después de las revisiones y verificaciones correspondientes.
+
+### 8.5. Evidencia de colaboración
+
+Para cumplir con los requisitos de la actividad, se deberá verificar y documentar lo siguiente:
+
+- [ ] Rama `main` protegida mediante reglas de GitHub.
+- [ ] Commits atribuibles a los cuatro integrantes.
+- [ ] Al menos un Pull Request abierto por integrante.
+- [ ] Al menos una revisión de Pull Request realizada por cada integrante.
+- [ ] Evidencia de los cambios y revisiones en el historial del repositorio.
+
+Estas actividades se consideran pendientes de verificación hasta confirmar su cumplimiento directamente en GitHub.
+
+### 8.6. Buenas prácticas de colaboración
+
+Para mantener la reproducibilidad y evitar conflictos entre integrantes:
+
+- No subir archivos de datos originales ni procesados de MiBici.
+- No publicar carpetas locales de MLflow ni modelos serializados.
+- Mantener actualizado `.gitignore`.
+- Registrar modificaciones a dependencias y configuraciones.
+- Documentar los comandos utilizados para ejecutar los experimentos.
+- Vincular los resultados de MLflow con la versión de datos y el commit correspondiente.
+- Evitar modificar archivos desarrollados por otros integrantes sin coordinación previa.
