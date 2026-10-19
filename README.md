@@ -195,3 +195,54 @@ Para mantener la reproducibilidad y evitar conflictos entre integrantes:
 - Documentar los comandos utilizados para ejecutar los experimentos.
 - Vincular los resultados de MLflow con la versión de datos y el commit correspondiente.
 - Evitar modificar archivos desarrollados por otros integrantes sin coordinación previa.
+
+## 8. Contribucion P1 aislada: ejecucion y validacion
+
+Esta seccion agrega las instrucciones de P1 sin sustituir los comandos ni la
+configuracion compartida de las secciones anteriores. Los archivos existentes de
+main, incluidos config.py, dataset.py, features.py, modeling/train.py, Makefile,
+pyproject.toml, tests/test_data.py y el notebook, se conservan sin cambios.
+
+### 8.1. Entorno independiente
+
+Instalar `uv` y ejecutar desde la raiz del repositorio:
+
+```bash
+uv sync --project environments/p1 --frozen
+uv run --project environments/p1 --frozen python -m pytest -c environments/p1/pyproject.toml tests/test_features_p1.py tests/test_workflow_p1.py -q
+```
+
+Python 3.13.2, dependencias y lockfile de P1 viven en `environments/p1/`.
+Su entorno virtual se crea ahi; no se cambia el entorno ni el pyproject del equipo.
+En Windows ARM64 puede ser necesario instalar Python x64 con uv y pasar su ruta
+mediante `--python` para utilizar las ruedas cientificas disponibles.
+
+### 8.2. Entradas y comandos
+
+Se reutilizan, solo para lectura, `data/interim/viajes_unificados.parquet`,
+`data/raw/nomenclatura_2026_09.csv` y `data/data_manifest.json`, generados por la
+ingesta compartida. No se modifica el API ni el comportamiento de dataset.py.
+
+```bash
+uv run --project environments/p1 --frozen python -m proyecto_mibici.features_p1
+uv run --project environments/p1 --frozen python -m proyecto_mibici.modeling.train_p1 --candidates
+uv run --project environments/p1 --frozen mlflow ui --backend-store-uri sqlite:///mlruns/p1/tracking.db
+```
+
+`features_p1.py` es el modulo propio de esta contribucion; el `features.py` que ya
+existe en main se conserva. `config_p1.py` contiene las opciones de esta ejecucion.
+`train_p1.py` entrena P1 por defecto. No se cambian los comandos del Makefile compartido.
+P1 pronostica el conteo de una hora a 24 horas: `[t+24h,t+25h)` desde el origen t.
+
+### 8.3. Salidas propias y evaluacion
+
+- Features/metadatos: `data/processed/p1/`.
+- Tracking: `mlruns/p1/tracking.db`; artefactos: `mlartifacts/p1/`.
+- Figuras: `reports/figures/p1/`; experimento: `mibici-equipo25-p1`.
+- Baseline: DummyRegressor; candidato: HistGradientBoostingRegressor.
+- Metricas: MAE, RMSE y WAPE de validacion/prueba; parametros, modelo, configuracion,
+  tablas, figuras, version de datos y commit en MLflow.
+
+Las funciones auxiliares de presion y perfiles se mantienen en el modulo propio;
+no reemplazan implementaciones de P2/P3 de otros integrantes. Las pruebas indicadas
+son exclusivamente de esta contribucion; la suite compartida conserva su estado.

@@ -233,3 +233,18 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# P1-specific generated output and local working files
+/reports/figures/p1/
+/environments/p1/.venv/
+/tmp/
+*.db-shm
+*.db-wal
+/datos_abiertos_*.csv
+/nomenclatura_*.csv
+.env.*
+!.env.example
+/AGENTS.md
+/proyecto_mibici/AGENTS.md
+/PROJECT_STATUS.md
+/SESSION_LOG.md

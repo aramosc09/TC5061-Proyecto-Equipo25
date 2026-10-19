@@ -1,0 +1,28 @@
+[project]
+name = "mibici-p1-environment"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "click==8.1.8",
+    "loguru==0.7.3",
+    "matplotlib==3.10.1",
+    "mlflow==2.21.3",
+    "numpy==2.2.3",
+    "pandas==2.2.3",
+    "pyarrow==19.0.1",
+    "python-dotenv==1.0.1",
+    "scikit-learn==1.6.1",
+    "sqlalchemy==2.0.40",
+    "tqdm==4.67.1",
+    "typer==0.15.2",
+]
+
+[dependency-groups]
+dev = ["pytest==8.3.5", "ruff==0.11.2"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests/test_features_p1.py", "tests/test_workflow_p1.py"]
+cache_dir = "../../tmp/pytest_p1_cache"
