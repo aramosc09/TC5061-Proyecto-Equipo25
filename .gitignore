@@ -1,32 +1,10 @@
-# Ignorar todo el contenido de data/
-data/*
-
-# Permitir los directorios de la estructura
-!data/external/
-!data/interim/
-!data/processed/
-!data/raw/
-
-# Ignorar todo dentro de cada directorio
-data/external/*
-data/interim/*
-data/processed/*
-data/raw/*
-
-# Permitir únicamente los archivos .gitkeep
-!data/external/.gitkeep
-!data/interim/.gitkeep
-!data/processed/.gitkeep
-!data/raw/.gitkeep
-
-# Permitir el manifiesto
-!data/data_manifest.json
-
-# Artefactos y bases de datos locales de MLFlow
-mlruns/
-*.db
-mlflow.dbs
-
+# Data
+/data/
+/mlflow.db
+/mlflow.db-shm
+/mlflow.db-wal
+/mlartifacts/
+/mlruns/
 
 # Mac OS-specific storage files
 .DS_Store
