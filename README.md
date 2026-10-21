@@ -74,15 +74,25 @@ PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.dataset 
 
 ## Ingesta y validación
 
-Descarga desde el portal los archivos mensuales del rango elegido y `nomenclatura_2026_09.csv`; colócalos en `data/raw/`. El comando procesa los CSV locales (no los descarga), normaliza nombres y tipos, crea `data/interim/viajes_unificados.parquet` y genera o actualiza el manifiesto.
+La ingesta del punto 10 descarga automáticamente los CSV faltantes de octubre de 2023 a septiembre de 2026 y la nomenclatura de septiembre de 2026, resolviendo los enlaces publicados por MiBici. No requiere descargar ni consolidar archivos manualmente. Las rutas, fechas y tamaño de lote se centralizan en [config.py](proyecto_mibici/config.py).
 
 ```bash
-PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.dataset procesar-datos
-PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.dataset verificar-manifiesto
-PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.dataset verificar-parquet
+PYTHONPATH=. uv run --project environments/p1 --frozen python -m proyecto_mibici.dataset procesar-datos
+PYTHONPATH=. uv run --project environments/p1 --frozen python -m proyecto_mibici.dataset verificar-manifiesto
+PYTHONPATH=. uv run --project environments/p1 --frozen python -m proyecto_mibici.dataset verificar-parquet
 ```
 
-Por defecto el Parquet local conserva `usuario_id`, `genero` y `anio_nacimiento`; no compartas ni subas ese archivo. Para generar una salida sin esos campos agrega `--excluir-datos-personales` al comando `procesar-datos`. El contenido de columnas influye en `data_version`, por lo que una nueva versión del manifiesto debe revisarse y coordinarse antes de reemplazar la versión compartida.
+La ejecución normaliza codificación, nombres, IDs y fechas explícitas; descarta registros inválidos e inicios fuera del mes fuente, deduplica viajes por ID y procesa por lotes sin cargar los 36 meses completos en memoria. No recorta llegadas posteriores al fin del rango ni infiere inventario o actividad histórica desde el catálogo. Produce:
+
+- `data/interim/viajes_unificados.parquet`: `viaje_id`, `inicio_viaje`, `fin_viaje`, `origen_id`, `destino_id`, `fecha_archivo`.
+- `data/interim/estaciones.parquet`: catálogo normalizado; capacidad no utilizable y coordenadas inválidas quedan nulas y se contabilizan.
+- `data/data_manifest.json`: hashes de fuentes/salidas, rango, filas crudas/limpias, descartes, esquemas y `data_version`, recuperable con `obtener_version_datos()` para MLflow.
+
+Los Parquet comunes **siempre excluyen identificadores de usuario y demografía**; aun así no se versionan ni se publican viajes individuales. Los CSV originales permanecen locales y excluidos de Git. El manifiesto, sin filas individuales, debe revisarse y versionarse mediante PR al cambiar la base; los runs anteriores conservan su versión histórica. La versión incluye las reglas de normalización además del contenido de las fuentes.
+
+Por defecto se reutilizan los CSV existentes; `--actualizar` solicita descargarlos de nuevo. Para procesar exclusivamente copias locales completas se admite `--sin-descarga`; un mes faltante provoca error. `--input-path`, `--output-path` y `--manifiesto-path` permiten validar en rutas separadas sin reemplazar la base compartida. La escritura se prepara en temporales y el manifiesto se publica al final.
+
+La [propuesta de pipelines](docs/docs/propuestaSolucion.md) parte de estas salidas comunes. En esta etapa no se han adaptado los ejecutores históricos de modelos a ese diseño. La [validación de ingesta](notebooks/1.4-ARC-validacion-ingesta-reproducible.ipynb) conserva una ejecución real de un mes en directorios temporales, y las pruebas de [ingesta](tests/test_dataset_ingestion.py) cubren descarga, limpieza, privacidad y versionado.
 
 ## Ejecutar los experimentos MLflow
 

@@ -39,6 +39,14 @@ DEFAULT_MES_INICIO = 10
 DEFAULT_ANIO_FIN = 2026
 DEFAULT_MES_FIN = 9
 
+# Contrato común de ingesta para P1, P2 y P3.
+TRIPS_PARQUET_PATH = INTERIM_DATA_DIR / "viajes_unificados.parquet"
+STATIONS_PARQUET_PATH = INTERIM_DATA_DIR / "estaciones.parquet"
+STATIONS_SNAPSHOT_MONTH = "2026-09"
+INGESTION_CHUNK_SIZE = 100_000
+DOWNLOAD_TIMEOUT_SECONDS = 60
+DOWNLOAD_ATTEMPTS = 3
+
 
 # ==========================================
 # Configuración P2

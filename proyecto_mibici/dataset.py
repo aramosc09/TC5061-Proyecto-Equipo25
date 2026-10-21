@@ -1,12 +1,23 @@
-import hashlib
-import json
+import codecs
 from datetime import datetime
+import hashlib
+from html.parser import HTMLParser
 from importlib import metadata
+import json
+import os
 from pathlib import Path
 import re
+import shutil
+import sqlite3
+import tempfile
+import time
+import unicodedata
+from urllib.parse import unquote, urljoin, urlparse
+from urllib.request import Request, urlopen
 
 from loguru import logger
 import pandas as pd
+import pyarrow as pa
 import pyarrow.parquet as pq
 import typer
 
@@ -41,7 +52,7 @@ def _ruta_relativa(ruta: Path) -> str:
     try:
         return Path(ruta).resolve().relative_to(config.PROJ_ROOT.resolve()).as_posix()
     except ValueError:
-        return Path(ruta).name
+        return Path(ruta).resolve().as_posix()
 
 
 # ---------------------------------------------------------------------------
@@ -87,14 +98,25 @@ class MibiciDataLoader:
         raise ValueError(f"No fue posible leer el archivo {archivo.name}")
 
     def _normalizar_columnas(self, df: pd.DataFrame) -> pd.DataFrame:
-        if len(df.columns) != len(self.COLUMNAS_ESTANDAR):
-            raise ValueError(
-                f"Se esperaban {len(self.COLUMNAS_ESTANDAR)} columnas "
-                f"y se encontraron {len(df.columns)}."
-            )
-        df = df.copy()
-        df.columns = self.COLUMNAS_ESTANDAR
-        return df
+        """Identifica columnas por nombre, sin depender de su orden en el CSV."""
+        equivalencias = {
+            "ano_de_nacimiento": "anio_nacimiento",
+            "anio_de_nacimiento": "anio_nacimiento",
+            "inicio_del_viaje": "inicio_viaje",
+            "fin_del_viaje": "fin_viaje",
+        }
+        nombres = []
+        for columna in df.columns:
+            nombre = unicodedata.normalize("NFKD", str(columna).strip().lstrip("\ufeff"))
+            nombre = nombre.encode("ascii", errors="ignore").decode().lower()
+            nombre = re.sub(r"\W+", "_", nombre).strip("_")
+            nombres.append(equivalencias.get(nombre, nombre))
+        if len(set(nombres)) != len(nombres):
+            raise ValueError("Hay nombres de columnas duplicados tras normalizar.")
+        faltantes = set(self.COLUMNAS_ESTANDAR) - set(nombres)
+        if faltantes:
+            raise ValueError(f"Faltan columnas originales: {sorted(faltantes)}")
+        return df.set_axis(nombres, axis=1).loc[:, self.COLUMNAS_ESTANDAR].copy()
 
     def _obtener_periodo_archivo(self, archivo: Path) -> tuple[int, int]:
         match = re.search(r"(\d{4})_(\d{2})", archivo.name)
@@ -105,23 +127,19 @@ class MibiciDataLoader:
     def _convertir_fechas(
         self, serie: pd.Series, archivo: Path
     ) -> tuple[pd.Series, str]:
-        anio_esperado, mes_esperado = self._obtener_periodo_archivo(archivo)
-        opciones = {}
-
-        for estrategia, dayfirst in [("default", False), ("dayfirst", True)]:
-            fechas = pd.to_datetime(serie, errors="coerce", dayfirst=dayfirst)
-            coincide_periodo = (fechas.dt.year == anio_esperado) & (
-                fechas.dt.month == mes_esperado
+        fechas = pd.Series(pd.NaT, index=serie.index, dtype="datetime64[ns]")
+        texto = serie.astype("string").str.strip()
+        for formato in (
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+            "%d/%m/%Y %H:%M:%S",
+            "%d/%m/%Y %H:%M",
+        ):
+            pendientes = fechas.isna()
+            fechas.loc[pendientes] = pd.to_datetime(
+                texto.loc[pendientes], format=formato, errors="coerce"
             )
-            opciones[estrategia] = {
-                "fechas": fechas,
-                "coincidencias": coincide_periodo.sum(),
-            }
-
-        mejor_estrategia = max(
-            opciones, key=lambda x: opciones[x]["coincidencias"]
-        )
-        return opciones[mejor_estrategia]["fechas"], mejor_estrategia
+        return fechas, "iso_o_dia_mes_anio_explicito"
 
     def _castear_tipos(self, df: pd.DataFrame) -> pd.DataFrame:
         """Castea las columnas al tipo de dato adecuado."""
@@ -267,7 +285,7 @@ class DataManifest:
     archivo, rango de fechas, columnas de salida y una `data_version` global.
     """
 
-    VERSION_ESQUEMA = 1
+    VERSION_ESQUEMA = 2
 
     def __init__(self, ruta: str | Path = config.MANIFEST_PATH):
         self.ruta = Path(ruta)
@@ -283,6 +301,7 @@ class DataManifest:
         absolutas, para que sea idéntico en cualquier computadora.
         """
         carga = {
+            "normalizacion": NORMALIZATION_VERSION,
             "rango": rango,
             "archivos": [
                 [a["archivo"], a["sha256_crudo"], a["n_filas"]]
@@ -335,8 +354,9 @@ class DataManifest:
                 "n_filas": int(n_filas_parquet),
                 "columnas": columnas,
                 "sha256": calcular_sha256(ruta_parquet),
-                "nota": "El hash del Parquet es informativo: puede variar entre "
-                "versiones de pyarrow. La versión de datos usa los hashes crudos.",
+                "nota": "El hash verifica esta salida concreta. Regenerar Parquet con "
+                "otra versión de pyarrow puede cambiar sus bytes y requiere actualizar "
+                "el manifiesto. data_version usa entradas, esquema y reglas de limpieza.",
             },
         }
         return manifiesto
@@ -368,18 +388,18 @@ class DataManifest:
             elif calcular_sha256(ruta) != entrada["sha256_crudo"]:
                 errores.append(f"El hash no coincide: {entrada['ruta']}")
 
-        salida = manifiesto["salida"]
-        ruta_parquet = config.PROJ_ROOT / salida["ruta"]
-        if not ruta_parquet.exists():
-            errores.append(f"Falta el Parquet: {salida['ruta']}")
-        else:
-            if pq.ParquetFile(ruta_parquet).metadata.num_rows != salida["n_filas"]:
-                errores.append("El número de filas del Parquet no coincide.")
-            if calcular_sha256(ruta_parquet) != salida["sha256"]:
-                logger.warning(
-                    "El hash del Parquet difiere (puede deberse a otra versión de "
-                    "pyarrow). Se valida con los hashes de los archivos crudos."
-                )
+        errores.extend(self.verificar_parquet())
+        if "salida_estaciones" in manifiesto:
+            salida = manifiesto["salida_estaciones"]
+            ruta = config.PROJ_ROOT / salida["ruta"]
+            if not ruta.is_file():
+                errores.append("Falta el Parquet de estaciones.")
+            else:
+                pf = pq.ParquetFile(ruta)
+                if (pf.metadata.num_rows != salida["n_filas"]
+                        or pf.schema_arrow.names != salida["columnas"]
+                        or calcular_sha256(ruta) != salida["sha256"]):
+                    errores.append("El Parquet de estaciones no coincide con el manifiesto.")
         return errores
 
     def verificar_parquet(self, ruta_parquet: Path | None = None) -> list[str]:
@@ -405,32 +425,322 @@ class DataManifest:
         ):
             errores.append("El Parquet contiene columnas personales.")
 
+        if errores:
+            return errores
+
         # 2. Contenido: conteos por mes (independiente de la versión de pyarrow)
         df = pd.read_parquet(ruta, columns=["fecha_archivo", "viaje_id"])
         obtenidos = df["fecha_archivo"].value_counts().to_dict()
         for registro in m["viajes_mensuales"]:
             coincidencia = re.search(r"(\d{4})_(\d{2})", registro["archivo"])
             mes = f"{coincidencia.group(1)}-{coincidencia.group(2)}"
-            if obtenidos.get(mes) != registro["n_filas"]:
+            esperadas = registro.get("n_filas_salida", registro["n_filas"])
+            if obtenidos.get(mes, 0) != esperadas:
                 errores.append(
-                    f"{mes}: {obtenidos.get(mes)} viajes vs {registro['n_filas']} esperados."
+                    f"{mes}: {obtenidos.get(mes, 0)} viajes vs {esperadas} esperados."
                 )
 
         # 3. Informativo
         if df["viaje_id"].duplicated().any():
             logger.warning("Hay viaje_id duplicados (revisar si es esperado).")
         if calcular_sha256(ruta) != salida["sha256"]:
-            logger.warning(
-                "El hash del archivo difiere del manifiesto. Es esperable si el "
-                "Parquet se regeneró con otra versión de pyarrow; la validación "
-                "se basa en estructura y conteos."
-            )
+            errores.append("El hash del Parquet no coincide con el manifiesto.")
         return errores
 
 
 def obtener_version_datos(ruta: str | Path = config.MANIFEST_PATH) -> str:
     """Devuelve la `data_version` del manifiesto (para registrarla en MLflow)."""
     return DataManifest(ruta).cargar()["data_version"]
+
+
+# La versión incluye las reglas de limpieza, no solo los bytes de entrada.
+NORMALIZATION_VERSION = "mibici-ingesta-v2"
+TRIP_SCHEMA = pa.schema([
+    ("viaje_id", pa.int64()),
+    ("inicio_viaje", pa.timestamp("ns")),
+    ("fin_viaje", pa.timestamp("ns")),
+    ("origen_id", pa.int64()),
+    ("destino_id", pa.int64()),
+    ("fecha_archivo", pa.string()),
+])
+
+
+class _EnlacesCSV(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.enlaces = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            self.enlaces.extend(value for key, value in attrs if key == "href" and value)
+
+
+def _url_oficial(url: str) -> bool:
+    parsed = urlparse(url)
+    return parsed.scheme == "https" and parsed.netloc in {"www.mibici.net", "mibici.net"}
+
+
+def _solicitud(url: str) -> Request:
+    return Request(url, headers={
+        "User-Agent": "MiBici-Equipo25/1.0",
+        "Accept": "text/html,text/csv,application/octet-stream,*/*;q=0.8",
+    })
+
+
+def descubrir_fuentes() -> dict[str, str]:
+    """Resuelve URLs publicadas por MiBici sin inventar los IDs de sus directorios."""
+    with urlopen(_solicitud(config.DATA_URL_ONLINE),
+                 timeout=config.DOWNLOAD_TIMEOUT_SECONDS) as response:
+        parser = _EnlacesCSV()
+        parser.feed(response.read().decode("utf-8"))
+    fuentes = {}
+    for enlace in parser.enlaces:
+        url = urljoin(config.DATA_URL_ONLINE, enlace)
+        nombre = Path(unquote(urlparse(url).path)).name
+        if _url_oficial(url) and nombre.lower().endswith(".csv"):
+            fuentes[nombre] = url
+    return fuentes
+
+
+def descargar_archivo(url: str, destino: Path) -> None:
+    """Descarga en un temporal y publica el CSV solo si la transferencia concluye."""
+    if not _url_oficial(url):
+        raise ValueError("Solo se permiten descargas HTTPS del dominio oficial de MiBici.")
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    for intento in range(config.DOWNLOAD_ATTEMPTS):
+        temporal = None
+        try:
+            with tempfile.NamedTemporaryFile(dir=destino.parent, delete=False) as output:
+                temporal = Path(output.name)
+                with urlopen(_solicitud(url), timeout=config.DOWNLOAD_TIMEOUT_SECONDS) as response:
+                    if not _url_oficial(response.geturl()):
+                        raise ValueError("La descarga redirigió fuera del dominio oficial.")
+                    shutil.copyfileobj(response, output)
+                    expected = response.headers.get("Content-Length")
+                    if expected is not None and output.tell() != int(expected):
+                        raise OSError("Descarga incompleta.")
+                if output.tell() == 0:
+                    raise OSError("El archivo descargado está vacío.")
+            os.replace(temporal, destino)
+            return
+        except (OSError, ValueError):
+            if intento + 1 == config.DOWNLOAD_ATTEMPTS:
+                raise
+            time.sleep(2 ** intento)
+        finally:
+            if temporal is not None:
+                temporal.unlink(missing_ok=True)
+
+
+def _codificacion(archivo: Path) -> str:
+    """Detecta UTF-8/BOM, Windows-1252 o Latin-1 con decodificación estricta."""
+    for encoding in ("utf-8-sig", "cp1252", "latin-1"):
+        decoder = codecs.getincrementaldecoder(encoding)(errors="strict")
+        try:
+            with archivo.open("rb") as handle:
+                for block in iter(lambda: handle.read(1 << 20), b""):
+                    decoder.decode(block)
+                decoder.decode(b"", final=True)
+            return encoding
+        except UnicodeDecodeError:
+            continue
+    raise ValueError(f"No se pudo decodificar {archivo.name}")
+
+
+def _entero(serie: pd.Series) -> pd.Series:
+    numeros = pd.to_numeric(serie, errors="coerce")
+    return numeros.where(numeros.mod(1).eq(0) & numeros.gt(0)).astype("Int64")
+
+
+def _normalizar_estaciones(archivo: Path) -> tuple[pd.DataFrame, dict]:
+    encoding = _codificacion(archivo)
+    frame = pd.read_csv(archivo, encoding=encoding, dtype="string")
+    frame.columns = frame.columns.str.strip().str.lower()
+    columnas = ["id", "name", "latitude", "longitude", "dpcapacity"]
+    if not set(columnas).issubset(frame.columns):
+        raise ValueError("La nomenclatura no contiene las columnas requeridas.")
+    frame = frame.loc[:, columnas].copy()
+    frame["id"] = _entero(frame["id"])
+    if frame["id"].isna().any() or frame["id"].duplicated().any():
+        raise ValueError("La nomenclatura contiene IDs inválidos o duplicados.")
+    frame["name"] = frame["name"].str.strip()
+    for name, lower, upper in (("latitude", -90, 90), ("longitude", -180, 180)):
+        values = pd.to_numeric(frame[name], errors="coerce")
+        frame[name] = values.where(values.between(lower, upper)).astype("Float64")
+    frame["dpcapacity"] = _entero(frame["dpcapacity"])
+    return frame, {
+        "archivo": archivo.name,
+        "ruta": _ruta_relativa(archivo),
+        "sha256_crudo": calcular_sha256(archivo),
+        "codificacion": encoding,
+        "n_filas": len(frame),
+        "n_sin_capacidad": int(frame["dpcapacity"].isna().sum()),
+        "n_sin_coordenadas": int(frame[["latitude", "longitude"]].isna().any(axis=1).sum()),
+    }
+
+
+def _limpiar_lote(frame: pd.DataFrame, archivo: Path, loader: MibiciDataLoader) -> pd.DataFrame:
+    frame = loader._normalizar_columnas(frame).drop(columns=COLUMNAS_PERSONALES)
+    for name in ("viaje_id", "origen_id", "destino_id"):
+        frame[name] = _entero(frame[name])
+    for name in ("inicio_viaje", "fin_viaje"):
+        frame[name], _ = loader._convertir_fechas(frame[name], archivo)
+    year, month = loader._obtener_periodo_archivo(archivo)
+    frame["fecha_archivo"] = f"{year}-{month:02d}"
+    valid = (
+        frame[["viaje_id", "origen_id", "destino_id", "inicio_viaje", "fin_viaje"]]
+        .notna().all(axis=1)
+        & frame["fin_viaje"].ge(frame["inicio_viaje"])
+        & frame["inicio_viaje"].dt.year.eq(year)
+        & frame["inicio_viaje"].dt.month.eq(month)
+    )
+    return frame.loc[valid, TRIP_SCHEMA.names].reset_index(drop=True)
+
+
+def _sin_duplicados(frame: pd.DataFrame, connection: sqlite3.Connection) -> pd.DataFrame:
+    """Conserva la primera aparición del viaje en orden de archivo/fila, sin cargar todos los IDs."""
+    connection.execute("DELETE FROM lote")
+    connection.executemany(
+        "INSERT INTO lote VALUES (?, ?)",
+        enumerate(int(value) for value in frame["viaje_id"]),
+    )
+    indices = [row[0] for row in connection.execute(
+        "SELECT MIN(posicion) FROM lote WHERE id NOT IN (SELECT id FROM vistos) "
+        "GROUP BY id ORDER BY MIN(posicion)"
+    )]
+    connection.execute("INSERT OR IGNORE INTO vistos SELECT id FROM lote")
+    connection.commit()
+    return frame.iloc[indices].copy()
+
+
+def ejecutar_ingesta(
+    *,
+    anio_inicio: int = config.DEFAULT_ANIO_INICIO,
+    mes_inicio: int = config.DEFAULT_MES_INICIO,
+    anio_fin: int = config.DEFAULT_ANIO_FIN,
+    mes_fin: int = config.DEFAULT_MES_FIN,
+    input_path: Path = config.RAW_DATA_DIR,
+    parquet_path: Path = config.TRIPS_PARQUET_PATH,
+    estaciones_path: Path = config.STATIONS_PARQUET_PATH,
+    manifiesto_path: Path = config.MANIFEST_PATH,
+    sin_descarga: bool = False,
+    actualizar: bool = False,
+    chunk_size: int = config.INGESTION_CHUNK_SIZE,
+) -> dict:
+    """Descarga, limpia por lotes y versiona una base común sin columnas personales.
+
+    Descarta fechas/IDs inválidos, duraciones negativas, inicios fuera del mes fuente
+    y viajes repetidos. No corta llegadas al fin del rango ni aplica filtros propios
+    de una pregunta. El catálogo no determina la actividad histórica de estaciones.
+    """
+    if chunk_size < 1:
+        raise ValueError("chunk-size debe ser positivo.")
+    if sin_descarga and actualizar:
+        raise ValueError("--actualizar no puede combinarse con --sin-descarga.")
+    start = pd.Period(year=anio_inicio, month=mes_inicio, freq="M")
+    end = pd.Period(year=anio_fin, month=mes_fin, freq="M")
+    if start > end:
+        raise ValueError("El inicio del rango es posterior al fin.")
+    input_path = Path(input_path)
+    parquet_path, estaciones_path, manifiesto_path = map(
+        Path, (parquet_path, estaciones_path, manifiesto_path)
+    )
+    if len({p.resolve() for p in (parquet_path, estaciones_path, manifiesto_path)}) != 3:
+        raise ValueError("Viajes, estaciones y manifiesto requieren rutas diferentes.")
+    months = pd.period_range(start, end, freq="M")
+    expected = [f"datos_abiertos_{month.strftime('%Y_%m')}.csv" for month in months]
+    station_name = f"nomenclatura_{config.STATIONS_SNAPSHOT_MONTH.replace('-', '_')}.csv"
+    fuentes = {} if sin_descarga else descubrir_fuentes()
+    archivos = []
+    for nombre in [*expected, station_name]:
+        local = input_path / nombre
+        candidatos = []
+        if nombre.startswith("datos_abiertos_"):
+            candidatos = sorted(input_path.glob(nombre.removesuffix(".csv") + "-*.csv"))
+            if (local.is_file() and candidatos) or len(candidatos) > 1:
+                raise ValueError(f"Hay varios CSV para el mismo mes: {nombre}")
+        if not local.is_file() and candidatos:
+            local = candidatos[0]
+        if actualizar or not local.is_file():
+            if sin_descarga:
+                raise FileNotFoundError(f"Falta el archivo requerido: {nombre}")
+            url = fuentes.get(nombre)
+            if url is None:
+                alternativas = [key for key in fuentes if re.fullmatch(
+                    re.escape(nombre.removesuffix('.csv')) + r'-\d+\.csv', key
+                )]
+                if len(alternativas) != 1:
+                    raise ValueError(f"No hay un enlace único publicado para {nombre}")
+                url = fuentes[alternativas[0]]
+            descargar_archivo(url, local)
+        archivos.append(local)
+    if {path.resolve() for path in archivos} & {
+        path.resolve() for path in (parquet_path, estaciones_path, manifiesto_path)
+    }:
+        raise ValueError("Las salidas no pueden reemplazar archivos de origen.")
+    loader = MibiciDataLoader(input_path)
+    stations, station_info = _normalizar_estaciones(archivos[-1])
+    station_info["url"] = fuentes.get(station_name)
+    for output in (parquet_path, estaciones_path, manifiesto_path):
+        output.parent.mkdir(parents=True, exist_ok=True)
+    registros = []
+    with tempfile.TemporaryDirectory(prefix=".ingesta-", dir=parquet_path.parent) as tmp:
+        temporary = Path(tmp)
+        trips_tmp = temporary / "viajes.parquet"
+        with sqlite3.connect(temporary / "deduplicacion.sqlite") as connection:
+            connection.execute("CREATE TABLE vistos (id INTEGER PRIMARY KEY)")
+            connection.execute("CREATE TEMP TABLE lote (posicion INTEGER, id INTEGER)")
+            with pq.ParquetWriter(trips_tmp, TRIP_SCHEMA, compression="snappy") as writer:
+                for month, archivo in zip(months, archivos[:-1], strict=True):
+                    encoding = _codificacion(archivo)
+                    info = {
+                        "archivo": archivo.name, "ruta": _ruta_relativa(archivo),
+                        "url": fuentes.get(archivo.name) or fuentes.get(
+                            f"datos_abiertos_{month.strftime('%Y_%m')}.csv"
+                        ),
+                        "sha256_crudo": calcular_sha256(archivo), "codificacion": encoding,
+                        "n_filas": 0, "n_descartadas_calidad": 0, "n_duplicados": 0,
+                        "n_filas_salida": 0,
+                    }
+                    for frame in pd.read_csv(
+                        archivo, encoding=encoding, dtype="string", chunksize=chunk_size
+                    ):
+                        info["n_filas"] += len(frame)
+                        cleaned = _limpiar_lote(frame, archivo, loader)
+                        info["n_descartadas_calidad"] += len(frame) - len(cleaned)
+                        unique = _sin_duplicados(cleaned, connection)
+                        info["n_duplicados"] += len(cleaned) - len(unique)
+                        info["n_filas_salida"] += len(unique)
+                        writer.write_table(pa.Table.from_pandas(
+                            unique, schema=TRIP_SCHEMA, preserve_index=False
+                        ))
+                    if info["n_filas"] == 0:
+                        raise ValueError(f"El archivo no contiene registros: {archivo.name}")
+                    registros.append(info)
+                    logger.info("{}: {} registros válidos", month, info["n_filas_salida"])
+        if not any(item["n_filas_salida"] for item in registros):
+            raise ValueError("La ventana no contiene viajes válidos.")
+        stations_tmp = temporary / "estaciones.parquet"
+        stations.to_parquet(stations_tmp, index=False, compression="snappy")
+        manifest = DataManifest(manifiesto_path).construir(
+            {"inicio": str(start), "fin": str(end)}, registros, [station_info],
+            trips_tmp, TRIP_SCHEMA.names, True,
+        )
+        manifest["salida"]["ruta"] = _ruta_relativa(parquet_path)
+        manifest["salida_estaciones"] = {
+            "ruta": _ruta_relativa(estaciones_path), "n_filas": len(stations),
+            "columnas": list(stations.columns), "sha256": calcular_sha256(stations_tmp),
+            "mes_referencia": config.STATIONS_SNAPSHOT_MONTH,
+        }
+        manifest["normalizacion"] = NORMALIZATION_VERSION
+        manifest["resumen"]["n_viajes_limpios"] = sum(r["n_filas_salida"] for r in registros)
+        manifest_tmp = temporary / "manifiesto.json"
+        DataManifest(manifest_tmp).guardar(manifest)
+        # El manifiesto se publica al final; no se anuncian resultados de una ingesta parcial.
+        for source, output in ((trips_tmp, parquet_path), (stations_tmp, estaciones_path),
+                               (manifest_tmp, manifiesto_path)):
+            os.replace(source, output)
+    return manifest
 
 
 # ---------------------------------------------------------------------------
@@ -443,60 +753,25 @@ def procesar_datos(
     anio_fin: int = config.DEFAULT_ANIO_FIN,
     mes_fin: int = config.DEFAULT_MES_FIN,
     input_path: Path = config.RAW_DATA_DIR,
-    output_filename: str = "viajes_unificados.parquet",
+    output_filename: str = config.TRIPS_PARQUET_PATH.name,
+    output_path: Path = config.INTERIM_DATA_DIR,
     manifiesto_path: Path = config.MANIFEST_PATH,
-    excluir_datos_personales: bool = typer.Option(
-        False,
-        "--excluir-datos-personales/--conservar-datos-personales",
-        help="Por defecto conserva usuario_id, genero y anio_nacimiento en el "
-        "Parquet local. Con --excluir-datos-personales los elimina (útil para "
-        "generar una versión compartible).",
-    ),
+    sin_descarga: bool = False,
+    actualizar: bool = False,
+    chunk_size: int = config.INGESTION_CHUNK_SIZE,
 ):
-    """Procesa los CSV, guarda el Parquet y genera el manifiesto de datos."""
-
-    logger.info(f"Iniciando proceso desde la ruta local: {input_path}")
-    cargador = MibiciDataLoader(input_path)
-
-    # Cargar datos y obtener el rango de fechas detectadas
-    df_procesado, rango_fechas = cargador.cargar_ventana_tiempo(
-        anio_inicio, mes_inicio, anio_fin, mes_fin
+    """Descarga CSV faltantes, limpia viajes/estaciones y publica Parquet y manifiesto."""
+    manifest = ejecutar_ingesta(
+        anio_inicio=anio_inicio, mes_inicio=mes_inicio,
+        anio_fin=anio_fin, mes_fin=mes_fin,
+        input_path=input_path, parquet_path=output_path / output_filename,
+        estaciones_path=output_path / config.STATIONS_PARQUET_PATH.name,
+        manifiesto_path=manifiesto_path, sin_descarga=sin_descarga,
+        actualizar=actualizar, chunk_size=chunk_size,
     )
-
     logger.success(
-        f"¡Archivos concatenados con éxito! Rango de fechas procesado: [{rango_fechas}]"
-    )
-
-    # Minimización de datos personales (la decisión queda en el manifiesto)
-    if excluir_datos_personales:
-        df_procesado = df_procesado.drop(columns=COLUMNAS_PERSONALES)
-        logger.info(f"Columnas personales eliminadas: {COLUMNAS_PERSONALES}")
-
-    # Definir ruta de salida en data/interim/ y asegurar que exista
-    output_path = config.INTERIM_DATA_DIR / output_filename
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Guardar en formato Parquet comprimido
-    df_procesado.to_parquet(output_path, index=False, compression="snappy")
-    logger.success(f"Archivo intermedio guardado correctamente en: {output_path}")
-
-    # Generar y guardar el manifiesto
-    gestor = DataManifest(manifiesto_path)
-    manifiesto = gestor.construir(
-        rango=cargador.rango,
-        registros_viajes=cargador.registros,
-        registros_estaciones=cargador.registrar_nomenclatura(),
-        ruta_parquet=output_path,
-        columnas=list(df_procesado.columns),
-        excluye_datos_personales=excluir_datos_personales,
-    )
-    ruta_manifiesto = gestor.guardar(manifiesto)
-
-    resumen = manifiesto["resumen"]
-    logger.success(
-        f"Manifiesto guardado en {ruta_manifiesto} | "
-        f"data_version={manifiesto['data_version']} | "
-        f"meses={resumen['n_meses']} | viajes={resumen['n_viajes']:,}"
+        "Ingesta completa | data_version={} | viajes válidos={:,}",
+        manifest["data_version"], manifest["resumen"]["n_viajes_limpios"],
     )
 
 
