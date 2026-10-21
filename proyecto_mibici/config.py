@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -29,7 +30,7 @@ MANIFEST_PATH = DATA_DIR / "data_manifest.json"
 # ==========================================
 # Configuración global del proyecto
 # ==========================================
-DATA_URL_ONLINE = 'https://www.mibici.net/es/datos-abiertos/'
+DATA_URL_ONLINE = "https://www.mibici.net/es/datos-abiertos/"
 
 DEFAULT_RANDOM_STATE = 42
 
@@ -48,12 +49,118 @@ DOWNLOAD_TIMEOUT_SECONDS = 60
 DOWNLOAD_ATTEMPTS = 3
 
 
-# ==========================================
-# Configuración P2
-# ==========================================
-DEFAULT_DESFASE_HORAS = 2
-DEFAULT_PERCENTIL_UMBRAL = 0.90
-DEFAULT_FECHA_CORTE_SPLIT = '2026-04-01'
+# Experimento base común.
+EXPERIMENT_NAME = "mibici-equipo25"
+TRAIN_END = "2025-07-01"
+VALIDATION_END = "2025-10-01"
+HOURS_PARQUET_PATH = PROCESSED_DATA_DIR / "horas_estacion.parquet"
+TRACKING_DATABASE = PROJ_ROOT / "mlruns" / EXPERIMENT_NAME / "tracking.db"
+ARTIFACTS_DIR = PROJ_ROOT / "mlartifacts" / EXPERIMENT_NAME
+BASELINE_FIGURES_DIR = FIGURES_DIR / "baselines"
+SUPERVISED_HORIZON_HOURS = 1
+FEATURE_LAGS = (1, 3, 24, 168)
+ROLLING_WINDOWS = (3, 24, 168)
+BALANCE_WINDOWS = (3, 24)
+
+
+@dataclass(frozen=True)
+class ProjectConfig:
+    """Configuración inmutable compartida por ingesta, features y los tres baselines."""
+
+    root: Path = PROJ_ROOT
+    start_month: str = f"{DEFAULT_ANIO_INICIO}-{DEFAULT_MES_INICIO:02d}"
+    end_month: str = f"{DEFAULT_ANIO_FIN}-{DEFAULT_MES_FIN:02d}"
+    train_end: str = TRAIN_END
+    validation_end: str = VALIDATION_END
+    seed: int = DEFAULT_RANDOM_STATE
+    recent_hours: int = FEATURE_LAGS[-1]
+    weekly_lag: int = FEATURE_LAGS[-1]
+    pressure_quantiles: tuple[float, float] = (0.75, 0.90)
+
+    @property
+    def start(self):
+        import pandas as pd
+
+        return pd.Period(self.start_month, freq="M").start_time
+
+    @property
+    def end(self):
+        import pandas as pd
+
+        return (pd.Period(self.end_month, freq="M") + 1).start_time
+
+    @property
+    def splits(self):
+        import pandas as pd
+
+        return {
+            "train": (self.start, pd.Timestamp(self.train_end)),
+            "validation": (pd.Timestamp(self.train_end), pd.Timestamp(self.validation_end)),
+            "test": (pd.Timestamp(self.validation_end), self.end),
+        }
+
+    def path(self, canonical: Path) -> Path:
+        return Path(self.root).resolve() / canonical.relative_to(PROJ_ROOT)
+
+    @property
+    def trips_path(self) -> Path:
+        return self.path(TRIPS_PARQUET_PATH)
+
+    @property
+    def stations_path(self) -> Path:
+        return self.path(STATIONS_PARQUET_PATH)
+
+    @property
+    def manifest_path(self) -> Path:
+        return self.path(MANIFEST_PATH)
+
+    @property
+    def hours_path(self) -> Path:
+        return self.path(HOURS_PARQUET_PATH)
+
+    @property
+    def tracking_uri(self) -> str:
+        return f"sqlite:///{self.path(TRACKING_DATABASE).as_posix()}"
+
+    def validate(self) -> None:
+        import pandas as pd
+
+        if (
+            not self.start
+            < pd.Timestamp(self.train_end)
+            < pd.Timestamp(self.validation_end)
+            < self.end
+        ):
+            raise ValueError(
+                "Se requiere inicio < fin de entrenamiento < fin de validación < fin."
+            )
+        for boundary in (pd.Timestamp(self.train_end), pd.Timestamp(self.validation_end)):
+            if boundary != boundary.floor("h"):
+                raise ValueError("Los cortes deben coincidir con horas completas.")
+        if self.recent_hours < 1 or self.weekly_lag < 1:
+            raise ValueError("Las ventanas históricas deben ser positivas.")
+        if self.seed < 0:
+            raise ValueError("La semilla debe ser no negativa.")
+        if not 0 < self.pressure_quantiles[0] < self.pressure_quantiles[1] < 1:
+            raise ValueError("Los percentiles de presión deben estar ordenados entre cero y uno.")
+
+    def parameters(self) -> dict:
+        return {
+            "start_month": self.start_month,
+            "end_month": self.end_month,
+            "train_start": self.start.isoformat(),
+            "train_end_exclusive": self.train_end,
+            "validation_end_exclusive": self.validation_end,
+            "test_end_exclusive": self.end.isoformat(),
+            "seed": self.seed,
+            "supervised_horizon_hours": SUPERVISED_HORIZON_HOURS,
+            "recent_activity_hours": self.recent_hours,
+            "weekly_lag_hours": self.weekly_lag,
+            "capacity_snapshot": STATIONS_SNAPSHOT_MONTH,
+            "coverage_policy": "complete_source_months_and_activity_in_previous_window",
+            "zero_policy": "analytical_zero_only_after_observed_past_activity_not_inventory",
+        }
+
 
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135

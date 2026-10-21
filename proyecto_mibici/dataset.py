@@ -23,7 +23,10 @@ import typer
 
 from proyecto_mibici import config
 
-app = typer.Typer(help = "Ingesta reproducible y versionada de los datos de MiBici.")
+app = typer.Typer(
+    help="Ingesta reproducible y versionada de los datos de MiBici.",
+    pretty_exceptions_show_locals=False,
+)
 
 COLUMNAS_PERSONALES = ["usuario_id", "genero", "anio_nacimiento"]
 
@@ -102,6 +105,8 @@ class MibiciDataLoader:
         equivalencias = {
             "ano_de_nacimiento": "anio_nacimiento",
             "anio_de_nacimiento": "anio_nacimiento",
+            # Encabezado dañado observado en las fuentes de febrero/mayo de 2024.
+            "a_ae_nacimiento": "anio_nacimiento",
             "inicio_del_viaje": "inicio_viaje",
             "fin_del_viaje": "fin_viaje",
         }
@@ -454,7 +459,7 @@ def obtener_version_datos(ruta: str | Path = config.MANIFEST_PATH) -> str:
 
 
 # La versión incluye las reglas de limpieza, no solo los bytes de entrada.
-NORMALIZATION_VERSION = "mibici-ingesta-v2"
+NORMALIZATION_VERSION = "mibici-ingesta-v3"
 TRIP_SCHEMA = pa.schema([
     ("viaje_id", pa.int64()),
     ("inicio_viaje", pa.timestamp("ns")),
