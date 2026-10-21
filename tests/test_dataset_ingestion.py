@@ -85,6 +85,16 @@ def test_maps_headers_by_name_not_position(tmp_path):
     assert pd.read_parquet(tmp_path / "data/interim/viajes.parquet").origen_id.tolist() == [1]
 
 
+def test_observed_damaged_birth_year_header_is_recognized(tmp_path):
+    raw = write_sources(tmp_path)
+    path = raw / "datos_abiertos_2023_10.csv"
+    frame = pd.read_csv(path, encoding="cp1252").rename(
+        columns={"Año_de_nacimiento": "A}äe_nacimiento"}
+    )
+    frame.to_csv(path, encoding="cp1252", index=False)
+    assert ingest(tmp_path)["resumen"]["n_viajes_limpios"] == 1
+
+
 def test_missing_month_does_not_publish_partial_outputs(tmp_path):
     write_sources(tmp_path)
     with pytest.raises(FileNotFoundError, match="2023_11"):

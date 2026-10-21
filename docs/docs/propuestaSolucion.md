@@ -2,7 +2,7 @@
 
 Este documento construye las respuestas a la **Parte A de [context.md](./context.md)**, punto por punto. En cada revisión se leerá la instrucción, se elaborará la respuesta a partir de sus fuentes y evidencias y se reemplazará o ajustará la sección correspondiente. El contenido previo no se considera correcto por defecto ni demuestra que una implementación cumpla los requisitos.
 
-**Estado de esta revisión:** se han revisado los puntos 1–5: formulación basada en el [ML Canvas del equipo 25](../Machine%20Learning%20Canvas_Equipo%2025.pdf), definición de datos, propuesta de pipelines sobre una ingesta común implementada conforme al punto 10 de la Parte B, modelos y métricas por pregunta y arquitectura con énfasis en MLflow Projects y POO. Los puntos 6–7 quedan pendientes de revisión conforme se avance en las instrucciones.
+**Estado de esta revisión:** se han revisado los puntos 1–6: formulación basada en el [ML Canvas del equipo 25](../Machine%20Learning%20Canvas_Equipo%2025.pdf), datos, pipelines, modelos y métricas propuestos, arquitectura con énfasis en MLflow Projects y POO, y ejecución verificada de los tres baselines sobre la ingesta común. El punto 7, captura de evidencia de la interfaz, queda pendiente.
 
 Cuando una respuesta requiera evidencia computacional, se desarrollará en notebooks separados por propósito (por ejemplo, exploración, conteos o gráficas), dentro de `notebooks/` y con la convención `1.0-iniciales-descripcion.ipynb`. Conforme a la Parte B, las transformaciones y ejecuciones finales reutilizables deberán vivir en el módulo del proyecto; los notebooks documentarán la exploración y la justificación, sin sustituir el código ejecutable requerido.
 
@@ -237,7 +237,7 @@ Se propone una **base de datos limpia común para P1, P2 y P3**, producida por l
 El comando de [dataset.py](../../proyecto_mibici/dataset.py) descarga los meses definidos en el punto 2 y la nomenclatura, sin preparación manual de archivos:
 
 ```bash
-PYTHONPATH=. uv run --project environments/p1 --frozen python -m proyecto_mibici.dataset procesar-datos
+uv run --frozen python -m proyecto_mibici.dataset procesar-datos
 ```
 
 | Etapa | Procedimiento común | Salida o justificación |
@@ -429,7 +429,7 @@ El estado aprendido —por ejemplo, escaladores, umbrales del proxy y centroides
 #### Contrato de ejecución y trazabilidad con MLflow Projects
 
 1. **Entradas explícitas:** el `MLproject` declarará los entry points `ingesta`, `features` y `experimento`, sus parámetros tipados y las salidas esperadas. Las fechas, cortes temporales, rutas, semilla y selección de pregunta/modelo se resolverán desde la configuración central y sus overrides explícitos, sin repetir valores por defecto en varios archivos.
-2. **Entorno y código identificables:** ejecutar desde un commit versionado y limpio, usando el entorno bloqueado. Conservar la revisión Git y la huella del archivo de bloqueo junto con la configuración efectiva de la ejecución.
+2. **Entorno y código identificables:** usar el entorno bloqueado y conservar la revisión Git, la huella del archivo de bloqueo y la configuración efectiva. Se recomienda ejecutar sobre código committed; si existen cambios pendientes, registrar ese estado y adjuntar una copia exacta de los fuentes con su huella, sin presentar HEAD como si incluyera esos cambios.
 3. **Datos verificables:** validar el manifiesto antes de generar features o entrenar y transmitir su `data_version`. Si los archivos no corresponden a la versión solicitada, detener la ejecución; no sustituirla silenciosamente por una descarga distinta.
 4. **Runs organizados:** usar un único experimento `mibici-equipo25`. La ejecución del entry point `experimento` actuará como run padre y cada combinación de pregunta y baseline/candidato tendrá un run hijo con nombre descriptivo. Se reutilizará el contexto de run proporcionado por Projects para mantener la relación entre ejecución y resultados, sin crear padres desconectados.
 5. **Registro completo:** en cada run de modelo, registrar rango, partición, semilla, versión de datos, modelo e hiperparámetros; métricas con prefijo del conjunto —por ejemplo, `validation_mae`, `test_f1_macro` o `test_silhouette`—; etiquetas de equipo, pregunta y commit; y al menos un artefacto agregado pertinente. La elección de modelos seguirá las reglas temporales de los puntos 2–4.
@@ -439,19 +439,66 @@ El estado aprendido —por ejemplo, escaladores, umbrales del proxy y centroides
 
 ### 6. Ejecutar el experimento base en MLflow
 
-**Estado: completado.** El comando reproducible `PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.modeling.experiment_baselines` ejecuta los baselines de P1, P2 y P3 desde el código del repositorio y los registra en el experimento `mibici-equipo25`. Usa el entorno fijado para P1, con MLflow `2.21.3`, y una única base SQLite en `mlruns/mibici-equipo25/tracking.db`. Los archivos de datos y artefactos se mantienen localmente y están excluidos de Git.
+**Estado: ejecutado y verificado el 21 de octubre de 2026 con MLflow 3.17.2**, la última versión estable publicada en PyPI al momento de la actualización. Se implementaron los tres baselines definidos en el punto 4 y se ejecutaron desde el código del repositorio mediante MLflow Projects. La ejecución documentada en `mibici-equipo25` tiene un run padre y tres hijos, uno por pregunta, todos con estado `FINISHED`. Se migró la base SQLite con respaldo previo y se conservó la ejecución anterior de estos mismos baselines; las métricas no cambiaron. En esta etapa no se ejecutaron modelos candidatos.
 
-El ejecutor proyecta desde `data/processed/raw_data.parquet` solo los campos de viaje necesarios para P1/P2; no copia el identificador de usuario, género ni año de nacimiento a los datos de modelado. La proyección generada contiene 13,621,885 viajes de octubre de 2023 a septiembre de 2026. P3 lee por lotes solo sus cinco campos operativos. Los runs registran `data_version=5e95734e844b`, el rango de fechas, las particiones, los parámetros del modelo, las métricas, al menos un artefacto y tags `team`, `question` y `git_commit` (`23f2eda`). P3 incluye además el hash del Parquet y la huella de los módulos usados. Los tags `git_worktree_dirty=true` señalan que las corridas se ejecutaron con cambios locales todavía sin commit; las versiones exactas de esos archivos no están representadas por el hash del commit.
+#### Base común y ejecución reproducible
 
-| Pregunta | Run (ID) | Resultados de validación y prueba |
-| --- | --- | --- |
-| P1 | Baseline `P1-baseline-2023-10-2026-09` (`730e61d3df5544709aa27ce8b7ed6067`); candidato `P1-candidate-2023-10-2026-09` (`29797ac3fde54a36951fad425a37883a`). | `DummyRegressor` vs. `HistGradientBoostingRegressor`. En prueba, el candidato mejora MAE de 1.5905 a 0.8457, RMSE de 2.5203 a 1.5984 y WAPE de 1.2661 a 0.6732. La misma dirección se observa en validación. El candidato supera esta referencia inicial, aunque todavía debe evaluarse con otros criterios y contra variaciones temporales. |
-| P2 | Baseline `P2-baseline-2023-10-2026-09` (`663b180da45244a8b2a77579326d5d2a`); candidato `P2-candidate-2023-10-2026-09` (`0ae4213f5074464294d269872038d323`). | `DummyClassifier` vs. `HistGradientBoostingClassifier`. En prueba, la exactitud balanceada mejora de 0.3333 a 0.6927 y macro-F1 de 0.3207 a 0.4320. El candidato obtiene recall 0.6949 para `balanced`, 0.6716 para `bike_pressure` y 0.7117 para `dock_pressure`; el baseline solo detecta la clase mayoritaria. Sigue siendo una etiqueta proxy de flujo, no inventario observado. |
-| P3 | `p3-baseline-weekend-median` (`53061616b92d4b2d933cda33cbcd73ec`) | Mediana de proporción de actividad de fin de semana en entrenamiento: 0.1995. Silhouette: 0.0366 en validación (367 estaciones; grupos 177/190) y 0.0421 en prueba (471 estaciones; grupos 167/304). Entrenamiento: 371 estaciones; grupos 186/185. Artefacto `figures/p3-baseline-weekend-share.png`. |
+La ingesta completa procesó **36 meses, octubre de 2023–septiembre de 2026**: 13,621,885 registros de entrada y **13,621,127 viajes limpios**, tras retirar 758 registros duplicados del archivo de septiembre de 2026. La versión resultante es **`09a6a584dd5d`**, registrada en el [manifiesto](../../data/data_manifest.json). Los tres baselines leen exclusivamente los Parquet comunes de viajes y estaciones producidos por la ingesta.
 
-La WAPE de P1 mayor que 1 significa que el error absoluto total de este baseline supera la demanda real agregada; el promedio global sirve como punto de comparación, pero no es un pronóstico operacional satisfactorio. Para P2, aunque el candidato mejora estas métricas, queda pendiente validar el proxy frente a eventos reales de disponibilidad. Para P3, los valores de silhouette cercanos a cero indican poca separación de los grupos en los perfiles medidos y no prueban la existencia de tipos naturales de estación. Los resultados de P1/P2 son una primera comparación de candidatos contra sus baselines, no una selección definitiva ni evidencia de utilidad operacional por sí solos.
+Se utilizó el entorno único bloqueado de [pyproject.toml](../../pyproject.toml) y [uv.lock](../../uv.lock), con Python 3.13.2, MLflow 3.17.2 y semilla 42. La partición es la misma para las tres preguntas: entrenamiento octubre de 2023–junio de 2025, validación julio–septiembre de 2025 y prueba octubre de 2025–septiembre de 2026.
 
-La base se consulta con `PYTHONPATH=. uv run --project environments/p1 mlflow ui --backend-store-uri sqlite:///mlruns/mibici-equipo25/tracking.db`. Para registrar los candidatos P1/P2 que se compararán con esos baselines, se ejecuta `PYTHONPATH=. uv run --project environments/p1 python -m proyecto_mibici.modeling.experiment_baselines --candidates-only`; este modo conserva la misma base, versión de datos y particiones, y no vuelve a crear runs P3. Para P1/P2 los cortes son entrenamiento hasta 2026-04-01, validación hasta 2026-07-01 y prueba hasta 2026-10-01; P3 conserva su propia partición temporal documentada en el run. Por ello, las métricas de una pregunta no deben compararse directamente con las de otra.
+Desde la raíz del repositorio:
+
+```bash
+uv sync --frozen
+uv run --frozen python -m proyecto_mibici.dataset procesar-datos
+uv run --frozen python -m proyecto_mibici.experiments ejecutar-proyecto
+uv run --frozen python -m proyecto_mibici.experiments verificar-experimento
+```
+
+[MLproject](../../MLproject) declara `main`/`experimento`, `ingesta` y `features`. [ProyectoMiBici](../../proyecto_mibici/experiments.py:65) coordina el repositorio común, los pipelines y el registro; [RegistroExperimentos](../../proyecto_mibici/tracking.py:63) reutiliza el contexto padre de Projects y crea los tres hijos. Las ejecuciones usan `env_manager=local`, pero cada entry point invoca `uv run --frozen`, no el entorno global del sistema.
+
+**Cobertura implementada:** para considerar una hora analíticamente cubierta se exigen los archivos mensuales del rango y al menos un evento observado en las **168 horas previas completas** de la estación. Se excluye el arranque sin historial suficiente y no se usa actividad futura ni presencia en el catálogo para admitir horas pasadas. Esta regla permite ceros analíticos tras actividad reciente, pero no demuestra actividad operacional continua ni ausencia de fallos de publicación. P1 exige además que la hora de referencia semanal tuviera cobertura; P2 excluye estaciones sin capacidad de referencia utilizable. P3 requiere exposición en las 168 franjas semanales y actividad positiva para formar un perfil, evitando imputar cero en franjas desconocidas.
+
+#### Runs y resultados obtenidos
+
+Run padre: **`baselines-2023-10-2026-09`**, ID `f28b2cbddb444afcb5fbbd4d40d56232`.
+
+| Pregunta y baseline | Nombre e ID del run | Validación | Prueba |
+| --- | --- | --- | --- |
+| **P1:** persistencia semanal, rezago 168 h. | `P1-baseline-2023-10-2026-09` — `deee50802abe4f23a99360107a8724e2` | MAE **0.989610**; RMSE **1.932962**; error medio firmado **−0.008497**; 810,070 horas evaluadas. | MAE **0.988442**; RMSE **1.963652**; error medio firmado **−0.009098**; 3,409,921 horas evaluadas. |
+| **P2:** `DummyClassifier(strategy="most_frequent")`. | `P2-baseline-2023-10-2026-09` — `30d1955a115e4cfab0241f53d8b79f93` | F1 macro **0.096895**; 810,203 horas evaluadas. | F1 macro **0.100259**; 3,429,357 horas evaluadas; frecuencia de alertas altas **0**. |
+| **P3:** mediana de proporción de actividad de fin de semana. | `P3-baseline-2023-10-2026-09` — `dd3c3395baa146d8b63828f248f66083` | Silhouette **0.036582**; ARI frente a entrenamiento **0.444139**, sobre 367 estaciones comunes. Grupos: 177/190. | Silhouette **0.053999**; ARI frente a entrenamiento **0.397156**, sobre 369 estaciones comunes. Grupos: 165/306; 471 estaciones con perfil. |
+
+- **P1:** el error absoluto medio es aproximadamente un viaje por estación-hora; el error firmado ligeramente negativo indica una leve subestimación agregada. Esto establece una referencia, no un pronóstico operacional aprobado.
+- **P2:** los percentiles de entrenamiento quedaron en `q75=0.08695652` y `q90=0.18181818`; se mantuvieron fijos posteriormente. La clase mayoritaria fue `sin_presion_neta`, por lo que el baseline no detecta presión alta. Se registraron soporte, matriz de confusión y recall/precisión por clase cuando están definidos. El F1 macro promedia las siete clases fijas con `zero_division=0`; una precisión o recall sin denominador se omite y se acompaña de su soporte, no se presenta como una medición válida. Los resultados corresponden al proxy, no a inventario ni faltantes reales.
+- **P3:** la mediana aprendida fue **0.19937798**, con 371 estaciones de entrenamiento y grupos 186/185. Se mantuvo fija al asignar validación y prueba. Silhouette cercano a cero indica separación débil de esta regla sencilla; ARI describe concordancia temporal de las estaciones comunes, no exactitud ni beneficio urbano demostrado. Las distancias son euclídeas, calculadas como distancias precalculadas para evitar una ruta de producto matricial con avisos aritméticos del entorno.
+
+#### Parámetros, etiquetas y artefactos registrados
+
+Cada hijo conserva rango, cortes temporales, política de cobertura, semilla, versión y hash de base, versiones de librerías, modelo e hiperparámetros. Las métricas distinguen `train_`, `validation_` y `test_`, por ejemplo `test_mae`, `test_f1_macro` y `test_silhouette`.
+
+Las etiquetas incluyen `team=25`, `question=P1/P2/P3` y `git_commit=6c47a3b38a7b0e8ba9cdb204e1e9d4ddeeae502b`. Como se trabajó sin crear commits, también se registraron **`git_worktree_dirty=true`** y la huella de fuentes **`28449d79216fdcd5a793abbf827adc290dc32965ed14b1054cf9a9aacde26e44`**. El commit no representa por sí solo los cambios pendientes: cada run adjunta `reproducibilidad/codigo_ejecutado.zip`, con el código exacto, el proyecto y el entorno bloqueado, además del manifiesto.
+
+| Pregunta | Ejemplos de artefactos en `resultados/` |
+| --- | --- |
+| P1 | `p1_perfil_observado_vs_baseline.png` y `errores_por_estacion.csv`: comparación agregada y errores por estación/conjunto. |
+| P2 | `p2_test_matriz_confusion.png`, matrices CSV y `distribucion_clases.csv`: aciertos, confusiones y soporte del proxy. |
+| P3 | `p3_proporcion_fin_semana.png`, `asignaciones_por_periodo.csv`, `perfiles_medios_grupos.csv` y `cobertura_perfiles.csv`. |
+
+Cada hijo incluye además `resumen_run.json`; el padre conserva `resumen_experimento.json`. Son artefactos agregados y metadatos, sin identificadores de usuario ni viajes individuales. El almacenamiento es local: backend SQLite en `mlruns/mibici-equipo25/tracking.db` y artefactos en `mlartifacts/mibici-equipo25/`, excluidos de Git.
+
+**Verificación:** 35 pruebas automatizadas aprobadas, incluidas pruebas temporales de P3, causalidad de features y ejecución real de Projects sobre datos sintéticos aislados. Después se ejecutó el rango completo y `verificar-experimento` comprobó los tres hijos terminados, parámetros, etiquetas, métricas de prueba y PNG registrados. El historial de sesiones anteriores se eliminó según lo solicitado; el comando normal de ejecución no borra historial y añade runs cuando se repite.
+
+Para consultar la interfaz:
+
+```bash
+uv run --frozen mlflow ui \
+  --backend-store-uri sqlite:///mlruns/mibici-equipo25/tracking.db \
+  --host 127.0.0.1 --port 5000
+```
+
+En el experimento `mibici-equipo25`, expandir el run padre para ver P1, P2 y P3. Las capturas de evidencia se abordarán en el punto 7.
 
 ### 7. Capturar la evidencia
 

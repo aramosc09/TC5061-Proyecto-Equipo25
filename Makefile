@@ -2,9 +2,7 @@
 # GLOBALS                                                                       #
 #################################################################################
 
-PROJECT_NAME = TC5061-Proyecto-Equipo25
-PYTHON_VERSION = 3.13.16
-PYTHON_INTERPRETER = python
+PYTHON_INTERPRETER = uv run --frozen python
 
 #################################################################################
 # COMMANDS                                                                      #
@@ -14,7 +12,7 @@ PYTHON_INTERPRETER = python
 ## Install Python dependencies
 .PHONY: requirements
 requirements:
-	pip install -e .
+	uv sync --frozen
 	
 
 
@@ -29,28 +27,26 @@ clean:
 ## Lint using ruff (use `make format` to do formatting)
 .PHONY: lint
 lint:
-	ruff format --check
-	ruff check
+	uv run --frozen ruff check proyecto_mibici tests
 
 ## Format source code with ruff
 .PHONY: format
 format:
-	ruff check --fix
-	ruff format
+	uv run --frozen ruff check proyecto_mibici tests --fix
+	uv run --frozen ruff format proyecto_mibici tests
 
 
 
 ## Run tests
 .PHONY: test
 test:
-	python -m pytest tests
+	$(PYTHON_INTERPRETER) -m pytest tests
 
 
 ## Set up Python interpreter environment
 .PHONY: create_environment
 create_environment:
-	@bash -c "if [ ! -z `which virtualenvwrapper.sh` ]; then source `which virtualenvwrapper.sh`; mkvirtualenv $(PROJECT_NAME) --python=$(PYTHON_INTERPRETER); else mkvirtualenv.bat $(PROJECT_NAME) --python=$(PYTHON_INTERPRETER); fi"
-	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
+	uv sync --frozen
 	
 
 
@@ -63,7 +59,22 @@ create_environment:
 ## Make dataset
 .PHONY: data
 data: requirements
-	$(PYTHON_INTERPRETER) proyecto_mibici/dataset.py
+	$(PYTHON_INTERPRETER) -m proyecto_mibici.dataset procesar-datos
+
+## Build shared station-hour features
+.PHONY: features
+features:
+	$(PYTHON_INTERPRETER) -m proyecto_mibici.experiments features
+
+## Run all three baselines through MLflow Projects
+.PHONY: experiment
+experiment:
+	$(PYTHON_INTERPRETER) -m proyecto_mibici.experiments ejecutar-proyecto
+
+## Verify recorded runs and artifacts
+.PHONY: verify
+verify:
+	$(PYTHON_INTERPRETER) -m proyecto_mibici.experiments verificar-experimento
 
 
 #################################################################################

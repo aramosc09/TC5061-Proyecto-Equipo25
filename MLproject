@@ -1,0 +1,30 @@
+name: mibici-equipo25
+
+entry_points:
+  main:
+    parameters: &common_parameters
+      root: {type: path, default: "."}
+      start_month: {type: string, default: "default"}
+      end_month: {type: string, default: "default"}
+      train_end: {type: string, default: "default"}
+      validation_end: {type: string, default: "default"}
+      seed: {type: int, default: -1}
+    command: &experiment_command >-
+      uv run --frozen python -m proyecto_mibici.experiments experimento
+      --root "{root}" --start-month "{start_month}" --end-month "{end_month}"
+      --train-end "{train_end}" --validation-end "{validation_end}" --seed {seed}
+  experimento:
+    parameters: *common_parameters
+    command: *experiment_command
+  features:
+    parameters: *common_parameters
+    command: >-
+      uv run --frozen python -m proyecto_mibici.experiments features
+      --root "{root}" --start-month "{start_month}" --end-month "{end_month}"
+      --train-end "{train_end}" --validation-end "{validation_end}" --seed {seed}
+  ingesta:
+    parameters: *common_parameters
+    command: >-
+      uv run --frozen python -m proyecto_mibici.experiments ingesta
+      --root "{root}" --start-month "{start_month}" --end-month "{end_month}"
+      --train-end "{train_end}" --validation-end "{validation_end}" --seed {seed}

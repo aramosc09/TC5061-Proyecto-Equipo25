@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "proyecto_mibici"
 version = "0.0.1"
-description = "A short description of the project."
+description = "Ingesta reproducible y baselines de demanda, presión de flujo y perfiles de estaciones MiBici."
 authors = [
   { name = "equipo25" },
 ]
@@ -16,26 +16,33 @@ classifiers = [
     "License :: OSI Approved :: MIT License"
 ]
 dependencies = [
-    "ipython",
-    "jupyterlab",
-    "loguru",
-    "matplotlib",
-    "mlflow==3.17.1",
-    "mkdocs",
-    "notebook",
-    "numpy",
-    "pandas",
-    "pyarrow==19.0.0",
-    "pip",
-    "pytest",
-    "python-dotenv",
-    "ruff",
-    "seaborn",
-    "scikit-learn",
-    "tqdm",
-    "typer",
+    "click==8.1.8",
+    "loguru==0.7.3",
+    "matplotlib==3.10.1",
+    "mlflow==3.17.2",
+    "numpy==2.2.3",
+    "pandas==2.2.3",
+    "pyarrow==19.0.1",
+    "python-dotenv==1.0.1",
+    "scikit-learn==1.6.1",
+    "sqlalchemy==2.0.40",
+    "tqdm==4.67.1",
+    "typer==0.15.2",
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.13,<3.14"
+
+[project.optional-dependencies]
+notebooks = ["ipython==9.0.2", "jupyterlab==4.4.0", "seaborn==0.13.2"]
+docs = ["mkdocs==1.6.1"]
+
+[dependency-groups]
+dev = ["pytest==8.3.5", "ruff==0.11.2"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 
 [tool.ruff]
