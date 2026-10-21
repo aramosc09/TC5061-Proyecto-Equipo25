@@ -1,0 +1,38 @@
+flowchart TD
+    FUENTE["MiBici Datos Abiertos<br/>CSV mensuales y nomenclatura"]
+    VERSION["Git + configuración centralizada<br/>Código, manifiesto y entorno uv bloqueado"]
+    PROJECTS["MLflow Projects - MLproject<br/>Entradas: ingesta, features, experimento<br/>Coordinación: ProyectoMiBici"]
+    DESCARGA["IngestorMiBici - descarga HTTP<br/>Python / urllib"]
+    RAW["CSV originales locales<br/>data/raw/"]
+    LIMPIEZA["IngestorMiBici - normalización y limpieza<br/>pandas / PyArrow<br/>SQLite temporal para deduplicar"]
+    BASE["Base común - Parquet<br/>Viajes limpios y catálogo<br/>data/interim/"]
+    MANIFIESTO["DataManifest - JSON y SHA-256<br/>Fuentes, filas, reglas y data_version"]
+    F1["PipelineP1 - variables<br/>Calendario y flujos históricos"]
+    F2["PipelineP2 - variables y proxy<br/>Historial, balances y capacidad de referencia"]
+    F3["PipelineP3 - perfiles<br/>336 componentes semanales normalizadas"]
+    M1["P1 - scikit-learn<br/>Persistencia semanal / Poisson"]
+    M2["P2 - scikit-learn<br/>Clase mayoritaria / Logística multiclase"]
+    M3["P3 - scikit-learn<br/>Regla de fin de semana / KMeans"]
+    EVAL["Evaluación temporal por pregunta<br/>Entrenar, seleccionar con validación<br/>y evaluar en prueba"]
+    TRACKING["RegistroExperimentos - MLflow Tracking<br/>Experimento: mibici-equipo25"]
+    SQL["Backend local SQLite<br/>Parámetros, métricas y etiquetas<br/>mlruns/"]
+    ART["Almacén local de artefactos<br/>Gráficas, perfiles y mapas agregados<br/>mlartifacts/"]
+    UI["MLflow UI<br/>Consulta y comparación de runs"]
+
+    FUENTE --> DESCARGA --> RAW --> LIMPIEZA --> BASE
+    LIMPIEZA --> MANIFIESTO
+    VERSION --> PROJECTS
+    PROJECTS -. coordina .-> DESCARGA
+    PROJECTS -. coordina .-> F1
+    PROJECTS -. coordina .-> F2
+    PROJECTS -. coordina .-> F3
+    BASE --> F1 --> M1 --> EVAL
+    BASE --> F2 --> M2 --> EVAL
+    BASE --> F3 --> M3 --> EVAL
+    EVAL --> TRACKING
+    MANIFIESTO -->|data_version y trazabilidad| TRACKING
+    VERSION -->|commit y configuración de ejecución| TRACKING
+    TRACKING --> SQL
+    TRACKING --> ART
+    SQL --> UI
+    ART --> UI
