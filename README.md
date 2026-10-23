@@ -216,3 +216,4 @@ La configuración de protección de `main`, las revisiones requeridas y la evide
 - [ML Canvas](references/ml_canvas_mibici.pdf).
 - [Arquitectura propuesta — fuente Mermaid](references/arquitectura_propuesta_mibici.mmd).
 - [Auditoría reproducible de tamaño de datos](notebooks/1.3-ARC-verificacion-datos-punto2.ipynb).
+- [Exploración y decisiones de feature engineering](notebooks/1.5-eq25-exploracion-feature-engineering.ipynb).

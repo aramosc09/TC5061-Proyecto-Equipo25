@@ -8,51 +8,18 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import adjusted_rand_score, pairwise_distances, silhouette_score
 
+from proyecto_mibici.features import (
+    PROFILE_COLUMNS,
+    construir_perfil_semanal,
+    proporcion_fin_semana,
+)
 from proyecto_mibici.modeling.base import BaselineResult, PipelinePregunta
 
 matplotlib.use("Agg")
 
-DAYS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
-PROFILE_COLUMNS = [
-    f"{direction}_{day}_h{hour:02d}"
-    for direction in ("salidas", "llegadas")
-    for day in DAYS
-    for hour in range(24)
-]
-WEEKEND_MASK = np.tile(np.repeat(np.arange(7) >= 5, 24), 2)
-
-
-def perfil_estacion(hours: pd.DataFrame) -> tuple[pd.Series | None, dict]:
-    """Divide eventos entre horas elegibles por franja y normaliza las 336 tasas.
-
-    Una franja sin exposición es desconocida, no cero uso: se excluye el perfil
-    si falta alguna de las 168 franjas semanales o no hay actividad. Los conteos
-    cero sí son válidos en franjas con exposición analítica documentada.
-    """
-    eligible = hours.loc[hours.elegible]
-    slots = eligible.index.dayofweek * 24 + eligible.index.hour
-    exposure = np.bincount(slots, minlength=168)
-    audit = {
-        "horas_elegibles": len(eligible),
-        "franjas_cubiertas": int((exposure > 0).sum()),
-        "eventos": int(eligible[["salidas", "llegadas"]].to_numpy().sum()),
-    }
-    if not (exposure > 0).all():
-        return None, {**audit, "estado": "cobertura_semanal_incompleta"}
-    if audit["eventos"] == 0:
-        return None, {**audit, "estado": "sin_actividad"}
-    rates = np.concatenate(
-        [
-            np.bincount(slots, weights=eligible[direction], minlength=168) / exposure
-            for direction in ("salidas", "llegadas")
-        ]
-    )
-    return pd.Series(rates / rates.sum(), index=PROFILE_COLUMNS), {**audit, "estado": "incluida"}
-
-
-def weekend_shares(profiles: pd.DataFrame) -> pd.Series:
-    """Suma la actividad relativa de sábado/domingo en ambas direcciones."""
-    return profiles.loc[:, np.asarray(PROFILE_COLUMNS)[WEEKEND_MASK]].sum(axis=1)
+# Alias de compatibilidad para consumidores previos del módulo de P3.
+perfil_estacion = construir_perfil_semanal
+weekend_shares = proporcion_fin_semana
 
 
 def silhouette_euclidea(profiles: pd.DataFrame, labels: pd.Series) -> float:

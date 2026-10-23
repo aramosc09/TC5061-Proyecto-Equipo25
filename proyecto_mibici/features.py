@@ -60,23 +60,46 @@ def agregar_eventos_horarios(trips: pd.DataFrame, start, end) -> pd.DataFrame:
     return combined.loc[:, HOUR_SCHEMA.names]
 
 
-def construir_variables_horarias(hours: pd.DataFrame) -> pd.DataFrame:
-    """Construye calendario y resúmenes estrictamente anteriores a la hora objetivo.
+DAYS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
+PROFILE_COLUMNS = [
+    f"{direction}_{day}_h{hour:02d}"
+    for direction in ("salidas", "llegadas")
+    for day in DAYS
+    for hour in range(24)
+]
+WEEKEND_MASK = np.tile(np.repeat(np.arange(7) >= 5, 24), 2)
 
-    El calendario describe rutinas diarias/semanales. Rezagos de 1/3/24/168 h y
-    medias de 3/24/168 h captan persistencia y recurrencia sin leer la hora futura.
-    Los balances describen flujo, nunca inventario de bicicletas.
+
+def construir_features_calendario(index: pd.DatetimeIndex) -> pd.DataFrame:
+    """Codifica el calendario conocido para P1 y P2 sin consultar viajes.
+
+    Los pares seno/coseno preservan la continuidad entre el final e inicio de
+    hora y semana; fin de semana y mes representan rutinas previsibles al
+    momento de predecir la siguiente hora.
     """
-    features = pd.DataFrame(index=hours.index)
+    features = pd.DataFrame(index=index)
     for name, values, period in (
-        ("hora", hours.index.hour, 24),
-        ("dia_semana", hours.index.dayofweek, 7),
+        ("hora", index.hour, 24),
+        ("dia_semana", index.dayofweek, 7),
     ):
         features[f"{name}_sin"] = np.sin(2 * np.pi * values / period)
         features[f"{name}_cos"] = np.cos(2 * np.pi * values / period)
-    features["fin_semana"] = hours.index.dayofweek >= 5
-    features["mes"] = hours.index.month
-    coverage = hours.get("elegible", pd.Series(True, index=hours.index))
+    features["fin_semana"] = index.dayofweek >= 5
+    features["mes"] = index.month
+    return features
+
+
+def construir_features_flujo_historico(hours: pd.DataFrame) -> pd.DataFrame:
+    """Resume flujos anteriores para P1 y P2 sin tratar historia desconocida como cero.
+
+    Los rezagos captan persistencia reciente y semanal; las medias suavizan la
+    variabilidad y los balances describen dirección neta de flujo para el
+    proxy de P2. Todas las columnas se desplazan al menos una hora y exigen
+    cobertura elegible previa, por lo que no incorporan la hora objetivo ni el
+    futuro. El balance no representa inventario de bicicletas.
+    """
+    coverage = hours.get("elegible", pd.Series(True, index=hours.index)).astype(bool)
+    features = pd.DataFrame(index=hours.index)
     for direction in ("salidas", "llegadas"):
         for lag in FEATURE_LAGS:
             features[f"{direction}_lag_{lag}"] = (
@@ -89,6 +112,60 @@ def construir_variables_horarias(hours: pd.DataFrame) -> pd.DataFrame:
     for window in BALANCE_WINDOWS:
         features[f"balance_acumulado_{window}"] = balance.rolling(window).sum()
     return features
+
+
+def construir_variables_horarias(hours: pd.DataFrame) -> pd.DataFrame:
+    """Une las variables de calendario e historial causal para P1 y P2.
+
+    La fila indexada por una hora contiene solo información disponible antes de
+    esa hora. Así puede alinearse con el objetivo de la siguiente hora sin fuga
+    temporal; los nulos señalan historial insuficiente y deben excluirse, no
+    imputarse como ceros.
+    """
+    return pd.concat(
+        [construir_features_calendario(hours.index), construir_features_flujo_historico(hours)],
+        axis=1,
+    )
+
+
+def construir_perfil_semanal(hours: pd.DataFrame) -> tuple[pd.Series | None, dict]:
+    """Construye el perfil P3 de 336 tasas semanales con exposición observada.
+
+    Para cada franja día-hora divide salidas y llegadas entre horas elegibles y
+    normaliza el vector conjunto a uno. La corrección por exposición evita que
+    ausencias de cobertura parezcan poco uso; una franja sin exposición queda
+    como desconocida y excluye la estación, en vez de imputarse como cero.
+    P3 es descriptiva: usa solo la ventana temporal que se está perfilando.
+    """
+    eligible = hours.loc[hours.elegible]
+    slots = eligible.index.dayofweek * 24 + eligible.index.hour
+    exposure = np.bincount(slots, minlength=168)
+    audit = {
+        "horas_elegibles": len(eligible),
+        "franjas_cubiertas": int((exposure > 0).sum()),
+        "eventos": int(eligible[["salidas", "llegadas"]].to_numpy().sum()),
+    }
+    if not (exposure > 0).all():
+        return None, {**audit, "estado": "cobertura_semanal_incompleta"}
+    if audit["eventos"] == 0:
+        return None, {**audit, "estado": "sin_actividad"}
+    rates = np.concatenate(
+        [
+            np.bincount(slots, weights=eligible[direction], minlength=168) / exposure
+            for direction in ("salidas", "llegadas")
+        ]
+    )
+    return pd.Series(rates / rates.sum(), index=PROFILE_COLUMNS), {**audit, "estado": "incluida"}
+
+
+def proporcion_fin_semana(profiles: pd.DataFrame) -> pd.Series:
+    """Calcula la proporción P3 de actividad relativa en sábado y domingo.
+
+    Resume perfiles ya normalizados para el baseline descriptivo. No usa
+    coordenadas, capacidad ni volumen bruto, por lo que compara la forma
+    temporal del uso entre estaciones.
+    """
+    return profiles.loc[:, np.asarray(PROFILE_COLUMNS)[WEEKEND_MASK]].sum(axis=1)
 
 
 class RepositorioParquet:
