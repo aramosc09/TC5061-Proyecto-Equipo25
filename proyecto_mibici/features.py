@@ -97,6 +97,7 @@ def construir_features_flujo_historico(hours: pd.DataFrame) -> pd.DataFrame:
     proxy de P2. Todas las columnas se desplazan al menos una hora y exigen
     cobertura elegible previa, por lo que no incorporan la hora objetivo ni el
     futuro. El balance no representa inventario de bicicletas.
+    
     """
     coverage = hours.get("elegible", pd.Series(True, index=hours.index)).astype(bool)
     features = pd.DataFrame(index=hours.index)
