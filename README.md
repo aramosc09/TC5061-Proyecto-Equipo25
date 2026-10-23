@@ -11,20 +11,26 @@ Desde la raíz del repositorio, con `uv` instalado. El entorno actual usa **MLfl
 uv sync --frozen
 uv run --frozen mlflow --version
 
-# 2. Descargar los CSV faltantes y construir la base limpia de 36 meses.
+# 2. En una primera terminal, iniciar Tracking, UI y Model Registry locales.
+uv run --frozen mlflow server \
+  --backend-store-uri sqlite:///mlflow.db \
+  --artifacts-destination "file://$PWD/mlartifacts" \
+  --host 127.0.0.1 --port 5000
+
+# 3. En otra terminal, usar el servidor para las ejecuciones posteriores.
+export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
+
+# 4. Descargar los CSV faltantes y construir la base limpia de 36 meses.
 uv run --frozen python -m proyecto_mibici.dataset procesar-datos
 
-# 3. Ejecutar P1, P2 y P3 mediante MLflow Projects y registrar los resultados.
+# 5. Ejecutar P1, P2 y P3 mediante MLflow Projects y registrar los resultados.
 uv run --frozen python -m proyecto_mibici.experiments ejecutar-proyecto
 
-# 4. Comprobar que los tres runs y sus artefactos estén completos.
+# 6. Comprobar que los tres runs y sus artefactos estén completos.
 uv run --frozen python -m proyecto_mibici.experiments verificar-experimento
-
-# 5. Abrir la interfaz; mantener esta terminal abierta.
-uv run --frozen mlflow ui --backend-store-uri sqlite:///mlruns/mibici-equipo25/tracking.db --host 127.0.0.1 --port 5000
 ```
 
-La interfaz estará en <http://127.0.0.1:5000>, experimento **mibici-equipo25**. No hay que ejecutar notebooks, activar entornos manualmente ni lanzar un servidor antes del experimento. El comando de experimento exige la base de ingesta; no descarga datos por sí mismo. Repetirlo añade runs, no borra los existentes.
+La interfaz y API están en <http://127.0.0.1:5000>, incluido el experimento **mibici-equipo25** y el Model Registry. Mantener el servidor abierto mientras se ejecuta el proyecto. El comando de experimento exige la base de ingesta; no descarga datos por sí mismo. Repetirlo añade runs, no borra los existentes.
 
 **Qué ejecuta cada pieza:** `uv` restaura y usa las dependencias; [dataset.py](proyecto_mibici/dataset.py) obtiene y limpia datos; [experiments.py](proyecto_mibici/experiments.py) inicia el proyecto declarado en [MLproject](MLproject), prepara las horas y coordina los baselines; [tracking.py](proyecto_mibici/tracking.py) registra parámetros, métricas y artefactos. La UI solo permite consultar/comparar lo ya registrado: no ejecuta el pipeline. Los resultados agregados quedan en `reports/figures/baselines/` y los artefactos de MLflow en `mlartifacts/mibici-equipo25/`.
 
@@ -63,7 +69,9 @@ notebooks/                 # Exploración y auditoría; no ejecutan el experimen
 references/                # ML Canvas y diagrama de arquitectura
 reports/figures/baselines/  # Resultados agregados por run padre (locales)
 tests/                     # Pruebas de ingesta, causalidad, baselines y tracking
-MLproject                  # Entry points main, ingesta y features
+MLproject                  # Entry points ingest, train, main y features
+python_env.yaml            # Entorno virtual de MLflow Projects
+requirements.txt           # Dependencias runtime exactas, exportadas de uv.lock
 pyproject.toml             # Dependencias directas fijadas
 uv.lock                    # Entorno común y dependencias transitivas bloqueadas
 proyecto_mibici/
@@ -94,8 +102,34 @@ El entorno único usa Python 3.13.2 y **MLflow 3.17.2**, con versiones directas 
 
 **Decisión de versión:** se eligió [MLflow 3.17.2](https://pypi.org/project/mlflow/3.17.2/), la última versión estable publicada al 21 de octubre de 2026. La actualización se validó con **35 pruebas aprobadas**, ejecución de MLflow Projects y los tres baselines sobre la base completa. Sus métricas coinciden con las de la ejecución anterior: cambió el entorno de tracking, no los modelos ni los datos.
 
-**Migración de una instalación anterior:** en esta copia local ya se respaldó la base SQLite y se ejecutó la migración oficial con `mlflow db upgrade`. Se conservaron los runs existentes y se añadió una nueva ejecución con 3.17.2. No es necesario repetir la migración para usar esta copia. En otras instalaciones con una base antigua, detener primero la UI y cualquier escritor, realizar un respaldo mediante la API de backup de SQLite y ejecutar `uv run --frozen mlflow db upgrade sqlite:///mlruns/mibici-equipo25/tracking.db` antes de usarla. No abrir la base migrada con MLflow 2.x; una reversión requiere restaurar el respaldo. Desde un clon nuevo, los comandos de inicio rápido crean el almacenamiento sin necesitar una base previa.
+## MLflow Projects
 
+[MLproject](MLproject) declara el entorno [python_env.yaml](python_env.yaml), cuya lista exacta de dependencias runtime está en [requirements.txt](requirements.txt) y se exporta desde [uv.lock](uv.lock). Los valores de rango, rutas y semilla no se duplican en el descriptor: se resuelven desde [config.py](proyecto_mibici/config.py).
+
+Con el servidor local activo y `MLFLOW_TRACKING_URI=http://127.0.0.1:5000`, se pueden ejecutar los entry points mediante MLflow:
+
+```bash
+# Ingesta con los defaults centralizados en config.py.
+uv run --frozen mlflow run . -e ingest --env-manager uv \
+  --experiment-name mibici-equipo25
+
+# Baseline de una pregunta. Por ahora train admite únicamente model=baseline.
+uv run --frozen mlflow run . -e train --env-manager uv \
+  --experiment-name mibici-equipo25 \
+  -P question=p1 -P model=baseline -P hyperparameters='{}'
+```
+
+`train` acepta `question` (`p1`, `p2` o `p3`), `model` y `hyperparameters` como objeto JSON. Mientras se implementan los candidatos, solo se permite `baseline` y el objeto debe ser vacío para evitar parámetros sin efecto. Desde un clon limpio, después de la ingesta, reproduzcan el baseline elegido de cada pregunta con:
+
+```bash
+for question in p1 p2 p3; do
+  uv run --frozen mlflow run . -e train --env-manager uv \
+    --experiment-name mibici-equipo25 \
+    -P question="$question" -P model=baseline -P hyperparameters='{}'
+done
+```
+
+**Migración de una instalación anterior:** antes de migrar una base SQLite, detener el servidor y cualquier escritor, realizar un respaldo mediante la API de backup de SQLite y ejecutar `uv run --frozen mlflow db upgrade sqlite:///mlflow.db`. No abrir la base migrada con MLflow 2.x; una reversión requiere restaurar el respaldo. Desde un clon nuevo, los comandos de inicio rápido crean el almacenamiento sin necesitar una base previa.
 ```bash
 uv run --frozen python --version
 uv run --frozen python -m proyecto_mibici.experiments --help
@@ -127,14 +161,15 @@ La [propuesta de pipelines](docs/docs/propuestaSolucion.md) y los tres baselines
 
 ## Ejecutar los experimentos MLflow
 
-Después de la ingesta, este comando valida la base, genera/reutiliza la tabla horaria y ejecuta los tres baselines mediante **MLflow Projects**:
+Con el servidor local del inicio rápido activo y `MLFLOW_TRACKING_URI=http://127.0.0.1:5000`, este comando valida la base, genera/reutiliza la tabla horaria y ejecuta los tres baselines mediante **MLflow Projects**:
 
 ```bash
+export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
 uv run --frozen python -m proyecto_mibici.experiments ejecutar-proyecto
 uv run --frozen python -m proyecto_mibici.experiments verificar-experimento
 ```
 
-[MLproject](MLproject) declara los entry points `main`, `features` e `ingesta`. Projects usa `env_manager=local` y cada entry point ejecuta `uv run --frozen`: no depende de paquetes del Python global ni requiere Conda/Docker. El comando prepara primero el experimento `mibici-equipo25` y su almacén local, luego crea un run padre y tres hijos P1/P2/P3. Repetirlo añade otra ejecución; nunca borra runs automáticamente.
+[MLproject](MLproject) declara los entry points `ingest`, `train`, `main` y `features`. MLflow Projects usa `env_manager=uv` y [python_env.yaml](python_env.yaml), por lo que instala el entorno fijo sin depender de paquetes globales ni requerir Conda/Docker. El comando prepara primero el experimento `mibici-equipo25` en el servidor local y luego crea un run padre y tres hijos P1/P2/P3. Repetirlo añade otra ejecución; nunca borra runs automáticamente.
 
 | Pregunta | Baseline implementado | Métricas |
 |---|---|---|
@@ -154,15 +189,7 @@ Para generar solo las horas/features, sin registrar runs:
 uv run --frozen python -m proyecto_mibici.experiments features
 ```
 
-Para abrir la interfaz local:
-
-```bash
-uv run --frozen mlflow ui \
-  --backend-store-uri sqlite:///mlruns/mibici-equipo25/tracking.db \
-  --host 127.0.0.1 --port 5000
-```
-
-Visita <http://127.0.0.1:5000>, selecciona `mibici-equipo25` y expande los hijos del run padre. Los artefactos están en `resultados/` y `reproducibilidad/`. Para comparar repeticiones, selecciona runs de la misma pregunta y usa **Compare**; no interpretes los tres baselines de tareas distintas como modelos rivales.
+La interfaz ya es parte del servidor iniciado en el inicio rápido. Visita <http://127.0.0.1:5000>, selecciona `mibici-equipo25` y expande los hijos del run padre. Los artefactos están en `resultados/` y `reproducibilidad/`. Para comparar repeticiones, selecciona runs de la misma pregunta y usa **Compare**; no interpretes los tres baselines de tareas distintas como modelos rivales.
 
 ## Pruebas
 

@@ -73,7 +73,7 @@ def test_features_entrypoint_uses_locked_environment_and_common_input(tmp_path):
         mlflow.set_tracking_uri(previous)
 
 
-def test_full_project_records_three_new_baselines_on_synthetic_months(tmp_path):
+def test_full_project_records_three_new_baselines_on_synthetic_months(tmp_path, monkeypatch):
     raw = tmp_path / "data/raw"
     raw.mkdir(parents=True)
     records = []
@@ -123,7 +123,10 @@ def test_full_project_records_three_new_baselines_on_synthetic_months(tmp_path):
         sin_descarga=True,
     )
     previous = mlflow.get_tracking_uri()
+    tracking_uri = f"sqlite:///{tmp_path / 'tracking.db'}"
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", tracking_uri)
     try:
+        mlflow.set_tracking_uri(tracking_uri)
         submitted = ProyectoMiBici(config).execute_project()
         client = mlflow.tracking.MlflowClient()
         assert client.get_run(submitted.run_id).info.status == "FINISHED"

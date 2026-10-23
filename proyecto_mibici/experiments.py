@@ -81,13 +81,44 @@ class ProyectoMiBici:
             ],
         )
 
+    def train(self, question: str, model: str, hyperparameters: dict) -> dict:
+        """Ejecuta el baseline solicitado; los modelos candidatos se incorporarán después."""
+        if model != "baseline":
+            raise ValueError("Por ahora train solo admite model=baseline.")
+        if hyperparameters:
+            raise ValueError("El baseline no acepta hiperparámetros; use {}.")
+        from proyecto_mibici.modeling.p3_baseline import PipelineP3
+
+        pipelines = {
+            "p1": PipelineP1,
+            "p2": PipelineP2,
+            "p3": PipelineP3,
+        }
+        try:
+            pipeline = pipelines[question.lower()](self.config)
+        except KeyError as error:
+            raise ValueError("question debe ser p1, p2 o p3.") from error
+        self.repository.prepare()
+        return self.registry.run(
+            self.repository,
+            [pipeline],
+            parent_kind="baseline_training",
+            extra_parameters={
+                "requested_question": question.lower(),
+                "requested_model": model,
+                "requested_hyperparameters": json.dumps(
+                    hyperparameters, sort_keys=True, separators=(",", ":")
+                ),
+            },
+        )
+
     def execute_project(self):
         """Ejecuta MLproject reutilizando el entorno bloqueado, sin Conda ni Docker."""
         experiment_id = self.registry.configure()
         return mlflow.projects.run(
             uri=str(PROJ_ROOT),
             entry_point="main",
-            env_manager="local",
+            env_manager="uv",
             experiment_id=experiment_id,
             synchronous=True,
             parameters={
@@ -144,6 +175,24 @@ def experimento(
     logger.success("Baselines registrados: {}", report["parent_run_id"])
     for run in report["runs"]:
         logger.info("{}: {}", run["question"], run["run_id"])
+
+
+@app.command()
+def train(
+    question: str = "p1",
+    model: str = "baseline",
+    hyperparameters: str = "{}",
+):
+    """Entrena una pregunta mediante el contrato del entry point train de MLflow Project."""
+    try:
+        parsed_hyperparameters = json.loads(hyperparameters)
+    except json.JSONDecodeError as error:
+        raise typer.BadParameter("hyperparameters debe ser un objeto JSON válido.") from error
+    if not isinstance(parsed_hyperparameters, dict):
+        raise typer.BadParameter("hyperparameters debe ser un objeto JSON.")
+    report = ProyectoMiBici(ProjectConfig()).train(question, model, parsed_hyperparameters)
+    run = report["runs"][0]
+    logger.success("{} registrado: {}", run["question"], run["run_id"])
 
 
 @app.command()

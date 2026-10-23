@@ -17,7 +17,6 @@ from proyecto_mibici.config import (
     BASELINE_FIGURES_DIR,
     EXPERIMENT_NAME,
     PROJ_ROOT,
-    TRACKING_DATABASE,
     ProjectConfig,
 )
 from proyecto_mibici.dataset import calcular_sha256
@@ -41,7 +40,14 @@ class SourceSnapshot:
         files = sorted((self.root / "proyecto_mibici").rglob("*.py"))
         files += [
             self.root / name
-            for name in ("MLproject", "pyproject.toml", "uv.lock", ".python-version")
+            for name in (
+                "MLproject",
+                "python_env.yaml",
+                "requirements.txt",
+                "pyproject.toml",
+                "uv.lock",
+                ".python-version",
+            )
         ]
         fingerprint = hashlib.sha256()
         archive = directory / "codigo_ejecutado.zip"
@@ -68,7 +74,6 @@ class RegistroExperimentos:
 
     def configure(self) -> str:
         """Configura el único experimento antes de que MLflow Projects cree su run padre."""
-        self.config.path(TRACKING_DATABASE).parent.mkdir(parents=True, exist_ok=True)
         artifacts = self.config.path(ARTIFACTS_DIR)
         artifacts.mkdir(parents=True, exist_ok=True)
         mlflow.set_tracking_uri(self.config.tracking_uri)
@@ -79,7 +84,15 @@ class RegistroExperimentos:
             else mlflow.create_experiment(EXPERIMENT_NAME, artifact_location=artifacts.as_uri())
         )
 
-    def run(self, repository, pipelines) -> dict:
+    def run(
+        self,
+        repository,
+        pipelines,
+        *,
+        parent_kind: str = "baseline_suite",
+        extra_parameters: dict | None = None,
+    ) -> dict:
+        """Registra uno o varios pipelines bajo el run padre creado por MLflow Projects."""
         manifest = repository.verify_base()
         experiment_id = self.configure()
         project_run = os.environ.pop("MLFLOW_RUN_ID", None)
@@ -108,12 +121,13 @@ class RegistroExperimentos:
                 "base_sha256": manifest["salida"]["sha256"],
                 "source_tree_sha256": source["source_tree_sha256"],
                 "environment_lock_sha256": source["environment_lock_sha256"],
+                **(extra_parameters or {}),
             }
             mlflow.set_tags(
                 {
                     **tags,
                     "question": "ALL",
-                    "run_kind": "baseline_suite",
+                    "run_kind": parent_kind,
                     "mlflow.runName": f"baselines-{self.config.start_month}-{self.config.end_month}",
                 }
             )

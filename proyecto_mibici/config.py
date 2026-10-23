@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -54,7 +55,7 @@ EXPERIMENT_NAME = "mibici-equipo25"
 TRAIN_END = "2025-07-01"
 VALIDATION_END = "2025-10-01"
 HOURS_PARQUET_PATH = PROCESSED_DATA_DIR / "horas_estacion.parquet"
-TRACKING_DATABASE = PROJ_ROOT / "mlruns" / EXPERIMENT_NAME / "tracking.db"
+LOCAL_TRACKING_URI = "http://127.0.0.1:5000"
 ARTIFACTS_DIR = PROJ_ROOT / "mlartifacts" / EXPERIMENT_NAME
 BASELINE_FIGURES_DIR = FIGURES_DIR / "baselines"
 SUPERVISED_HORIZON_HOURS = 1
@@ -120,7 +121,8 @@ class ProjectConfig:
 
     @property
     def tracking_uri(self) -> str:
-        return f"sqlite:///{self.path(TRACKING_DATABASE).as_posix()}"
+        """URI del servidor MLflow; admite sustitución por entorno para pruebas aisladas."""
+        return os.getenv("MLFLOW_TRACKING_URI", LOCAL_TRACKING_URI)
 
     def validate(self) -> None:
         import pandas as pd
