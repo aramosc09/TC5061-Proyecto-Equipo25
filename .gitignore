@@ -242,6 +242,7 @@ cython_debug/
 # P1-specific generated output and local working files
 /reports/figures/p1/
 /reports/figures/baselines/
+/reports/figures/candidates/
 /tmp/
 *.db-shm
 *.db-wal
@@ -253,3 +254,9 @@ cython_debug/
 /proyecto_mibici/AGENTS.md
 /PROJECT_STATUS.md
 /SESSION_LOG.md
+
+# Archivos locales del equipo (no se versionan)
+/.claude/
+/Construye*.pdf
+/planExperimentacion.md
+/planExperimentacion.pdf

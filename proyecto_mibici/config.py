@@ -62,6 +62,107 @@ SUPERVISED_HORIZON_HOURS = 1
 FEATURE_LAGS = (1, 3, 24, 168)
 ROLLING_WINDOWS = (3, 24, 168)
 BALANCE_WINDOWS = (3, 24)
+WEEKLY_LAGS = (336, 504, 672)
+
+# Candidatos de la Entrega 2 y sus hiperparámetros por defecto.
+SUPERVISED_TABLE_PATH = PROCESSED_DATA_DIR / "tabla_supervisada.parquet"
+CANDIDATE_FIGURES_DIR = FIGURES_DIR / "candidates"
+# Filas de entrenamiento muestreadas con la semilla; 0 = todas.
+CANDIDATE_MAX_TRAIN_ROWS = 2_000_000
+SEARCH_MAX_TRAIN_ROWS = 500_000
+CANDIDATE_MODELS = {
+    "p1": {
+        "poisson": {"family": "glm_poisson", "defaults": {"alpha": 1e-4, "max_iter": 300}},
+        # Sin l2, la pérdida Poisson puede divergir con muchas iteraciones.
+        "hgb": {
+            "family": "gradient_boosting",
+            "defaults": {
+                "learning_rate": 0.1,
+                "max_iter": 200,
+                "max_leaf_nodes": 31,
+                "min_samples_leaf": 50,
+                "l2_regularization": 1.0,
+            },
+        },
+        "rf": {
+            "family": "random_forest",
+            "defaults": {
+                "n_estimators": 100,
+                "max_depth": 16,
+                "min_samples_leaf": 50,
+                "max_features": 0.5,
+                "max_samples": 0.25,
+            },
+        },
+    },
+    "p2": {
+        "logistic": {
+            "family": "glm_logistic",
+            "defaults": {"C": 1.0, "class_weight": "balanced", "max_iter": 300},
+        },
+        "hgb": {
+            "family": "gradient_boosting",
+            "defaults": {
+                "learning_rate": 0.1,
+                "max_iter": 200,
+                "max_leaf_nodes": 31,
+                "min_samples_leaf": 50,
+                "l2_regularization": 0.0,
+                "class_weight": "balanced",
+            },
+        },
+        "rf": {
+            "family": "random_forest",
+            "defaults": {
+                "n_estimators": 100,
+                "max_depth": 16,
+                "min_samples_leaf": 50,
+                "max_features": 0.5,
+                "max_samples": 0.25,
+                "class_weight": "balanced",
+            },
+        },
+    },
+    "p3": {
+        "kmeans": {"family": "kmeans", "defaults": {"n_clusters": 3, "n_init": 20}},
+        "agglomerative": {
+            "family": "hierarchical",
+            "defaults": {"n_clusters": 3, "linkage": "ward"},
+        },
+        # PCA previo: en 336 dimensiones la mezcla no es estimable con ~400 estaciones.
+        "gmm": {
+            "family": "gaussian_mixture",
+            "defaults": {"n_clusters": 2, "covariance_type": "diag", "pca_components": 5},
+        },
+    },
+}
+# Rejillas de búsqueda; las claves no listadas toman el default del modelo.
+SEARCH_SPACES = {
+    "p1": {
+        "hgb": {
+            "learning_rate": [0.05, 0.1],
+            "max_iter": [200, 500],
+            "min_samples_leaf": [50, 200],
+        }
+    },
+    "p2": {
+        "hgb": {
+            "learning_rate": [0.05, 0.1],
+            "max_leaf_nodes": [31, 63],
+            "min_samples_leaf": [50, 200],
+        }
+    },
+    "p3": {
+        "kmeans": {"n_clusters": [2, 3, 4, 5, 6, 7, 8]},
+        "gmm": {"n_clusters": [2, 3, 4], "pca_components": [0, 5, 10, 20]},
+    },
+}
+# Las búsquedas eligen solo con validación.
+SEARCH_CRITERIA = {
+    "p1": ("validation_rmse", "min"),
+    "p2": ("validation_f1_macro", "max"),
+    "p3": ("validation_silhouette", "max"),
+}
 
 
 @dataclass(frozen=True)
@@ -118,6 +219,10 @@ class ProjectConfig:
     @property
     def hours_path(self) -> Path:
         return self.path(HOURS_PARQUET_PATH)
+
+    @property
+    def supervised_table_path(self) -> Path:
+        return self.path(SUPERVISED_TABLE_PATH)
 
     @property
     def tracking_uri(self) -> str:

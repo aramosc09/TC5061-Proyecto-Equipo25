@@ -1,4 +1,5 @@
 import codecs
+from contextlib import closing
 from datetime import datetime
 import hashlib
 from html.parser import HTMLParser
@@ -692,7 +693,8 @@ def ejecutar_ingesta(
     with tempfile.TemporaryDirectory(prefix=".ingesta-", dir=parquet_path.parent) as tmp:
         temporary = Path(tmp)
         trips_tmp = temporary / "viajes.parquet"
-        with sqlite3.connect(temporary / "deduplicacion.sqlite") as connection:
+        # closing() libera el archivo; Windows no permite borrar el temporal con la conexión abierta.
+        with closing(sqlite3.connect(temporary / "deduplicacion.sqlite")) as connection:
             connection.execute("CREATE TABLE vistos (id INTEGER PRIMARY KEY)")
             connection.execute("CREATE TEMP TABLE lote (posicion INTEGER, id INTEGER)")
             with pq.ParquetWriter(trips_tmp, TRIP_SCHEMA, compression="snappy") as writer:
