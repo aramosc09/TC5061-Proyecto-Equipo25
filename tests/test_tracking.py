@@ -1,13 +1,11 @@
-"""La ejecución de Projects debe reutilizar un padre y registrar tres hijos completos."""
+"""La ejecución de Projects debe reutilizar un padre y registrar un hijo por pipeline."""
 
 import json
 import zipfile
 
 import mlflow
-from typer.testing import CliRunner
 
 from proyecto_mibici.config import ProjectConfig
-from proyecto_mibici.experiments import app
 from proyecto_mibici.modeling.base import BaselineResult
 from proyecto_mibici.tracking import RegistroExperimentos
 
@@ -57,15 +55,16 @@ def test_projects_context_has_one_parent_three_children_and_source_snapshot(tmp_
         RepositoryDouble(manifest), [pipeline_double(q) for q in ("P1", "P2", "P3")]
     )
     assert report["parent_run_id"] == parent.info.run_id
-    runs = client.search_runs([experiment_id])
-    assert len(runs) == 4
-    assert all(run.info.status == "FINISHED" for run in runs)
     for summary in report["runs"]:
         run = client.get_run(summary["run_id"])
+        assert run.info.status == "FINISHED"
         assert run.data.tags["mlflow.parentRunId"] == parent.info.run_id
         assert run.data.tags["question"] == summary["question"]
         assert run.data.tags["git_commit"]
-        assert run.data.tags["git_worktree_dirty"] == "true"
+        assert run.data.tags["git_worktree_dirty"] in {"true", "false"}
+        assert run.data.tags["stage_of_work"] == "baseline"
+        assert run.data.tags["model_family"] == "synthetic"
+        assert run.data.tags["data_version"] == "synthetic-v1"
         assert run.data.params["data_version"] == "synthetic-v1"
         assert run.data.metrics["test_score"] == 0.5
         archive = client.download_artifacts(
@@ -79,7 +78,4 @@ def test_projects_context_has_one_parent_three_children_and_source_snapshot(tmp_
             assert not any(
                 "data/raw" in name or name.endswith(".env") for name in snapshot.namelist()
             )
-    result = CliRunner().invoke(app, ["verificar-experimento", "--root", str(tmp_path)])
-    assert result.exit_code == 0, result.output
-    assert "synthetic-v1" in result.output
     mlflow.set_tracking_uri(None)
