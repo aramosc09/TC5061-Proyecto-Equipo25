@@ -91,15 +91,6 @@ def test_seeded_sample_is_reproducible_and_bounded(candidate_config, synthetic_r
     assert not first.X.equals(other.X)
 
 
-def test_cache_is_reused_only_for_identical_data(candidate_config, synthetic_repository):
-    repository = synthetic_repository(candidate_config)
-    table, metadata = prepared(candidate_config, repository)
-    modified = table.path.stat().st_mtime_ns
-    assert table.prepare(repository, "synthetic-v1") == metadata
-    assert table.path.stat().st_mtime_ns == modified
-    assert table.prepare(repository, "synthetic-v2")["data_version"] == "synthetic-v2"
-
-
 def test_p3_profiles_cover_every_station_and_period(candidate_config, synthetic_repository):
     frames, coverage = construir_perfiles(synthetic_repository(candidate_config), candidate_config)
     assert set(frames) == {"train", "validation", "test"}

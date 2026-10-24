@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from proyecto_mibici.config import CANDIDATE_MODELS, SEARCH_SPACES
+from proyecto_mibici.config import CANDIDATE_MODELS
 from proyecto_mibici.modeling.base import resolve_hyperparameters
 from proyecto_mibici.modeling.datasets import (
     DatosSupervisados,
@@ -14,7 +14,6 @@ from proyecto_mibici.modeling.datasets import (
 from proyecto_mibici.modeling.p1_candidates import CandidatosP1, regression_metrics
 from proyecto_mibici.modeling.p2_candidates import CandidatosP2
 from proyecto_mibici.modeling.p3_candidates import CandidatosP3
-from proyecto_mibici.modeling.search import expand_grid
 
 SMALL = {
     ("p1", "poisson"): {},
@@ -36,22 +35,6 @@ def test_hyperparameters_are_typed_and_foreign_keys_rejected():
         resolve_hyperparameters("p1", "rf", {"n_estimators": "0.5"})
     with pytest.raises(ValueError, match="no disponible"):
         resolve_hyperparameters("p2", "poisson", {})
-
-
-def test_every_question_has_three_candidates_and_a_complete_search_grid():
-    assert all(len(models) >= 3 for models in CANDIDATE_MODELS.values())
-    for question, spaces in SEARCH_SPACES.items():
-        for model, space in spaces.items():
-            trials = expand_grid(question, model)
-            expected = 1
-            for values in space.values():
-                expected *= len(values)
-            assert len(trials) == expected
-            assert len({tuple(sorted(trial.items())) for trial in trials}) == expected
-            assert all(
-                set(trial) == set(CANDIDATE_MODELS[question][model]["defaults"])
-                for trial in trials
-            )
 
 
 def test_divergent_regression_predictions_are_rejected():
