@@ -113,19 +113,36 @@ Con el servidor local activo y `MLFLOW_TRACKING_URI=http://127.0.0.1:5000`, se p
 uv run --frozen mlflow run . -e ingest --env-manager uv \
   --experiment-name mibici-equipo25
 
-# Baseline de una pregunta. Por ahora train admite únicamente model=baseline.
+# Baseline de una pregunta.
 uv run --frozen mlflow run . -e train --env-manager uv \
-  --experiment-name mibici-equipo25 \
-  -P question=p1 -P model=baseline -P hyperparameters='{}'
+  --experiment-name mibici-equipo25 -P question=p1 -P model=baseline
+
+# Candidato con hiperparámetros individuales (los omitidos toman el default de config.py).
+uv run --frozen mlflow run . -e train --env-manager uv \
+  --experiment-name mibici-equipo25 -P question=p1 -P model=rf -P n_estimators=300
+
+# Búsqueda de hiperparámetros como nested runs (rejillas en SEARCH_SPACES de config.py:
+# p1/hgb, p2/hgb, p3/kmeans y p3/gmm).
+uv run --frozen mlflow run . -e search --env-manager uv \
+  --experiment-name mibici-equipo25 -P question=p1 -P model=hgb
 ```
 
-`train` acepta `question` (`p1`, `p2` o `p3`), `model` y `hyperparameters` como objeto JSON. Mientras se implementan los candidatos, solo se permite `baseline` y el objeto debe ser vacío para evitar parámetros sin efecto. Desde un clon limpio, después de la ingesta, reproduzcan el baseline elegido de cada pregunta con:
+`train` acepta `question` (`p1`, `p2` o `p3`), `model` y cada hiperparámetro como parámetro individual. Los hiperparámetros se pasan por separado porque en Windows un argumento JSON se parte en varios. Los modelos disponibles y sus defaults están en `CANDIDATE_MODELS` de [config.py](proyecto_mibici/config.py). Se rechaza cualquier hiperparámetro que no pertenezca al modelo solicitado, para que no se registren parámetros sin efecto.
+
+| Pregunta | `model` | Hiperparámetros |
+|---|---|---|
+| P1 | `baseline`, `poisson`, `hgb`, `rf` | `alpha`, `max_iter` · `learning_rate`, `max_iter`, `max_leaf_nodes`, `min_samples_leaf`, `l2_regularization` · `n_estimators`, `max_depth`, `min_samples_leaf`, `max_features`, `max_samples` |
+| P2 | `baseline`, `logistic`, `hgb`, `rf` | `c`, `class_weight`, `max_iter` · los de `hgb` y `rf` de P1, más `class_weight` (`balanced` o `none`) |
+| P3 | `baseline`, `kmeans`, `agglomerative`, `gmm` | `n_clusters`, `n_init` · `n_clusters`, `linkage` · `n_clusters`, `covariance_type`, `pca_components` (`0` = sin PCA) |
+
+P1 y P2 entrenan con una submuestra de entrenamiento con semilla (`max_train_rows`: 2,000,000 en candidatos y 500,000 en búsquedas, `0` para usar todas las filas). Validación y prueba siempre se evalúan completas. Cada candidato registra métricas `train_`, `validation_` y `test_`, y también el baseline evaluado sobre sus mismas filas (`validation_baseline_rmse`, `validation_baseline_f1_macro`, `validation_baseline_silhouette`). Los trials de búsqueda solo registran `train_` y `validation_`. El mejor trial se elige con validación y se vuelve a correr como candidato con `train`. Todas las corridas llevan las etiquetas `team`, `question`, `git_commit`, `data_version`, `model_family` y `stage_of_work` (`baseline`, `search` o `candidate`).
+
+Desde un clon limpio, después de la ingesta, reproduzcan el baseline de cada pregunta con:
 
 ```bash
 for question in p1 p2 p3; do
   uv run --frozen mlflow run . -e train --env-manager uv \
-    --experiment-name mibici-equipo25 \
-    -P question="$question" -P model=baseline -P hyperparameters='{}'
+    --experiment-name mibici-equipo25 -P question="$question" -P model=baseline
 done
 ```
 

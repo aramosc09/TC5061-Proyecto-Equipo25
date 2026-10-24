@@ -66,6 +66,9 @@ def test_projects_context_has_one_parent_three_children_and_source_snapshot(tmp_
         assert run.data.tags["question"] == summary["question"]
         assert run.data.tags["git_commit"]
         assert run.data.tags["git_worktree_dirty"] == "true"
+        assert run.data.tags["stage_of_work"] == "baseline"
+        assert run.data.tags["model_family"] == "synthetic"
+        assert run.data.tags["data_version"] == "synthetic-v1"
         assert run.data.params["data_version"] == "synthetic-v1"
         assert run.data.metrics["test_score"] == 0.5
         archive = client.download_artifacts(

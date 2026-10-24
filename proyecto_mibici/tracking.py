@@ -15,6 +15,7 @@ import numpy as np
 from proyecto_mibici.config import (
     ARTIFACTS_DIR,
     BASELINE_FIGURES_DIR,
+    CANDIDATE_FIGURES_DIR,
     EXPERIMENT_NAME,
     PROJ_ROOT,
     ProjectConfig,
@@ -67,7 +68,7 @@ class SourceSnapshot:
 
 
 class RegistroExperimentos:
-    """Crea un run padre y un hijo por pregunta, con parámetros y artefactos completos."""
+    """Crea runs padre e hijos con etiquetas de filtrado, parámetros y artefactos completos."""
 
     def __init__(self, config: ProjectConfig):
         self.config = config
@@ -84,6 +85,64 @@ class RegistroExperimentos:
             else mlflow.create_experiment(EXPERIMENT_NAME, artifact_location=artifacts.as_uri())
         )
 
+    def _start_parent(self, experiment_id: str):
+        """Reutiliza el run creado por MLflow Projects o abre uno nuevo en el experimento."""
+        project_run = os.environ.pop("MLFLOW_RUN_ID", None)
+        if (
+            project_run
+            and mlflow.tracking.MlflowClient().get_run(project_run).info.experiment_id
+            != experiment_id
+        ):
+            raise ValueError("El run de MLflow Projects debe pertenecer a mibici-equipo25.")
+        return mlflow.start_run(run_id=project_run, experiment_id=experiment_id)
+
+    def _context(self, manifest: dict, output_root: Path) -> tuple[dict, dict, dict, Path]:
+        """Etiquetas, parámetros e identificación del código comunes a cualquier run."""
+        output_root.mkdir(parents=True, exist_ok=True)
+        source, archive = SourceSnapshot().create(output_root)
+        tags = {"team": "25", "data_version": manifest["data_version"], **source}
+        parameters = {
+            **self.config.parameters(),
+            "data_version": manifest["data_version"],
+            "python_version": platform.python_version(),
+            **{
+                f"version_{package}": version(package)
+                for package in ("mlflow", "pandas", "pyarrow", "numpy", "scikit-learn")
+            },
+            "base_rows_raw": manifest["resumen"]["n_viajes"],
+            "base_rows_clean": manifest["salida"]["n_filas"],
+            "base_sha256": manifest["salida"]["sha256"],
+            "source_tree_sha256": source["source_tree_sha256"],
+            "environment_lock_sha256": source["environment_lock_sha256"],
+        }
+        return tags, parameters, source, archive
+
+    def _log_reproducibility(self, archive: Path) -> None:
+        mlflow.log_artifact(str(archive), artifact_path="reproducibilidad")
+        mlflow.log_artifact(str(self.config.manifest_path), artifact_path="reproducibilidad")
+
+    def _log_result(self, run_id: str, result, parameters: dict, output_dir: Path) -> dict:
+        """Registra parámetros, métricas finitas, artefactos y un resumen JSON del run."""
+        mlflow.log_params({**parameters, **result.parameters})
+        metrics = {name: float(value) for name, value in result.metrics.items()}
+        if not all(np.isfinite(value) for value in metrics.values()):
+            raise ValueError("Las métricas indefinidas deben omitirse, no registrarse como NaN.")
+        mlflow.log_metrics(metrics)
+        for path in result.artifacts:
+            mlflow.log_artifact(str(path), artifact_path="resultados")
+        summary = {
+            "question": result.question,
+            "run_id": run_id,
+            "model": result.model_name,
+            "parameters": {**parameters, **result.parameters},
+            "metrics": metrics,
+        }
+        output_dir.mkdir(parents=True, exist_ok=True)
+        summary_path = output_dir / "resumen_run.json"
+        summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n")
+        mlflow.log_artifact(str(summary_path), artifact_path="resultados")
+        return summary
+
     def run(
         self,
         repository,
@@ -92,48 +151,26 @@ class RegistroExperimentos:
         parent_kind: str = "baseline_suite",
         extra_parameters: dict | None = None,
     ) -> dict:
-        """Registra uno o varios pipelines bajo el run padre creado por MLflow Projects."""
+        """Registra uno o varios baselines bajo el run padre creado por MLflow Projects."""
         manifest = repository.verify_base()
         experiment_id = self.configure()
-        project_run = os.environ.pop("MLFLOW_RUN_ID", None)
-        if (
-            project_run
-            and mlflow.tracking.MlflowClient().get_run(project_run).info.experiment_id
-            != experiment_id
-        ):
-            raise ValueError("El run de MLflow Projects debe pertenecer a mibici-equipo25.")
-        with mlflow.start_run(run_id=project_run, experiment_id=experiment_id) as parent:
+        with self._start_parent(experiment_id) as parent:
             parent_id = parent.info.run_id
             output_root = self.config.path(BASELINE_FIGURES_DIR) / parent_id
-            output_root.mkdir(parents=True, exist_ok=True)
-            source, archive = SourceSnapshot().create(output_root)
-            tags = {"team": "25", **source}
-            parameters = {
-                **self.config.parameters(),
-                "data_version": manifest["data_version"],
-                "python_version": platform.python_version(),
-                **{
-                    f"version_{package}": version(package)
-                    for package in ("mlflow", "pandas", "pyarrow", "numpy", "scikit-learn")
-                },
-                "base_rows_raw": manifest["resumen"]["n_viajes"],
-                "base_rows_clean": manifest["salida"]["n_filas"],
-                "base_sha256": manifest["salida"]["sha256"],
-                "source_tree_sha256": source["source_tree_sha256"],
-                "environment_lock_sha256": source["environment_lock_sha256"],
-                **(extra_parameters or {}),
-            }
+            tags, parameters, source, archive = self._context(manifest, output_root)
+            parameters.update(extra_parameters or {})
             mlflow.set_tags(
                 {
                     **tags,
                     "question": "ALL",
                     "run_kind": parent_kind,
+                    "model_family": "baseline",
+                    "stage_of_work": "baseline",
                     "mlflow.runName": f"baselines-{self.config.start_month}-{self.config.end_month}",
                 }
             )
             mlflow.log_params(parameters)
-            mlflow.log_artifact(str(archive), artifact_path="reproducibilidad")
-            mlflow.log_artifact(str(self.config.manifest_path), artifact_path="reproducibilidad")
+            self._log_reproducibility(archive)
             completed = []
             for pipeline in pipelines:
                 question = type(pipeline).__name__.removeprefix("Pipeline")
@@ -142,38 +179,26 @@ class RegistroExperimentos:
                     experiment_id=experiment_id,
                     nested=True,
                 ) as child:
-                    mlflow.set_tags({**tags, "question": question, "run_kind": "baseline"})
+                    mlflow.set_tags(
+                        {
+                            **tags,
+                            "question": question,
+                            "run_kind": "baseline",
+                            "stage_of_work": "baseline",
+                        }
+                    )
                     result = pipeline.run(repository, output_root / question)
                     if result.question != question:
                         raise ValueError("La pregunta del resultado no coincide con el pipeline.")
-                    mlflow.log_params({**parameters, **result.parameters})
-                    metrics = {name: float(value) for name, value in result.metrics.items()}
-                    if not all(np.isfinite(value) for value in metrics.values()):
-                        raise ValueError(
-                            "Las métricas indefinidas deben omitirse, no registrarse como NaN."
-                        )
                     if not result.artifacts:
                         raise ValueError("Cada pregunta debe generar al menos un artefacto.")
-                    mlflow.log_metrics(metrics)
-                    for path in result.artifacts:
-                        mlflow.log_artifact(str(path), artifact_path="resultados")
-                    mlflow.log_artifact(str(archive), artifact_path="reproducibilidad")
-                    mlflow.log_artifact(
-                        str(self.config.manifest_path), artifact_path="reproducibilidad"
+                    mlflow.set_tag("model_family", result.model_name)
+                    completed.append(
+                        self._log_result(
+                            child.info.run_id, result, parameters, output_root / question
+                        )
                     )
-                    summary = {
-                        "question": question,
-                        "run_id": child.info.run_id,
-                        "model": result.model_name,
-                        "parameters": {**parameters, **result.parameters},
-                        "metrics": metrics,
-                    }
-                    summary_path = output_root / question / "resumen_run.json"
-                    summary_path.write_text(
-                        json.dumps(summary, indent=2, ensure_ascii=False) + "\n"
-                    )
-                    mlflow.log_artifact(str(summary_path), artifact_path="resultados")
-                    completed.append(summary)
+                    self._log_reproducibility(archive)
             report = {
                 "experiment": EXPERIMENT_NAME,
                 "parent_run_id": parent_id,
@@ -182,6 +207,130 @@ class RegistroExperimentos:
                 "runs": completed,
             }
             report_path = output_root / "resumen_experimento.json"
+            report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+            mlflow.log_artifact(str(report_path), artifact_path="resultados")
+        return report
+
+    def candidate(
+        self,
+        manifest: dict,
+        question: str,
+        model: str,
+        family: str,
+        train,
+        extra_parameters: dict,
+    ) -> dict:
+        """Registra un candidato en un solo run; train(output_dir) devuelve CandidateResult."""
+        experiment_id = self.configure()
+        with self._start_parent(experiment_id) as run:
+            output_root = self.config.path(CANDIDATE_FIGURES_DIR) / run.info.run_id
+            tags, parameters, _, archive = self._context(manifest, output_root)
+            mlflow.set_tags(
+                {
+                    **tags,
+                    "question": question.upper(),
+                    "run_kind": "candidate",
+                    "model_family": family,
+                    "stage_of_work": "candidate",
+                    "mlflow.runName": f"{question}-{model}-candidate-"
+                    f"{self.config.start_month}-{self.config.end_month}",
+                }
+            )
+            output_dir = output_root / question.upper()
+            result = train(output_dir)
+            summary = self._log_result(
+                run.info.run_id, result, {**parameters, **extra_parameters}, output_dir
+            )
+            self._log_reproducibility(archive)
+        return {**summary, "result": result}
+
+    def search(
+        self,
+        manifest: dict,
+        question: str,
+        model: str,
+        family: str,
+        trials: list[dict],
+        train,
+        criterion: tuple[str, str],
+        extra_parameters: dict,
+    ) -> dict:
+        """Run padre por búsqueda y un hijo por combinación; elige solo con validación."""
+        metric, direction = criterion
+        if not metric.startswith("validation_"):
+            raise ValueError("La búsqueda solo puede seleccionar con métricas de validación.")
+        experiment_id = self.configure()
+        stem = f"{question}-{model}-search-{self.config.start_month}-{self.config.end_month}"
+        with self._start_parent(experiment_id) as parent:
+            parent_id = parent.info.run_id
+            output_root = self.config.path(CANDIDATE_FIGURES_DIR) / parent_id
+            tags, parameters, _, archive = self._context(manifest, output_root)
+            parameters.update(extra_parameters)
+            common_tags = {
+                **tags,
+                "question": question.upper(),
+                "model_family": family,
+                "stage_of_work": "search",
+            }
+            mlflow.set_tags(
+                {**common_tags, "run_kind": "search", "search_role": "parent", "mlflow.runName": stem}
+            )
+            mlflow.log_params(
+                {
+                    **parameters,
+                    "model": model,
+                    "n_trials": len(trials),
+                    "search_space": json.dumps(trials, sort_keys=True),
+                    "selection_metric": metric,
+                    "selection_direction": direction,
+                }
+            )
+            self._log_reproducibility(archive)
+            completed = []
+            best = None
+            for index, params in enumerate(trials, start=1):
+                with mlflow.start_run(
+                    run_name=f"{stem}-trial-{index:02d}", experiment_id=experiment_id, nested=True
+                ) as child:
+                    mlflow.set_tags(
+                        {
+                            **common_tags,
+                            "run_kind": "search_trial",
+                            "search_role": "trial",
+                            "trial_index": str(index),
+                        }
+                    )
+                    trial_dir = output_root / f"trial-{index:02d}"
+                    summary = self._log_result(
+                        child.info.run_id, train(params, trial_dir), parameters, trial_dir
+                    )
+                    summary["trial_parameters"] = params
+                    completed.append(summary)
+                value = summary["metrics"].get(metric)
+                if value is not None and (
+                    best is None or (value < best[0] if direction == "min" else value > best[0])
+                ):
+                    best = (value, summary)
+            if best is None:
+                raise ValueError(f"Ningún trial produjo {metric}.")
+            value, winner = best
+            mlflow.set_tag("best_trial_run_id", winner["run_id"])
+            mlflow.log_params(
+                {f"best_{key}": item for key, item in winner["trial_parameters"].items()}
+            )
+            mlflow.log_metric(f"best_{metric}", value)
+            report = {
+                "experiment": EXPERIMENT_NAME,
+                "parent_run_id": parent_id,
+                "question": question.upper(),
+                "model": model,
+                "selection_metric": metric,
+                "best_value": value,
+                "best_trial_run_id": winner["run_id"],
+                "best_parameters": winner["trial_parameters"],
+                "trials": completed,
+            }
+            report_path = output_root / "resumen_busqueda.json"
             report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
             mlflow.log_artifact(str(report_path), artifact_path="resultados")
         return report

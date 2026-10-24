@@ -8,11 +8,43 @@ entry_points:
     parameters:
       question: {type: string, default: "p1"}
       model: {type: string, default: "baseline"}
-      hyperparameters: {type: string, default: "{}"}
+      max_train_rows: {type: string, default: "default"}
+      alpha: {type: string, default: "default"}
+      c: {type: string, default: "default"}
+      class_weight: {type: string, default: "default"}
+      covariance_type: {type: string, default: "default"}
+      l2_regularization: {type: string, default: "default"}
+      learning_rate: {type: string, default: "default"}
+      linkage: {type: string, default: "default"}
+      max_depth: {type: string, default: "default"}
+      max_features: {type: string, default: "default"}
+      max_iter: {type: string, default: "default"}
+      max_leaf_nodes: {type: string, default: "default"}
+      max_samples: {type: string, default: "default"}
+      min_samples_leaf: {type: string, default: "default"}
+      n_clusters: {type: string, default: "default"}
+      n_estimators: {type: string, default: "default"}
+      n_init: {type: string, default: "default"}
+      pca_components: {type: string, default: "default"}
     command: >-
       python -m proyecto_mibici.experiments train
-      --question {question} --model {model}
-      --hyperparameters {hyperparameters}
+      --question {question} --model {model} --max-train-rows {max_train_rows}
+      --alpha {alpha} --c {c} --class-weight {class_weight}
+      --covariance-type {covariance_type} --l2-regularization {l2_regularization}
+      --learning-rate {learning_rate} --linkage {linkage} --max-depth {max_depth}
+      --max-features {max_features} --max-iter {max_iter}
+      --max-leaf-nodes {max_leaf_nodes} --max-samples {max_samples}
+      --min-samples-leaf {min_samples_leaf} --n-clusters {n_clusters}
+      --n-estimators {n_estimators} --n-init {n_init}
+      --pca-components {pca_components}
+  search:
+    parameters:
+      question: {type: string, default: "p1"}
+      model: {type: string, default: "hgb"}
+      max_train_rows: {type: string, default: "default"}
+    command: >-
+      python -m proyecto_mibici.experiments search
+      --question {question} --model {model} --max-train-rows {max_train_rows}
   main:
     parameters: &config_parameters
       root: {type: string, default: "."}
