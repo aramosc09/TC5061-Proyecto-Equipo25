@@ -107,6 +107,27 @@ def test_candidate_run_has_filter_tags_and_reproducibility_artifacts(registry, t
     }
 
 
+def test_candidate_keeps_requested_project_parameters_and_logs_resolved_values(
+    registry, monkeypatch
+):
+    registry, manifest = registry
+    client = mlflow.tracking.MlflowClient()
+    project_run = client.create_run(registry.configure())
+    client.log_param(project_run.info.run_id, "learning_rate", "default")
+    monkeypatch.setenv("MLFLOW_RUN_ID", project_run.info.run_id)
+    registry.candidate(
+        manifest,
+        "p1",
+        "hgb",
+        "gradient_boosting",
+        lambda output_dir: fake_train({"learning_rate": 0.1}, output_dir),
+        {},
+    )
+    params = client.get_run(project_run.info.run_id).data.params
+    assert params["learning_rate"] == "default"
+    assert params["resolved_learning_rate"] == "0.1"
+
+
 def test_baseline_rejects_hyperparameters_and_unknown_questions(tmp_path):
     project = ProyectoMiBici.__new__(ProyectoMiBici)
     project.config = ProjectConfig(root=tmp_path)

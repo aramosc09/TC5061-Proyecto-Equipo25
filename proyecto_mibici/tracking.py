@@ -238,6 +238,12 @@ class RegistroExperimentos:
             )
             output_dir = output_root / question.upper()
             result = train(output_dir)
+            # MLflow Projects ya registró el valor pedido (p. ej. 'default'), que no puede cambiarse.
+            requested = mlflow.get_run(run.info.run_id).data.params
+            result.parameters = {
+                f"resolved_{key}" if key in requested else key: value
+                for key, value in result.parameters.items()
+            }
             summary = self._log_result(
                 run.info.run_id, result, {**parameters, **extra_parameters}, output_dir
             )

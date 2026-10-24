@@ -242,6 +242,7 @@ cython_debug/
 # P1-specific generated output and local working files
 /reports/figures/p1/
 /reports/figures/baselines/
+/reports/figures/candidates/
 /tmp/
 *.db-shm
 *.db-wal
