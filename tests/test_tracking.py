@@ -37,6 +37,9 @@ def pipeline_double(question):
 
 
 def test_projects_context_has_one_parent_three_children_and_source_snapshot(tmp_path, monkeypatch):
+    tracking_uri = f"sqlite:///{tmp_path / 'tracking.db'}"
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", tracking_uri)
+    mlflow.set_tracking_uri(tracking_uri)
     config = ProjectConfig(root=tmp_path)
     manifest = {
         "data_version": "synthetic-v1",
@@ -70,6 +73,8 @@ def test_projects_context_has_one_parent_three_children_and_source_snapshot(tmp_
         )
         with zipfile.ZipFile(archive) as snapshot:
             assert "MLproject" in snapshot.namelist()
+            assert "python_env.yaml" in snapshot.namelist()
+            assert "requirements.txt" in snapshot.namelist()
             assert "uv.lock" in snapshot.namelist()
             assert not any(
                 "data/raw" in name or name.endswith(".env") for name in snapshot.namelist()
