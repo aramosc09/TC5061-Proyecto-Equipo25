@@ -19,6 +19,7 @@ from proyecto_mibici.config import (
     FEATURE_LAGS,
     INGESTION_CHUNK_SIZE,
     ROLLING_WINDOWS,
+    WEEKLY_LAGS,
     ProjectConfig,
 )
 from proyecto_mibici.dataset import DataManifest, calcular_sha256
@@ -128,6 +129,48 @@ def construir_variables_horarias(hours: pd.DataFrame) -> pd.DataFrame:
         [construir_features_calendario(hours.index), construir_features_flujo_historico(hours)],
         axis=1,
     )
+
+
+def construir_features_semanales(hours: pd.DataFrame) -> pd.DataFrame:
+    """Agrega memoria de 2 a 4 semanas para los candidatos de P1 y P2.
+
+    Un solo rezago de 168 h es ruidoso. La media de las cuatro semanas previas
+    a la misma hora estima el nivel típico de la estación con menos varianza.
+    Cada rezago exige cobertura elegible en su propia hora y la media no omite
+    nulos, así que historia desconocida no se trata como cero ni entra futuro.
+    """
+    coverage = hours.get("elegible", pd.Series(True, index=hours.index)).astype(bool)
+    features = pd.DataFrame(index=hours.index)
+    for direction in ("salidas", "llegadas"):
+        lags = {
+            lag: hours[direction].shift(lag).where(coverage.shift(lag, fill_value=False))
+            for lag in (FEATURE_LAGS[-1], *WEEKLY_LAGS)
+        }
+        for lag in WEEKLY_LAGS:
+            features[f"{direction}_lag_{lag}"] = lags[lag]
+        features[f"{direction}_media_4_semanas"] = pd.concat(lags.values(), axis=1).mean(
+            axis=1, skipna=False
+        )
+    return features
+
+
+def construir_features_presion(features: pd.DataFrame, capacity: float) -> pd.DataFrame:
+    """Expresa flujos netos pasados en la escala de la etiqueta de P2.
+
+    La clase de P2 es flujo neto entre capacidad; los árboles no dividen
+    columnas entre sí, por lo que se les entrega la razón ya calculada. Solo
+    usa columnas causales previas; sin capacidad válida el resultado es nulo.
+    """
+    net = {
+        "balance_3": features.balance_acumulado_3,
+        "balance_24": features.balance_acumulado_24,
+        "neto_lag_1": features.salidas_lag_1 - features.llegadas_lag_1,
+        "neto_lag_24": features.salidas_lag_24 - features.llegadas_lag_24,
+        "neto_lag_168": features.salidas_lag_168 - features.llegadas_lag_168,
+        "neto_media_4_semanas": features.salidas_media_4_semanas
+        - features.llegadas_media_4_semanas,
+    }
+    return pd.DataFrame({f"{name}_capacidad": values / capacity for name, values in net.items()})
 
 
 def construir_perfil_semanal(hours: pd.DataFrame) -> tuple[pd.Series | None, dict]:
