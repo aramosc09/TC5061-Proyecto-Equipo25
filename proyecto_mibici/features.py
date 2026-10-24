@@ -1,5 +1,6 @@
 """Base horaria común y variables causales de las tres preguntas de MiBici."""
 
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -219,7 +220,8 @@ class RepositorioParquet:
         output.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix=".horas-", dir=output.parent) as directory:
             temporary = Path(directory)
-            with sqlite3.connect(temporary / "horas.sqlite") as connection:
+            # closing() libera el archivo; Windows no permite borrar el temporal con la conexión abierta.
+            with closing(sqlite3.connect(temporary / "horas.sqlite")) as connection:
                 connection.execute(
                     "CREATE TABLE horas (estacion INTEGER, hora INTEGER, salidas INTEGER, "
                     "llegadas INTEGER, PRIMARY KEY(estacion,hora)) WITHOUT ROWID"

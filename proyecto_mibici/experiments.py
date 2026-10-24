@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 import json
+import os
 from pathlib import Path
 
 from loguru import logger
@@ -115,6 +116,11 @@ class ProyectoMiBici:
     def execute_project(self):
         """Ejecuta MLproject reutilizando el entorno bloqueado, sin Conda ni Docker."""
         experiment_id = self.registry.configure()
+        # En Windows (cmd /c) una ruta absoluta con espacios se parte en varios argumentos.
+        try:
+            root = os.path.relpath(self.config.root, PROJ_ROOT)
+        except ValueError:
+            root = str(self.config.root)
         return mlflow.projects.run(
             uri=str(PROJ_ROOT),
             entry_point="main",
@@ -122,7 +128,7 @@ class ProyectoMiBici:
             experiment_id=experiment_id,
             synchronous=True,
             parameters={
-                "root": str(self.config.root),
+                "root": root,
                 "start_month": self.config.start_month,
                 "end_month": self.config.end_month,
                 "train_end": self.config.train_end,

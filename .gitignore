@@ -253,3 +253,9 @@ cython_debug/
 /proyecto_mibici/AGENTS.md
 /PROJECT_STATUS.md
 /SESSION_LOG.md
+
+# Archivos locales del equipo (no se versionan)
+/.claude/
+/Construye*.pdf
+/planExperimentacion.md
+/planExperimentacion.pdf

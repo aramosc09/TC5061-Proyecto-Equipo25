@@ -11,11 +11,11 @@ entry_points:
       hyperparameters: {type: string, default: "{}"}
     command: >-
       python -m proyecto_mibici.experiments train
-      --question "{question}" --model "{model}"
-      --hyperparameters '{hyperparameters}'
+      --question {question} --model {model}
+      --hyperparameters {hyperparameters}
   main:
     parameters: &config_parameters
-      root: {type: path, default: "."}
+      root: {type: string, default: "."}
       start_month: {type: string, default: "default"}
       end_month: {type: string, default: "default"}
       train_end: {type: string, default: "default"}
@@ -23,11 +23,11 @@ entry_points:
       seed: {type: int, default: -1}
     command: &experiment_command >-
       python -m proyecto_mibici.experiments experimento
-      --root "{root}" --start-month "{start_month}" --end-month "{end_month}"
-      --train-end "{train_end}" --validation-end "{validation_end}" --seed {seed}
+      --root {root} --start-month {start_month} --end-month {end_month}
+      --train-end {train_end} --validation-end {validation_end} --seed {seed}
   features:
     parameters: *config_parameters
     command: >-
       python -m proyecto_mibici.experiments features
-      --root "{root}" --start-month "{start_month}" --end-month "{end_month}"
-      --train-end "{train_end}" --validation-end "{validation_end}" --seed {seed}
+      --root {root} --start-month {start_month} --end-month {end_month}
+      --train-end {train_end} --validation-end {validation_end} --seed {seed}
