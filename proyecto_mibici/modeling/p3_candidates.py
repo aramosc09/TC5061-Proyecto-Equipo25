@@ -97,6 +97,7 @@ class CandidatosP3:
             model_family=CANDIDATE_MODELS["p3"][model]["family"],
             estimator=estimator,
             feature_names=PROFILE_COLUMNS,
+            input_example=frames["train"].head(5).copy(),
         )
         n_groups = params["n_clusters"]
         assignments = {}

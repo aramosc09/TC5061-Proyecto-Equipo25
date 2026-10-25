@@ -71,6 +71,7 @@ class CandidatosP2:
             model_family=CANDIDATE_MODELS["p2"][model]["family"],
             estimator=estimator,
             feature_names=P2_FEATURES,
+            input_example=train.X[P2_FEATURES].head(5).copy(),
         )
         for split in ("train", "validation", "test")[: 3 if evaluate_test else 2]:
             subset = train if split == "train" else data.split("p2", split)

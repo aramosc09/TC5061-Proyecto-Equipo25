@@ -24,6 +24,8 @@ class CandidateResult(BaselineResult):
     model_family: str = ""
     estimator: Any = None
     feature_names: list[str] = field(default_factory=list)
+    # Solo variables agregadas, nunca identificadores de usuario ni viajes individuales.
+    input_example: Any = None
 
 
 def resolve_hyperparameters(question: str, model: str, overrides: dict[str, Any]) -> dict:

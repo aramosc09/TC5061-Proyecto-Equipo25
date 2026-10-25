@@ -211,6 +211,36 @@ class RegistroExperimentos:
             mlflow.log_artifact(str(report_path), artifact_path="resultados")
         return report
 
+    def _log_candidate_model(self, result, manifest: dict, question: str) -> str | None:
+        """Guarda candidato ajustado + firma y muestra de features agregadas.
+
+        Los tests de contratos que generan un CandidateResult sintético sin estimador
+        pueden omitir esta etapa. Los candidatos reales siempre deben proveer ambos.
+        """
+        if result.estimator is None:
+            return None
+        if result.input_example is None or result.input_example.empty:
+            raise ValueError("El candidato debe aportar input_example para inferir su firma.")
+        import mlflow.sklearn
+        from mlflow.models import infer_signature
+
+        example = result.input_example
+        signature = infer_signature(example, result.estimator.predict(example))
+        info = mlflow.sklearn.log_model(
+            sk_model=result.estimator,
+            name="model",
+            signature=signature,
+            input_example=example,
+            metadata={
+                "question": question.upper(),
+                "data_version": manifest["data_version"],
+                "task": "pressure_proxy_not_stockout" if question == "p2" else question,
+            },
+        )
+        mlflow.set_tag("candidate_model_uri", info.model_uri)
+        mlflow.set_tag("candidate_model_signed", "true")
+        return info.model_uri
+
     def candidate(
         self,
         manifest: dict,
@@ -247,6 +277,14 @@ class RegistroExperimentos:
             summary = self._log_result(
                 run.info.run_id, result, {**parameters, **extra_parameters}, output_dir
             )
+            # El manifiesto y la configuración también quedan en carpetas explícitas.
+            mlflow.log_artifact(str(self.config.manifest_path), artifact_path="data")
+            mlflow.log_dict(
+                {"config": self.config.parameters(), "question": question, "model": model,
+                 "resolved_parameters": result.parameters},
+                "config/parametros_ejecucion.json",
+            )
+            self._log_candidate_model(result, manifest, question)
             self._log_reproducibility(archive)
         return {**summary, "result": result}
 
