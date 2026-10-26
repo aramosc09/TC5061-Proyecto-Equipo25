@@ -229,6 +229,7 @@ class RegistroExperimentos:
         info = mlflow.sklearn.log_model(
             sk_model=result.estimator,
             name="model",
+            skops_trusted_types=["sklearn.compose._column_transformer._RemainderColsList"],
             signature=signature,
             input_example=example,
             metadata={

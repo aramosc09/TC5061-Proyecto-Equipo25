@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
@@ -71,6 +72,7 @@ class CandidatosP1:
         train = data.split("p1", "train", max_rows=max_train_rows, seed=self.config.seed)
         features = FEATURES_BY_MODEL[model]
         estimator = build_estimator(model, params, self.config.seed).fit(train.X[features], train.y)
+        
         result = CandidateResult(
             "P1",
             model,
@@ -92,9 +94,11 @@ class CandidatosP1:
             feature_names=features,
             input_example=train.X[features].head(5).copy(),
         )
+        
         for split in ("train", "validation", "test")[: 3 if evaluate_test else 2]:
             subset = train if split == "train" else data.split("p1", split)
-            metrics = regression_metrics(subset.y, estimator.predict(subset.X[features]))
+            y_pred = estimator.predict(subset.X[features])
+            metrics = regression_metrics(subset.y, y_pred)
             baseline = regression_metrics(subset.y, subset.baseline)
             result.metrics.update({f"{split}_{key}": value for key, value in metrics.items()})
             result.metrics.update(
@@ -104,4 +108,19 @@ class CandidatosP1:
                     f"{split}_rmse_delta_vs_baseline": metrics["rmse"] - baseline["rmse"],
                 }
             )
+            
+        # Generación del gráfico obligatorio (dispersión real vs predicho)
+        plt.figure(figsize=(8, 6))
+        plt.scatter(subset.y, y_pred, alpha=0.3, color="#1f77b4", edgecolors="none")
+        # Línea de predicción perfecta
+        plt.plot([subset.y.min(), subset.y.max()], [subset.y.min(), subset.y.max()], "r--", alpha=0.7)
+        plt.title(f"P1 {model.upper()} - Real vs Predicho ({split})")
+        plt.xlabel("Salidas Reales")
+        plt.ylabel("Salidas Predichas")
+        plt.tight_layout()
+        
+        # Guardar en output_dir resolverá el problema de la carpeta vacía mostrada anteriormente
+        plt.savefig(output_dir / "dispersion_real_vs_predicho.png")
+        plt.close()
+
         return result
