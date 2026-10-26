@@ -226,7 +226,7 @@ Equipo 25, TC5061 — Operaciones de Aprendizaje Automático (MLOps).
 | Alejandro Ramos Contreras | A01747461 | P3; integración del experimento y seguimiento de MLflow. |
 | Ángel Alexis Anaya Alamea | A01741351 | P2: clasificación de la etiqueta proxy de presión de flujo. |
 | Erick Fernando Carrillo Pineda | A01840029 | P1: predicción de demanda de viajes. |
-| Jose Rigoberto Cibrian Jacobo | A01740550 | Diagrama y documentación de arquitectura. |
+| Jose Rigoberto Cibrian Jacobo | A01740550 | Diagrama de arquitectura; módulo y documentación de Model Registry (Entrega 2). |
 
 ## Flujo de trabajo con Git y GitHub
 
@@ -252,6 +252,21 @@ Equipo 25, TC5061 — Operaciones de Aprendizaje Automático (MLOps).
 4. Solicita revisión a otro integrante, atiende comentarios y verifica las comprobaciones antes de integrar el Pull Request.
 
 La configuración de protección de `main`, las revisiones requeridas y la evidencia de contribuciones individuales deben confirmarse en GitHub; este README no presupone que las reglas estén activadas.
+
+## Model Registry: selección y promoción (Entrega 2)
+
+El proceso de promoción está documentado en [Registro de modelos y evidencia](docs/docs/registro_modelos_entrega2.md). Los modelos candidatos nuevos se guardan en MLflow con firma y ejemplo de entrada; el registro requiere elegir y justificar explícitamente un run de cada pregunta. Para inspeccionar, sin modificar el Registry:
+
+```bash
+export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
+uv run --frozen python -m proyecto_mibici.registry candidates --question p1
+uv run --frozen python -m proyecto_mibici.registry candidates --question p2
+uv run --frozen python -m proyecto_mibici.registry candidates --question p3
+```
+
+La promoción a `champion` debe realizarse **solo después de comparar y aprobar** los resultados, utilizando `python -m proyecto_mibici.registry promote --question p1 --run-id ID --reason "..." --approve`. Sin `--approve` el comando únicamente muestra una vista previa. Para verificar los tres modelos registrados y cargables: `uv run --frozen python -m proyecto_mibici.registry status`.
+
+**No declarar cumplido el Model Registry hasta que los tres alias existan realmente en el servidor y se hayan capturado sus evidencias.**
 
 ## Referencias
 
