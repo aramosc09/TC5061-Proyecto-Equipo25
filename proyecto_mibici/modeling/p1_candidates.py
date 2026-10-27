@@ -2,6 +2,10 @@
 
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")  # backend sin interfaz: seguro en scripts, servidores y CI
+
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.compose import ColumnTransformer
@@ -53,6 +57,34 @@ def regression_metrics(actual: np.ndarray, forecast: np.ndarray) -> dict[str, fl
     }
 
 
+def save_scatter_plot(
+    actual: np.ndarray, predicted: np.ndarray, model: str, split: str, output_dir: Path
+) -> Path:
+    """Dispersión real vs predicho; devuelve la ruta del PNG ya escrito en disco."""
+    actual = np.asarray(actual)
+    predicted = np.asarray(predicted)
+    path = output_dir / f"dispersion_real_vs_predicho_{split}.png"
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    try:
+        ax.scatter(actual, predicted, alpha=0.3, color="#1f77b4", edgecolors="none")
+        lim_min = float(min(actual.min(), predicted.min()))
+        lim_max = float(max(actual.max(), predicted.max()))
+        ax.plot([lim_min, lim_max], [lim_min, lim_max], "r--", alpha=0.7, label="Predicción perfecta")
+        ax.set_title(f"P1 {model.upper()} - Real vs Predicho ({split})")
+        ax.set_xlabel("Salidas Reales")
+        ax.set_ylabel("Salidas Predichas")
+        ax.legend()
+        fig.tight_layout()
+        fig.savefig(path, dpi=120)
+    finally:
+        plt.close(fig)  # siempre libera la figura, incluso si algo falla
+
+    if not path.exists():
+        raise RuntimeError(f"No se pudo guardar la gráfica en {path}.")
+    return path
+
+
 class CandidatosP1:
     def __init__(self, config: ProjectConfig):
         self.config = config
@@ -68,11 +100,12 @@ class CandidatosP1:
         evaluate_test: bool,
     ) -> CandidateResult:
         """Ajusta solo con entrenamiento y compara contra el baseline en las mismas filas."""
+        output_dir = Path(output_dir).resolve()
         output_dir.mkdir(parents=True, exist_ok=True)
         train = data.split("p1", "train", max_rows=max_train_rows, seed=self.config.seed)
         features = FEATURES_BY_MODEL[model]
         estimator = build_estimator(model, params, self.config.seed).fit(train.X[features], train.y)
-        
+
         result = CandidateResult(
             "P1",
             model,
@@ -94,7 +127,8 @@ class CandidatosP1:
             feature_names=features,
             input_example=train.X[features].head(5).copy(),
         )
-        
+
+        plot_paths: list[Path] = []
         for split in ("train", "validation", "test")[: 3 if evaluate_test else 2]:
             subset = train if split == "train" else data.split("p1", split)
             y_pred = estimator.predict(subset.X[features])
@@ -108,19 +142,12 @@ class CandidatosP1:
                     f"{split}_rmse_delta_vs_baseline": metrics["rmse"] - baseline["rmse"],
                 }
             )
-            
-        # Generación del gráfico obligatorio (dispersión real vs predicho)
-        plt.figure(figsize=(8, 6))
-        plt.scatter(subset.y, y_pred, alpha=0.3, color="#1f77b4", edgecolors="none")
-        # Línea de predicción perfecta
-        plt.plot([subset.y.min(), subset.y.max()], [subset.y.min(), subset.y.max()], "r--", alpha=0.7)
-        plt.title(f"P1 {model.upper()} - Real vs Predicho ({split})")
-        plt.xlabel("Salidas Reales")
-        plt.ylabel("Salidas Predichas")
-        plt.tight_layout()
-        
-        # Guardar en output_dir resolverá el problema de la carpeta vacía mostrada anteriormente
-        plt.savefig(output_dir / "dispersion_real_vs_predicho.png")
-        plt.close()
+            # Una gráfica por split, generada con los datos de ESE split.
+            plot_paths.append(save_scatter_plot(subset.y, y_pred, model, split, output_dir))
+
+
+        # Si el runner registra artefactos desde CandidateResult, aquí se le pasan las rutas.
+        # (Ajusta el nombre del atributo a lo que use tu base.py.)
+        result.artifacts.extend(plot_paths)
 
         return result

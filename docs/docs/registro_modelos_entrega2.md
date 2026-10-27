@@ -63,9 +63,7 @@ uv run --frozen mlflow run . -e train --env-manager uv --experiment-name mibici-
 uv run --frozen mlflow run . -e train --env-manager uv --experiment-name mibici-equipo25 -P question=p3 -P model=gmm
 ```
 
-
-
-**Importante:** `train` en el código actual también registra métricas de prueba por candidato. El equipo debe seleccionar con **validación**, mantener prueba solo como reporte de desempeño final y explicar cualquier diferencia metodológica con la entrega anterior.
+**Importante:** `train` registra métricas de prueba por candidato. Los modelos se seleccionan por su desempeño en **validación**, mantener prueba solo como reporte de desempeño final y explicar cualquier diferencia metodológica con la entrega anterior.
 
 ## 4. Inspeccionar candidatos sin cambiar el Registry
 
