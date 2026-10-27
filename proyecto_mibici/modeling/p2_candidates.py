@@ -7,7 +7,6 @@ import matplotlib
 matplotlib.use("Agg")  # backend sin interfaz: seguro en scripts, servidores y CI
 
 import matplotlib.pyplot as plt
-import mlflow
 import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -147,13 +146,7 @@ class CandidatosP2:
                 save_confusion_matrix_plot(matrix, list(PRESSURE_CLASSES), model, split, output_dir)
             )
 
-        # Registro en MLflow: solo funciona si hay un run activo en este momento.
-        if mlflow.active_run() is not None:
-            for path in plot_paths:
-                mlflow.log_artifact(str(path), artifact_path="plots")
-
         # Si el runner registra artefactos desde CandidateResult, aquí se le pasan las rutas.
-        if hasattr(result, "artifacts"):
-            result.artifacts.extend(str(p) for p in plot_paths)
+        result.artifacts.extend(plot_paths)
 
         return result
