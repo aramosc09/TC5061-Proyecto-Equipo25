@@ -1840,6 +1840,7 @@ version = "0.0.1"
 source = { virtual = "." }
 dependencies = [
     { name = "click" },
+    { name = "ipykernel" },
     { name = "loguru" },
     { name = "matplotlib" },
     { name = "mlflow" },
@@ -1872,6 +1873,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = "==8.1.8" },
+    { name = "ipykernel", specifier = ">=7.4.0" },
     { name = "ipython", marker = "extra == 'notebooks'", specifier = "==9.0.2" },
     { name = "jupyterlab", marker = "extra == 'notebooks'", specifier = "==4.4.0" },
     { name = "loguru", specifier = "==0.7.3" },

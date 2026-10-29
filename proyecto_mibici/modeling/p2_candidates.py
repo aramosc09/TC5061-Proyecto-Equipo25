@@ -2,6 +2,12 @@
 
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")  # backend sin interfaz: seguro en scripts, servidores y CI
+
+import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix
@@ -29,6 +35,49 @@ def build_estimator(model: str, params: dict, seed: int):
     raise ValueError(f"Modelo P2 desconocido: {model}.")
 
 
+def save_confusion_matrix_plot(
+    matrix: np.ndarray, labels: list[str], model: str, split: str, output_dir: Path
+) -> Path:
+    """Matriz de confusión (conteos y normalizada por fila); devuelve la ruta del PNG."""
+    path = output_dir / f"matriz_confusion_{split}.png"
+
+    # Normalización por fila (recall por clase); filas sin observaciones quedan en 0.
+    row_sums = matrix.sum(axis=1, keepdims=True)
+    normalized = np.divide(matrix, row_sums, out=np.zeros(matrix.shape, dtype=float), where=row_sums > 0)
+
+    panels = (
+        (matrix, "Conteos", lambda v: f"{int(v)}"),
+        (normalized, "Normalizada por fila (recall)", lambda v: f"{v:.0%}"),
+    )
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+    try:
+        for ax, (values, title, fmt) in zip(axes, panels):
+            image = ax.imshow(values, cmap="Blues")
+            ax.set_title(title)
+            ax.set_xlabel("Clase predicha")
+            ax.set_ylabel("Clase real")
+            ax.set_xticks(range(len(labels)), labels=labels, rotation=45, ha="right")
+            ax.set_yticks(range(len(labels)), labels=labels)
+            threshold = values.max() / 2 if values.max() > 0 else 0
+            for i in range(values.shape[0]):
+                for j in range(values.shape[1]):
+                    ax.text(
+                        j, i, fmt(values[i, j]), ha="center", va="center", fontsize=8,
+                        color="white" if values[i, j] > threshold else "black",
+                    )
+            fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
+        fig.suptitle(f"P2 {model.upper()} - Matriz de confusión ({split})")
+        fig.tight_layout()
+        fig.savefig(path, dpi=120)
+    finally:
+        plt.close(fig)  # siempre libera la figura, incluso si algo falla
+
+    if not path.exists():
+        raise RuntimeError(f"No se pudo guardar la gráfica en {path}.")
+    return path
+
+
 class CandidatosP2:
     def __init__(self, config: ProjectConfig):
         self.config = config
@@ -44,6 +93,7 @@ class CandidatosP2:
         evaluate_test: bool,
     ) -> CandidateResult:
         """Usa los percentiles congelados del baseline y compara en las mismas filas."""
+        output_dir = Path(output_dir).resolve()
         output_dir.mkdir(parents=True, exist_ok=True)
         train = data.split("p2", "train", max_rows=max_train_rows, seed=self.config.seed)
         estimator = build_estimator(model, params, self.config.seed).fit(train.X, train.y)
@@ -73,9 +123,12 @@ class CandidatosP2:
             feature_names=P2_FEATURES,
             input_example=train.X[P2_FEATURES].head(5).copy(),
         )
+
+        plot_paths: list[Path] = []
         for split in ("train", "validation", "test")[: 3 if evaluate_test else 2]:
             subset = train if split == "train" else data.split("p2", split)
-            matrix = confusion_matrix(subset.y, estimator.predict(subset.X), labels=range(7))
+            y_pred = estimator.predict(subset.X)
+            matrix = confusion_matrix(subset.y, y_pred, labels=range(7))
             baseline = classification_metrics(
                 confusion_matrix(subset.y, subset.baseline, labels=range(7))
             )
@@ -88,4 +141,12 @@ class CandidatosP2:
                     - baseline["f1_macro"],
                 }
             )
+            # Una matriz por split, con los datos de ESE split.
+            plot_paths.append(
+                save_confusion_matrix_plot(matrix, list(PRESSURE_CLASSES), model, split, output_dir)
+            )
+
+        # Si el runner registra artefactos desde CandidateResult, aquí se le pasan las rutas.
+        result.artifacts.extend(plot_paths)
+
         return result

@@ -229,6 +229,11 @@ class RegistroExperimentos:
         info = mlflow.sklearn.log_model(
             sk_model=result.estimator,
             name="model",
+            skops_trusted_types=["sklearn.compose._column_transformer._RemainderColsList",
+                                "sklearn.tree._tree.Tree",
+                                "sklearn.ensemble._hist_gradient_boosting.predictor.TreePredictor",
+                                "sklearn.ensemble._hist_gradient_boosting.binning._BinMapper",
+                                "proyecto_mibici.modeling.p3_candidates.AglomerativoConCentroides"],
             signature=signature,
             input_example=example,
             metadata={

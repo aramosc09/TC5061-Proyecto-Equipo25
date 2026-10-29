@@ -35,7 +35,16 @@ No se deben publicar datos crudos, Parquet, `mlflow.db`, `mlruns/`, `mlartifacts
 
 ## 3. Ejecutar corridas comparables mediante MLflow Projects
 
-El profesor solicita **baseline + al menos tres versiones adicionales por pregunta**. Estos ejemplos ejecutan una familia por pregunta; la versión real se distingue por los parámetros y el `run_id`:
+Como evidencia de `nested runs`, es posible ejecutar búsquedas desde el mismo MLflow Project:
+
+```bash
+uv run --frozen mlflow run . -e search --env-manager uv --experiment-name mibici-equipo25 -P question=p1 -P model=hgb
+uv run --frozen mlflow run . -e search --env-manager uv --experiment-name mibici-equipo25 -P question=p2 -P model=hgb
+uv run --frozen mlflow run . -e search --env-manager uv --experiment-name mibici-equipo25 -P question=p3 -P model=kmeans
+```
+Cada búsqueda genera un padre y trials hijos. El mejor trial debe ejecutarse después como **candidato final** usando `-e train` y sus parámetros ganadores; los trials no se promueven directamente.
+
+Por otro lado, para ejecutar modelos candidatos particulares por pregunta, se puede realizar lo siguiente, donde los parámetros por default se definen en `config/`. También es posible definir los hiperparámetros específicos con los que se desea realizar cada run, según cada modelo:
 
 ```bash
 # P1: tres candidatos de regresión.
@@ -54,17 +63,7 @@ uv run --frozen mlflow run . -e train --env-manager uv --experiment-name mibici-
 uv run --frozen mlflow run . -e train --env-manager uv --experiment-name mibici-equipo25 -P question=p3 -P model=gmm
 ```
 
-Como evidencia de `nested runs`, ejecutar búsquedas desde el mismo MLflow Project:
-
-```bash
-uv run --frozen mlflow run . -e search --env-manager uv --experiment-name mibici-equipo25 -P question=p1 -P model=hgb
-uv run --frozen mlflow run . -e search --env-manager uv --experiment-name mibici-equipo25 -P question=p2 -P model=hgb
-uv run --frozen mlflow run . -e search --env-manager uv --experiment-name mibici-equipo25 -P question=p3 -P model=kmeans
-```
-
-Cada búsqueda genera un padre y trials hijos. El mejor trial debe ejecutarse después como **candidato final** usando `-e train` y sus parámetros ganadores; los trials no se promueven directamente.
-
-**Importante:** `train` en el código actual también registra métricas de prueba por candidato. El equipo debe seleccionar con **validación**, mantener prueba solo como reporte de desempeño final y explicar cualquier diferencia metodológica con la entrega anterior.
+**Importante:** `train` registra métricas de prueba por candidato. Los modelos se seleccionan por su desempeño en **validación**, mantener prueba solo como reporte de desempeño final y explicar cualquier diferencia metodológica con la entrega anterior.
 
 ## 4. Inspeccionar candidatos sin cambiar el Registry
 

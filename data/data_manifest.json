@@ -1,7 +1,7 @@
 {
   "version_esquema": 2,
   "data_version": "09a6a584dd5d",
-  "generado_en": "2026-10-21T01:18:19-06:00",
+  "generado_en": "2026-10-25T21:29:49-07:00",
   "rango_fechas": {
     "inicio": "2023-10",
     "fin": "2026-09"
@@ -451,7 +451,7 @@
       "longitude",
       "dpcapacity"
     ],
-    "sha256": "9d505e6ace711071391ec8a0f51adfa1e33a2e8affa2d4c7e9bb6afd86fa6e86",
+    "sha256": "a346d8cc670798f8a022e0a0cf7cae5a40598cf4b797f8f342f01f3e4f7d0089",
     "mes_referencia": "2026-09"
   },
   "normalizacion": "mibici-ingesta-v3"
