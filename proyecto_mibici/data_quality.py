@@ -1,39 +1,62 @@
 """Validación de calidad de datos con Deepchecks y prechequeos reproducibles."""
 
-import argparse
+from importlib.metadata import version
 import json
 from pathlib import Path
 from typing import Any
 
+from loguru import logger
 import pandas as pd
+import typer
 
-from proyecto_mibici.modeling.datasets import P1_FEATURES, P2_FEATURES, SPLITS
+from proyecto_mibici.config import PROJ_ROOT, REPORTS_DIR, ProjectConfig
+from proyecto_mibici.features import RepositorioParquet
+from proyecto_mibici.modeling.datasets import (
+    DatosSupervisados,
+    PerfilesP3,
+    TablaSupervisada,
+    construir_perfiles,
+)
 
-QUALITY_COLUMNS = {
-    "p1": (P1_FEATURES, "salidas"),
-    "p2": (P2_FEATURES, "presion"),
+app = typer.Typer()
+
+QUALITY_OUTPUT_DIR = REPORTS_DIR / "data_quality"
+COMPARED_SPLITS = ("train", "test")
+# P2 se valida sobre sus siete clases, no sobre la presión continua de la que se derivan.
+DATASET_SPECS = {
+    "p1": {"label": "salidas", "label_type": "regression"},
+    "p2": {"label": "clase_presion", "label_type": "multiclass"},
+    "p3": {},
 }
 
 
-def load_supervised_splits(
-    path: Path, question: str, *, max_rows: int = 10_000
+def supervised_frame(data: DatosSupervisados, question: str, split: str, **sample) -> pd.DataFrame:
+    """Arma features, hora y objetivo de un periodo tal como los recibe el candidato."""
+    subset = data.split(question, split, **sample)
+    frame = subset.X.copy()
+    frame["hora"] = subset.hora
+    frame[DATASET_SPECS[question]["label"]] = subset.y
+    return frame
+
+
+def load_splits(
+    question: str, data: DatosSupervisados | PerfilesP3, *, max_rows: int, seed: int
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Carga train y test de la tabla causal sin incluir identificadores temporales."""
-    try:
-        features, target = QUALITY_COLUMNS[question]
-    except KeyError as error:
-        raise ValueError("question debe ser p1 o p2.") from error
-    columns = ["conjunto", *features, target]
-    frame = pd.read_parquet(path, columns=columns)
-    train = frame.loc[frame["conjunto"] == SPLITS.index("train")].drop(columns="conjunto")
-    test = frame.loc[frame["conjunto"] == SPLITS.index("test")].drop(columns="conjunto")
-    if train.empty or test.empty:
-        raise ValueError("La tabla supervisada debe contener filas de train y test.")
+    """Devuelve train y test sin identificadores de estación."""
+    if question not in DATASET_SPECS:
+        raise ValueError("question debe ser p1, p2 o p3.")
     if max_rows < 1:
         raise ValueError("max_rows debe ser positivo.")
-    train = train.sample(min(max_rows, len(train)), random_state=42)
-    test = test.sample(min(max_rows, len(test)), random_state=42)
-    return train.reset_index(drop=True), test.reset_index(drop=True)
+    if question == "p3":
+        frames = [data.frames[split].reset_index(drop=True) for split in COMPARED_SPLITS]
+    else:
+        frames = [
+            supervised_frame(data, question, split, max_rows=max_rows, seed=seed)
+            for split in COMPARED_SPLITS
+        ]
+    if any(frame.empty for frame in frames):
+        raise ValueError("Train y test deben contener filas.")
+    return frames[0], frames[1]
 
 
 def preflight_summary(train: pd.DataFrame, test: pd.DataFrame) -> dict[str, Any]:
@@ -55,10 +78,18 @@ def preflight_summary(train: pd.DataFrame, test: pd.DataFrame) -> dict[str, Any]
     }
 
 
+def dataset_arguments(question: str, frame: pd.DataFrame) -> dict[str, Any]:
+    """Argumentos de `deepchecks.tabular.Dataset`: tipo de tarea explícito y hora como fecha."""
+    arguments = {"cat_features": [], **DATASET_SPECS[question]}
+    if "hora" in frame.columns:
+        arguments["datetime_name"] = "hora"
+    return arguments
+
+
 def run_deepchecks(
-    train: pd.DataFrame, test: pd.DataFrame, output_path: Path
+    question: str, train: pd.DataFrame, test: pd.DataFrame, output_dir: Path
 ) -> dict[str, Any]:
-    """Ejecuta la suite tabular y guarda resultados legibles en JSON."""
+    """Ejecuta la suite tabular y guarda el resultado en JSON y HTML."""
     try:
         from deepchecks.tabular import Dataset
         from deepchecks.tabular.suites import full_suite
@@ -67,44 +98,40 @@ def run_deepchecks(
             "Deepchecks no está instalado. Usa requirements-quality.txt con Python 3.12."
         ) from error
 
-    train_dataset = Dataset(train, label=train.columns[-1], cat_features=[])
-    test_dataset = Dataset(test, label=test.columns[-1], cat_features=[])
-    suite_result = full_suite().run(train_dataset, test_dataset)
-    deepchecks = json.loads(suite_result.to_json())
+    datasets = [Dataset(frame, **dataset_arguments(question, frame)) for frame in (train, test)]
+    suite_result = full_suite().run(*datasets)
     report = {
         "tool": "deepchecks",
-        "version": _package_version("deepchecks"),
+        "version": version("deepchecks"),
+        "question": question,
         "preflight": preflight_summary(train, test),
-        "suite": deepchecks,
+        "suite": json.loads(suite_result.to_json()),
     }
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / f"deepchecks_{question}.json").write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    suite_result.save_as_html(str(output_dir / f"deepchecks_{question}.html"), as_widget=False)
     return report
 
 
-def _package_version(package: str) -> str:
-    from importlib.metadata import version
-
-    return version(package)
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--question", choices=sorted(QUALITY_COLUMNS), default="p1")
-    parser.add_argument(
-        "--input",
-        type=Path,
-        default=Path("data/processed/tabla_supervisada.parquet"),
-    )
-    parser.add_argument(
-        "--output", type=Path, default=Path("reports/data_quality/deepchecks.json")
-    )
-    parser.add_argument("--max-rows", type=int, default=10_000)
-    args = parser.parse_args()
-    train, test = load_supervised_splits(args.input, args.question, max_rows=args.max_rows)
-    run_deepchecks(train, test, args.output)
-    print(f"Reporte Deepchecks escrito en {args.output}")
+@app.command()
+def main(question: str = "p1", max_rows: int = 10_000, root: Path = PROJ_ROOT):
+    question = question.lower()
+    config = ProjectConfig(root=root)
+    repository = RepositorioParquet(config)
+    manifest = repository.verify_base()
+    repository.prepare()
+    if question == "p3":
+        data = PerfilesP3(*construir_perfiles(repository, config))
+    else:
+        table = TablaSupervisada(config)
+        data = DatosSupervisados(table, table.prepare(repository, manifest["data_version"]))
+    train, test = load_splits(question, data, max_rows=max_rows, seed=config.seed)
+    output_dir = config.path(QUALITY_OUTPUT_DIR)
+    run_deepchecks(question, train, test, output_dir)
+    logger.success("Reporte Deepchecks de {} en {}", question, output_dir)
 
 
 if __name__ == "__main__":
-    main()
+    app()
