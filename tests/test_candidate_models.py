@@ -11,7 +11,11 @@ from proyecto_mibici.modeling.datasets import (
     TablaSupervisada,
     construir_perfiles,
 )
-from proyecto_mibici.modeling.p1_candidates import CandidatosP1, regression_metrics
+from proyecto_mibici.modeling.p1_candidates import (
+    CandidatosP1,
+    build_estimator,
+    regression_metrics,
+)
 from proyecto_mibici.modeling.p2_candidates import CandidatosP2
 from proyecto_mibici.modeling.p3_candidates import CandidatosP3
 
@@ -40,6 +44,22 @@ def test_hyperparameters_are_typed_and_foreign_keys_rejected():
 def test_divergent_regression_predictions_are_rejected():
     with pytest.raises(ValueError, match="no finitas"):
         regression_metrics(np.array([1.0, 2.0]), np.array([1.0, np.inf]))
+
+
+def test_random_forest_training_is_reproducible_with_same_seed():
+    features = np.arange(60, dtype=float).reshape(20, 3)
+    target = np.array([0, 1, 2, 1, 3] * 4, dtype=float)
+    params = {"n_estimators": 7, "max_depth": 4, "min_samples_leaf": 1}
+
+    first = build_estimator("rf", params, seed=42).fit(features, target)
+    second = build_estimator("rf", params, seed=42).fit(features, target)
+
+    first_predictions = first.predict(features)
+    second_predictions = second.predict(features)
+    np.testing.assert_allclose(first_predictions, second_predictions, rtol=0, atol=1e-12)
+    assert regression_metrics(target, first_predictions) == pytest.approx(
+        regression_metrics(target, second_predictions)
+    )
 
 
 @pytest.mark.parametrize(("question", "model"), list(SMALL))
