@@ -6,7 +6,8 @@ import json
 import os
 from pathlib import Path
 import platform
-import subprocess
+import shutil
+import subprocess  # nosec B404
 import zipfile
 
 import mlflow
@@ -23,6 +24,15 @@ from proyecto_mibici.config import (
 from proyecto_mibici.dataset import calcular_sha256
 
 
+def _git(root: Path, *args: str) -> str:
+    """Consulta git por ruta absoluta, sin shell y con argumentos fijos; por eso se omite B603."""
+    executable = shutil.which("git")
+    if executable is None:
+        raise RuntimeError("git no está disponible en el PATH.")
+    output = subprocess.check_output([executable, *args], cwd=root, text=True)  # nosec B603
+    return output.strip()
+
+
 class SourceSnapshot:
     """Identifica HEAD y conserva exactamente el código ejecutado aunque no esté committed."""
 
@@ -30,14 +40,8 @@ class SourceSnapshot:
         self.root = root
 
     def create(self, directory: Path) -> tuple[dict, Path]:
-        commit = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=self.root, text=True
-        ).strip()
-        dirty = bool(
-            subprocess.check_output(
-                ["git", "status", "--porcelain"], cwd=self.root, text=True
-            ).strip()
-        )
+        commit = _git(self.root, "rev-parse", "HEAD")
+        dirty = bool(_git(self.root, "status", "--porcelain"))
         files = sorted((self.root / "proyecto_mibici").rglob("*.py"))
         files += [
             self.root / name

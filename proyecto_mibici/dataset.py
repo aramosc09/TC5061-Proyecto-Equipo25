@@ -487,16 +487,23 @@ def _url_oficial(url: str) -> bool:
 
 
 def _solicitud(url: str) -> Request:
+    """Única puerta a la red: rechaza esquemas como file:// y dominios ajenos a MiBici."""
+    if not _url_oficial(url):
+        raise ValueError("Solo se permiten descargas HTTPS del dominio oficial de MiBici.")
     return Request(url, headers={
         "User-Agent": "MiBici-Equipo25/1.0",
         "Accept": "text/html,text/csv,application/octet-stream,*/*;q=0.8",
     })
 
 
+def _abrir(url: str):
+    """Abre solo URLs que _solicitud acepta (HTTPS de mibici.net); por eso se omite B310."""
+    return urlopen(_solicitud(url), timeout=config.DOWNLOAD_TIMEOUT_SECONDS)  # nosec B310
+
+
 def descubrir_fuentes() -> dict[str, str]:
     """Resuelve URLs publicadas por MiBici sin inventar los IDs de sus directorios."""
-    with urlopen(_solicitud(config.DATA_URL_ONLINE),
-                 timeout=config.DOWNLOAD_TIMEOUT_SECONDS) as response:
+    with _abrir(config.DATA_URL_ONLINE) as response:
         parser = _EnlacesCSV()
         parser.feed(response.read().decode("utf-8"))
     fuentes = {}
@@ -518,7 +525,7 @@ def descargar_archivo(url: str, destino: Path) -> None:
         try:
             with tempfile.NamedTemporaryFile(dir=destino.parent, delete=False) as output:
                 temporal = Path(output.name)
-                with urlopen(_solicitud(url), timeout=config.DOWNLOAD_TIMEOUT_SECONDS) as response:
+                with _abrir(url) as response:
                     if not _url_oficial(response.geturl()):
                         raise ValueError("La descarga redirigió fuera del dominio oficial.")
                     shutil.copyfileobj(response, output)
