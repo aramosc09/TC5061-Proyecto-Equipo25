@@ -221,8 +221,8 @@ class RegistroExperimentos:
             return None
         if result.input_example is None or result.input_example.empty:
             raise ValueError("El candidato debe aportar input_example para inferir su firma.")
-        import mlflow.sklearn
         from mlflow.models import infer_signature
+        import mlflow.sklearn
 
         example = result.input_example
         signature = infer_signature(example, result.estimator.predict(example))

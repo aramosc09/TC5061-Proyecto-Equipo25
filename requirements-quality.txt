@@ -1,0 +1,5 @@
+deepchecks==0.19.1
+numpy<2
+pyarrow==19.0.1
+scikit-learn<1.6
+setuptools<81

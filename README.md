@@ -217,6 +217,29 @@ uv run --frozen ruff check proyecto_mibici tests
 
 Las pruebas usan fuentes sintéticas y tracking temporal; no alteran los runs reales ni requieren viajes individuales publicados.
 
+La suite está organizada por responsabilidad: `test_dataset_ingestion.py` cubre
+limpieza, duplicados, fechas, manifiestos y privacidad; `test_feature_engineering.py`
+y `test_baselines.py` verifican features causales, casos límite y ausencia de fuga
+temporal; y `test_candidate_models.py` cubre hiperparámetros, métricas y
+entrenamiento. También se prueban los datasets de modelado, el tracking nested y
+el Model Registry. La prueba
+`test_random_forest_training_is_reproducible_with_same_seed` confirma que dos
+entrenamientos con la misma semilla producen las mismas predicciones y métricas
+dentro de una tolerancia numérica.
+
+La validación de calidad se ejecuta con Deepchecks en un entorno separado porque
+Deepchecks 0.19.1 no es compatible con el Python 3.13 del proyecto principal:
+
+```bash
+uv run --no-project --python 3.12 \
+  --with-requirements requirements-quality.txt \
+  python -m proyecto_mibici.data_quality --question p1
+```
+
+El comando compara muestras reproducibles de train y test, revisa tipos, faltantes
+y duplicados, y ejecuta la `full_suite` de Deepchecks para detectar inconsistencias
+y drift. El reporte JSON se escribe en `reports/data_quality/deepchecks.json`.
+
 ## Equipo y roles
 
 Equipo 25, TC5061 — Operaciones de Aprendizaje Automático (MLOps).
