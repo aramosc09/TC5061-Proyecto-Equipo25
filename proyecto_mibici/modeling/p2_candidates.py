@@ -147,6 +147,7 @@ class CandidatosP2:
             )
 
         # Si el runner registra artefactos desde CandidateResult, aquí se le pasan las rutas.
+        # El runner registra estas rutas como artefactos del candidato.
         result.artifacts.extend(plot_paths)
 
         return result
