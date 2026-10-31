@@ -4,7 +4,9 @@ import json
 import zipfile
 
 import mlflow
+import pytest
 
+from proyecto_mibici import tracking
 from proyecto_mibici.config import ProjectConfig
 from proyecto_mibici.modeling.base import BaselineResult
 from proyecto_mibici.tracking import RegistroExperimentos
@@ -79,3 +81,10 @@ def test_projects_context_has_one_parent_three_children_and_source_snapshot(tmp_
                 "data/raw" in name or name.endswith(".env") for name in snapshot.namelist()
             )
     mlflow.set_tracking_uri(None)
+
+
+def test_git_queries_fail_clearly_when_git_is_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(tracking.shutil, "which", lambda name: None)
+
+    with pytest.raises(RuntimeError, match="git no está disponible"):
+        tracking._git(tmp_path, "rev-parse", "HEAD")

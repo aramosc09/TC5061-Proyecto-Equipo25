@@ -1,5 +1,10 @@
 deepchecks==0.19.1
+loguru==0.7.3
+matplotlib==3.10.1
 numpy<2
-pyarrow==19.0.1
+pandas==2.2.3
+pyarrow==23.0.1
+python-dotenv==1.2.2
 scikit-learn<1.6
 setuptools<81
+typer==0.15.2

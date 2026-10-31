@@ -207,6 +207,24 @@ def test_incomplete_download_does_not_replace_existing_file(tmp_path, monkeypatc
     assert list(tmp_path.iterdir()) == [output]
 
 
+@pytest.mark.parametrize("url", [
+    "http://www.mibici.net/site/assets/files/1/raw.csv",
+    "file:///C:/Windows/win.ini",
+    "https://mibici.net.example.com/raw.csv",
+    "https://example.com/raw.csv",
+])
+def test_requests_outside_official_https_domain_are_rejected(url, tmp_path, monkeypatch):
+    def fail(*args, **kwargs):
+        raise AssertionError("no debe abrir conexiones")
+
+    monkeypatch.setattr(dataset, "urlopen", fail)
+    with pytest.raises(ValueError, match="dominio oficial"):
+        dataset._solicitud(url)
+    with pytest.raises(ValueError, match="dominio oficial"):
+        dataset.descargar_archivo(url, tmp_path / "raw.csv")
+    assert not (tmp_path / "raw.csv").exists()
+
+
 def test_cli_runs_offline_from_local_sources(tmp_path):
     raw = write_sources(tmp_path)
     result = CliRunner().invoke(dataset.app, [

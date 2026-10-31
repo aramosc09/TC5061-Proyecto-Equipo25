@@ -46,12 +46,25 @@ mlartifacts/
 *.keras
 *.pt
 *.pth
+*.skops
+
+# ============================================
+# Credenciales y llaves
+# ============================================
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+service-account*.json
+.netrc
 
 # Archivos Parquet fuera de data/
 *.parquet
 
 # Mac OS-specific storage files
 .DS_Store
+Thumbs.db
 
 # vim
 *.swp
