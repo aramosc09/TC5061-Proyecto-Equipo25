@@ -71,8 +71,8 @@ La **guía del equipo (30-oct-2026)** documenta estos resultados preliminares:
 | P2 | Sin faltantes ni duplicados; drift multivariado bajo (AUC 0.60–0.62) | Abrir JSON/HTML final y confirmar |
 | P3 | Drift en 5 de 336 columnas (AUC 0.74); 22 columnas de madrugada sin variación | Revisar columnas y condición en HTML final |
 
-**Evidencias solicitadas:** capturas reales de los tres HTML, mostrando el
-resultado de los chequeos y los hallazgos. Nombres sugeridos:
+**Evidencias disponibles:** capturas reales de los tres HTML, mostrando el
+resultado de los chequeos y los hallazgos. Capturas generadas:
 `deepchecks_p1.png`, `deepchecks_p2.png`, `deepchecks_p3.png`.
 Los HTML/JSON generados están excluidos de Git: compartir capturas agregadas,
 no archivos con datos sensibles.
@@ -97,14 +97,13 @@ En macOS/Linux los tres controles se pueden ejecutar en conjunto mediante
 `make security`. Revisa los fundamentos de los hallazgos y excepciones en
 [`seguridad_entrega3.md`](seguridad_entrega3.md).
 
-**Estado verificado durante la revisión local del PR #19:**
+**Estado verificado en las ejecuciones locales de la Entrega 3:**
 
 - Bandit terminó sin hallazgos (`exit code 0`).
 - pip-audit del proyecto **no pasó**: detectó 4 vulnerabilidades conocidas
   en `pyasn1==0.6.4` (CVE-2026-119194, CVE-2026-119195, CVE-2026-119196 y
   CVE-2026-119197); la corrección indicada por la auditoría es `0.6.5`.
-- La auditoría aislada de Deepchecks **aún no tiene ejecución comprobada en
-  esta revisión**. Sus excepciones deben mantenerse explícitas y justificadas.
+- La auditoría aislada de Deepchecks **se ejecutó** y reportó `No known vulnerabilities found, 3 ignored`. Las tres vulnerabilidades ignoradas no están corregidas y sus excepciones deben mantenerse explícitas y justificadas.
 
 **No describir el control como exitoso** mientras permanezcan vulnerabilidades
 sin resolver. Después de actualizar `uv.lock` y regenerar `requirements.txt`,
@@ -112,7 +111,7 @@ repetir la auditoría y registrar el resultado nuevo, sin borrar la evidencia de
 la detección original. Nunca ignorar las CVE de `pyasn1` solo para obtener un
 resultado verde.
 
-**Evidencias solicitadas:** `bandit.png`, `pip_audit_proyecto.png` y
+**Evidencias disponibles:** `bandit_sin_hallazgos.png`, `pip_audit_vulnerabilidades_detectadas.png` y
 `pip_audit_deepchecks.png`, cada una tomada en la versión final del código.
 Si hay un fallo, capturar el hallazgo y señalar el seguimiento.
 
