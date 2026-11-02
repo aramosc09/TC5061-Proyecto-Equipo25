@@ -9,6 +9,7 @@ y seguridad:
 - `deepchecks_p3.png`
 - `bandit_sin_hallazgos.png`
 - `pip_audit_vulnerabilidades_detectadas.png`
+- `pip_audit_sin_vulnerabilidades.png`
 - `pip_audit_deepchecks.png`
 
 Las capturas de DeepChecks documentan la ejecución de P1, P2 y P3.

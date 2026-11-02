@@ -97,23 +97,38 @@ En macOS/Linux los tres controles se pueden ejecutar en conjunto mediante
 `make security`. Revisa los fundamentos de los hallazgos y excepciones en
 [`seguridad_entrega3.md`](seguridad_entrega3.md).
 
-**Estado verificado en las ejecuciones locales de la Entrega 3:**
+**Resultados verificados después de integrar el PR #19:**
 
-- Bandit terminó sin hallazgos (`exit code 0`).
-- pip-audit del proyecto **no pasó**: detectó 4 vulnerabilidades conocidas
-  en `pyasn1==0.6.4` (CVE-2026-119194, CVE-2026-119195, CVE-2026-119196 y
-  CVE-2026-119197); la corrección indicada por la auditoría es `0.6.5`.
-- La auditoría aislada de Deepchecks **se ejecutó** y reportó `No known vulnerabilities found, 3 ignored`. Las tres vulnerabilidades ignoradas no están corregidas y sus excepciones deben mantenerse explícitas y justificadas.
+- **PyTest:** 80 pruebas aprobadas, 18 advertencias.
+- **Bandit:** sin hallazgos, código de salida `0`.
+- **pip-audit principal:** `No known vulnerabilities found` con
+  `pyasn1==0.6.5`.
+- **DeepChecks:** capturas de P1, P2 y P3 incorporadas; los hallazgos
+  de calidad deben interpretarse según cada reporte HTML.
+- **pip-audit del entorno DeepChecks:** ejecución realizada con
+  tres vulnerabilidades ignoradas explícitamente. Estas excepciones
+  no equivalen a vulnerabilidades corregidas.
 
-**No describir el control como exitoso** mientras permanezcan vulnerabilidades
-sin resolver. Después de actualizar `uv.lock` y regenerar `requirements.txt`,
-repetir la auditoría y registrar el resultado nuevo, sin borrar la evidencia de
-la detección original. Nunca ignorar las CVE de `pyasn1` solo para obtener un
-resultado verde.
+**Historial de la corrección de seguridad:**
 
-**Evidencias disponibles:** `bandit_sin_hallazgos.png`, `pip_audit_vulnerabilidades_detectadas.png` y
-`pip_audit_deepchecks.png`, cada una tomada en la versión final del código.
-Si hay un fallo, capturar el hallazgo y señalar el seguimiento.
+Durante la revisión inicial del PR #19, pip-audit detectó cuatro
+vulnerabilidades en `pyasn1==0.6.4`:
+CVE-2026-119194, CVE-2026-119195,
+CVE-2026-119196 y CVE-2026-119197.
+
+El PR #19 actualizó `pyasn1` a `0.6.5` en `requirements.txt`
+y `uv.lock`. Tras integrar esos cambios, se repitió la auditoría
+principal y no se encontraron vulnerabilidades conocidas.
+
+Se conservan ambas capturas para documentar la detección original
+y la verificación posterior de la corrección.
+
+**Evidencias de seguridad disponibles:**
+
+- `bandit_sin_hallazgos.png`
+- `pip_audit_vulnerabilidades_detectadas.png`
+- `pip_audit_sin_vulnerabilidades.png`
+- `pip_audit_deepchecks.png`
 
 ## 5. Capturas y publicación
 
