@@ -227,6 +227,43 @@ el Model Registry. La prueba
 entrenamientos con la misma semilla producen las mismas predicciones y métricas
 dentro de una tolerancia numérica.
 
+### Ejecución reproducible y cobertura de PyTest (Entrega 3)
+
+Desde la raíz del repositorio, el **comando único** para ejecutar la suite es:
+
+```bash
+uv sync --frozen
+uv run --frozen python -m pytest tests -q
+# Alternativa en macOS/Linux: make test
+```
+
+`pyproject.toml` define `testpaths = ["tests"]`. Las pruebas usan fixtures sintéticos
+(`tests/conftest.py`) y almacenamiento temporal; **no necesitan** los CSV/Parquet
+históricos de MiBici ni un servidor MLflow levantado.
+
+| Archivo de pruebas | Casos normales que verifica | Casos límite / controles importantes |
+|---|---|---|
+| `test_dataset_ingestion.py` | Limpieza, duplicados y manifiesto | Mes faltante, descarga incompleta, encabezados dañados y rechazo de URL no HTTPS oficial |
+| `test_baselines.py` | Baselines P1/P2, métricas y ventanas horarias | Empates en clases, estaciones sin capacidad y splits temporales inválidos |
+| `test_data_quality.py` | Prechequeos de faltantes, duplicados y muestras | Esquemas train/test distintos, parámetros inválidos y P3 sin etiqueta |
+| `test_model_datasets.py` | Tablas de entrenamiento y perfiles P3 | Historia incompleta, cambios futuros y muestreo acotado |
+| `test_model_registry.py` | Vista previa, promoción y firma | Rechazo de baseline, firmas ausentes, pregunta incompatible y Git sucio |
+| `test_p3_baseline.py` | Normalización de perfiles y estabilidad | Horas sin cobertura, actividad cero y grupos degenerados |
+| `test_candidate_models.py` | Entrenamiento, hiperparámetros y métricas | Parámetros ajenos al modelo y predicciones divergentes |
+| `test_nested_tracking.py` | Runs padre/hijo, etiquetas y artefactos | Impedir selección usando métricas de test y parámetros inválidos |
+| `test_feature_engineering.py` | Calendario y perfiles semanales | Variables que no deben incorporar información actual o futura |
+| `test_tracking.py` | Contexto de proyectos y copia del código | Ausencia del ejecutable `git` |
+
+**Reproducibilidad:** `test_random_forest_training_is_reproducible_with_same_seed`
+en `test_candidate_models.py` repite el entrenamiento con la misma semilla y verifica
+predicciones y métricas consistentes. También existen pruebas de muestreo con semilla
+fija y de invariancia frente a datos futuros.
+
+**Evidencias y resultados:** consulta la
+[guía de ejecución y evidencias de la Entrega 3](docs/docs/evidencias_entrega3.md).
+Las capturas reales se incorporan en `reports/figures/entrega3/` después de ejecutar
+los comandos; nunca se deben sustituir por capturas simuladas.
+
 La validación de calidad se ejecuta con Deepchecks en un entorno separado porque
 Deepchecks 0.19.1 no es compatible con el Python 3.13 del proyecto principal:
 
@@ -238,7 +275,45 @@ uv run --no-project --python 3.12 \
 
 El comando compara muestras reproducibles de train y test, revisa tipos, faltantes
 y duplicados, y ejecuta la `full_suite` de Deepchecks para detectar inconsistencias
-y drift. El reporte JSON se escribe en `reports/data_quality/deepchecks.json`.
+y drift. Los reportes se guardan por pregunta en
+`reports/data_quality/deepchecks_p1.json` y `.html` (análogamente para `p2` y
+`p3`). Es necesario haber ejecutado la ingesta y la construcción de features.
+Para validar las tres preguntas:
+
+```bash
+for pregunta in p1 p2 p3; do
+  uv run --no-project --python 3.12 \
+    --with-requirements requirements-quality.txt \
+    python -m proyecto_mibici.data_quality --question "$pregunta"
+done
+```
+
+La guía del equipo del 30 de octubre reporta P1/P2 sin faltantes ni duplicados y
+con drift multivariado bajo (AUC aproximada de 0.60–0.62); en P3 reporta drift
+en 5 de 336 columnas (AUC 0.74) y 22 columnas sin variación durante la madrugada.
+**Estos son resultados históricos del equipo, no una nueva ejecución local**;
+se deben comprobar contra los reportes HTML/JSON antes de entregar evidencias.
+
+### Seguridad y registro de evidencias (Entrega 3)
+
+La auditoría de seguridad se puede ejecutar con `make security` (macOS/Linux)
+o con los comandos detallados en
+[seguridad_entrega3.md](docs/docs/seguridad_entrega3.md). Incluye Bandit sobre
+`proyecto_mibici`, pip-audit sobre `requirements.txt` y pip-audit para el
+entorno aislado de Deepchecks. Nunca publicar `.env`, archivos de datos,
+`mlflow.db`, llaves ni reportes que contengan información individual. Copia
+`.env.example` a `.env` solo para configurar variables locales:
+
+```bash
+cp .env.example .env
+```
+
+**Auditoría pendiente de corregir:** en la revisión local del PR #19, pip-audit
+detectó cuatro CVE en `pyasn1==0.6.4` (versión corregida indicada: `0.6.5`).
+No se debe declarar una auditoría limpia hasta actualizar el bloqueo/exportación
+de dependencias y volver a ejecutarla. La evidencia y el estado se registran
+en la [guía de evidencias](docs/docs/evidencias_entrega3.md).
+
 
 ## Seguridad y gobernanza
 
