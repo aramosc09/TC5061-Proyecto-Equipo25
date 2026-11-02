@@ -315,6 +315,30 @@ de dependencias y volver a ejecutarla. La evidencia y el estado se registran
 en la [guía de evidencias](docs/docs/evidencias_entrega3.md).
 
 
+## Seguridad y gobernanza
+
+Esta sección resume qué riesgos controla el proyecto y qué prueba respalda cada control. Puedes localizar la evidencia con `pytest tests -k "<nombre de la prueba>"`.
+
+| Riesgo | Control | Evidencia |
+|---|---|---|
+| Exposición de datos personales | Las columnas personales se eliminan en la ingesta y los identificadores privados no llegan al manifiesto | `test_cleaning_across_chunks_privacy_and_repeatability` |
+| Descargas desde fuentes no confiables | Solo se aceptan URLs HTTPS del dominio oficial de MiBici; se rechazan HTTP, `file://` y dominios que lo imitan | `test_requests_outside_official_https_domain_are_rejected` |
+| Archivos corruptos o parciales | Una descarga incompleta no reemplaza el archivo existente; si falta un mes no se publican salidas parciales; si la ingesta falla se conservan las salidas anteriores | `test_incomplete_download_does_not_replace_existing_file`, `test_missing_month_does_not_publish_partial_outputs`, `test_failure_preserves_previous_outputs` |
+| Alteración de datos crudos o procesados | Los archivos de origen no pueden usarse como salida, y el manifiesto con hashes SHA-256 detecta cambios manuales en el Parquet | `test_source_files_cannot_be_used_as_output_paths`, `test_manifest_detects_modified_parquet` |
+| Datos sin trazabilidad | `data_version` cambia cuando cambian los datos de origen o las reglas de normalización, y solo entonces (no depende de la ruta de salida ni del tamaño de bloque) | `test_version_changes_when_source_or_rules_change`, `test_version_does_not_depend_on_output_path_or_chunk_size` |
+| Fuga de información del futuro | Las variables solo usan datos disponibles al predecir; umbrales y filas de entrenamiento no cambian con datos futuros; los grupos de P3 se congelan con train | `test_features_do_not_see_the_current_or_future_hour`, `test_future_changes_do_not_alter_training_rows_or_thresholds`, `test_p3_candidates_freeze_groups_in_train` |
+| Selección sesgada del modelo | La búsqueda y el listado de candidatos no eligen con métricas de test | `test_search_refuses_to_select_with_test_metrics`, `test_lists_candidates_without_choosing_on_test_metric` |
+| Promoción indebida a `champion` | El modelo debe estar registrado, poder cargarse y tener firma; no puede ser un baseline; la pregunta debe coincidir y la justificación no puede ser trivial; la vista previa no escribe en el registro | `test_champion_requires_loadable_model_with_signature`, `test_unsigned_model_must_not_become_champion`, `test_rejects_baseline_and_missing_logged_model`, `test_rejects_mismatched_question_and_short_justification`, `test_selection_preview_does_not_write_to_registry` |
+| Modelos que no se pueden reconstruir | Se rechazan candidatos de un árbol de Git con cambios sin confirmar, y cada corrida guarda etiquetas y artefactos de reproducibilidad | `test_refuses_dirty_worktree_candidate`, `test_candidate_run_has_filter_tags_and_reproducibility_artifacts` |
+
+### Del dato al modelo
+
+La cadena de trazabilidad es: fuente oficial → manifiesto con hashes y `data_version` → Parquet verificable → corrida en MLflow con código y artefactos de reproducibilidad → registro con alias solo si pasa las reglas anteriores. Cada eslabón tiene al menos una prueba que falla si el control se rompe.
+
+### Alcance
+
+Las pruebas validan que el **proceso** se comporta correctamente con entradas controladas y que las reglas de gobernanza se cumplen. Deepchecks agrega una revisión estadística de los datos y del modelo, y detecta drift entre train y test.
+
 ## Equipo y roles
 
 Equipo 25, TC5061 — Operaciones de Aprendizaje Automático (MLOps).

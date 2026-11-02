@@ -147,7 +147,7 @@ class CandidatosP1:
 
 
         # Si el runner registra artefactos desde CandidateResult, aquí se le pasan las rutas.
-        # (Ajusta el nombre del atributo a lo que use tu base.py.)
+        # El runner registra estas rutas como artefactos del candidato.
         result.artifacts.extend(plot_paths)
 
         return result
