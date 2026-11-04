@@ -1,6 +1,8 @@
 """La ejecución de Projects debe reutilizar un padre y registrar un hijo por pipeline."""
 
 import json
+import shutil
+import subprocess
 import zipfile
 
 import mlflow
@@ -88,3 +90,25 @@ def test_git_queries_fail_clearly_when_git_is_missing(tmp_path, monkeypatch):
 
     with pytest.raises(RuntimeError, match="git no está disponible"):
         tracking._git(tmp_path, "rev-parse", "HEAD")
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="requiere git")
+def test_regenerated_manifest_does_not_mark_worktree_dirty(tmp_path):
+    def git(*args):
+        subprocess.run(
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t", *args],
+            cwd=tmp_path, check=True, capture_output=True,
+        )
+
+    (tmp_path / "data").mkdir()
+    manifest = tmp_path / "data" / "data_manifest.json"
+    manifest.write_text("{}")
+    (tmp_path / "MLproject").write_text("name: x\n")
+    git("init", "-q")
+    git("add", ".")
+    git("commit", "-q", "-m", "init")
+
+    manifest.write_text('{"generado_en": "otra máquina"}')
+    assert tracking.worktree_dirty(tmp_path) is False
+    (tmp_path / "MLproject").write_text("name: y\n")
+    assert tracking.worktree_dirty(tmp_path) is True
