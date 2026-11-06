@@ -47,6 +47,7 @@ mlartifacts/
 *.pt
 *.pth
 *.skops
+/models/api/
 
 # ============================================
 # Credenciales y llaves

@@ -33,6 +33,16 @@ def _git(root: Path, *args: str) -> str:
     return output.strip()
 
 
+# La ingesta reescribe el manifiesto en cada máquina; su contenido ya queda como artefacto del run.
+GENERATED_TRACKED_FILES = ("data/data_manifest.json",)
+
+
+def worktree_dirty(root: Path) -> bool:
+    """Indica cambios sin commit en código o configuración, sin contar archivos generados."""
+    excluded = [f":(exclude){path}" for path in GENERATED_TRACKED_FILES]
+    return bool(_git(root, "status", "--porcelain", "--", ".", *excluded))
+
+
 class SourceSnapshot:
     """Identifica HEAD y conserva exactamente el código ejecutado aunque no esté committed."""
 
@@ -41,7 +51,7 @@ class SourceSnapshot:
 
     def create(self, directory: Path) -> tuple[dict, Path]:
         commit = _git(self.root, "rev-parse", "HEAD")
-        dirty = bool(_git(self.root, "status", "--porcelain"))
+        dirty = worktree_dirty(self.root)
         files = sorted((self.root / "proyecto_mibici").rglob("*.py"))
         files += [
             self.root / name
