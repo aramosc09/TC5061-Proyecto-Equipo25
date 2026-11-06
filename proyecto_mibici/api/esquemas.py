@@ -4,8 +4,8 @@ La API recibe la fecha y hora a predecir y calcula aquí las 6 variables de
 calendario; el cliente solo manda las 24 variables de historial de la estación.
 """
 
-import math
 from datetime import datetime
+import math
 from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator

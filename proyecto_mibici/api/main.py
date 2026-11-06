@@ -5,13 +5,13 @@ Ejecutar localmente:
 Documentación interactiva en http://127.0.0.1:8000/docs
 """
 
-import logging
 from contextlib import asynccontextmanager
+import logging
 from typing import Any
 
+from fastapi import Depends, FastAPI, HTTPException, Request
 import numpy as np
 import pandas as pd
-from fastapi import Depends, FastAPI, HTTPException, Request
 
 from proyecto_mibici.api.esquemas import (
     PeticionPrediccion,
