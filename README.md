@@ -55,15 +55,30 @@ alias, `run_id`, commit, `data_version` y métrica de selección, además de la
 copia del modelo. Los modelos serializados son artefactos locales ignorados por
 Git y deben regenerarse cuando cambie el modelo `champion`.
 
-## API en Docker
+## API en Docker o Podman
 
 La imagen usa inferencia en tiempo real con la copia local del modelo; no
 necesita conexión al servidor MLflow durante la ejecución. Después de exportar
-el modelo, construye y ejecuta el contenedor:
+el modelo, construye y ejecuta el contenedor con Docker:
 
 ```bash
 docker build -f Containerfile -t mibici-api:p1 .
 docker run --rm --name mibici-api -p 8000:8000 mibici-api:p1
+```
+
+Con Podman, usa el formato Docker para conservar el `HEALTHCHECK` de la
+imagen:
+
+```bash
+podman build --format docker -f Containerfile -t mibici-api:p1 .
+podman run --rm --name mibici-api -p 8000:8000 mibici-api:p1
+```
+
+En Windows, si el puerto publicado no responde desde el navegador, configura
+la máquina de Podman en modo rootful antes de ejecutar el contenedor:
+
+```bash
+podman machine set --rootful=true
 ```
 
 En otra terminal, comprueba el servicio:
@@ -74,6 +89,24 @@ curl http://127.0.0.1:8000/model-info
 curl -X POST http://127.0.0.1:8000/predict \
   -H 'Content-Type: application/json' \
   -d '{"registros":[{"fecha_hora":"2026-03-10T08:00:00","salidas_lag_1":4,"salidas_lag_3":2,"salidas_lag_24":5,"salidas_lag_168":6,"salidas_lag_336":5,"salidas_lag_504":7,"salidas_lag_672":4,"salidas_media_3":3.0,"salidas_media_24":1.2,"salidas_media_168":1.4,"salidas_media_4_semanas":5.5,"llegadas_lag_1":3,"llegadas_lag_3":1,"llegadas_lag_24":4,"llegadas_lag_168":5,"llegadas_lag_336":4,"llegadas_lag_504":6,"llegadas_lag_672":3,"llegadas_media_3":2.3,"llegadas_media_24":1.1,"llegadas_media_168":1.3,"llegadas_media_4_semanas":4.5,"balance_acumulado_3":2.0,"balance_acumulado_24":2.4}]}'
+```
+
+Respuesta esperada:
+
+```json
+{
+  "predicciones": [
+    {
+      "salidas_esperadas": 5.2267
+    }
+  ],
+  "modelo": {
+    "registered_model": "mibici-equipo25-p1-demanda",
+    "version": "1",
+    "alias": "champion",
+    "source": "local"
+  }
+}
 ```
 
 La respuesta contiene `predicciones` con `salidas_esperadas` y los metadatos de
