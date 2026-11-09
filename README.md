@@ -113,6 +113,53 @@ La respuesta contiene `predicciones` con `salidas_esperadas` y los metadatos de
 linaje del modelo servido. La API y sus esquemas también pueden inspeccionarse
 en <http://127.0.0.1:8000/docs>.
 
+### Cliente de prueba de la API (Entrega 4)
+
+El módulo `proyecto_mibici/api/cliente.py` permite probar el endpoint `/predict` utilizando un registro real del conjunto de datos MiBici.
+
+El cliente selecciona una estación y una fecha, prepara las 24 variables históricas requeridas por el modelo y valida la petición mediante Pydantic.
+
+**Validación local sin iniciar la API:**
+
+```bash
+uv run --frozen python -m proyecto_mibici.api.cliente --solo-validar
+```
+
+Por defecto, el programa utiliza:
+- Estación: 519.
+- Fecha y hora: `2026-09-10T22:00:00`.
+- Conjunto: 2.
+- Salidas observadas: 1.
+- Variables históricas: 24.
+
+Este comando valida los datos de entrada sin realizar una predicción.
+
+**Predicción utilizando la API REST:**
+
+Con la API iniciada y el modelo P1 exportado:
+
+```bash
+uv run --frozen python -m proyecto_mibici.api.cliente
+```
+
+El cliente envía una petición HTTP a `http://127.0.0.1:8000/predict`, valida la respuesta y muestra las salidas esperadas, las salidas observadas y el error absoluto.
+
+El programa admite los argumentos `--parquet`, `--estacion`, `--fecha-hora`, `--conjunto`, `--api-url` y `--solo-validar`.
+
+**Requisitos:** disponer del archivo `data/processed/tabla_supervisada.parquet`. Para la predicción HTTP, también se requiere que la API esté funcionando con el modelo P1 exportado.
+
+**Pruebas automatizadas del cliente:**
+
+```bash
+uv run --frozen python -m pytest tests/test_api_cliente.py -q
+```
+
+Las seis pruebas unitarias del cliente fueron aprobadas. La ejecución HTTP real queda pendiente de verificar con el modelo exportado.
+
+**Justificación técnica del despliegue:** consultar [Estrategia de despliegue e inferencia — Entrega 4](docs/docs/despliegue_inferencia_entrega4.md), donde se explica la elección de inferencia en tiempo real frente a procesamiento por lotes, las limitaciones y las referencias utilizadas.
+
+
+
 ## Propósito y preguntas
 
 | Pregunta | Tarea y unidad | Objetivo implementado | Horizonte / uso esperado |
