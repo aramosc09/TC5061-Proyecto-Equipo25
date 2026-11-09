@@ -1,0 +1,31 @@
+{
+   "registros":[
+      {
+         "fecha_hora":"2026-03-10T08:00:00",
+         "salidas_lag_1":4,
+         "salidas_lag_3":2,
+         "salidas_lag_24":5,
+         "salidas_lag_168":6,
+         "salidas_lag_336":5,
+         "salidas_lag_504":7,
+         "salidas_lag_672":4,
+         "salidas_media_3":3.0,
+         "salidas_media_24":1.2,
+         "salidas_media_168":1.4,
+         "salidas_media_4_semanas":5.5,
+         "llegadas_lag_1":3,
+         "llegadas_lag_3":1,
+         "llegadas_lag_24":4,
+         "llegadas_lag_168":5,
+         "llegadas_lag_336":4,
+         "llegadas_lag_504":6,
+         "llegadas_lag_672":3,
+         "llegadas_media_3":2.3,
+         "llegadas_media_24":1.1,
+         "llegadas_media_168":1.3,
+         "llegadas_media_4_semanas":4.5,
+         "balance_acumulado_3":2.0,
+         "balance_acumulado_24":2.4
+      }
+   ]
+}
