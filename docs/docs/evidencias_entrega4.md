@@ -123,6 +123,31 @@ Este resultado no constituye una predicción real ni una prueba satisfactoria de
 
 **Estado:** pendiente de repetir con la API en ejecución y el modelo P1 exportado.
 
+### 6.1. Pruebas de integración HTTP realizadas por el equipo
+
+Como complemento a las pruebas individuales del cliente, se incorporan evidencias de integración proporcionadas por un compañero del Equipo 25.
+
+**Evidencia 05 — Ejecución del contenedor de la API**
+
+La captura muestra el arranque del contenedor y los registros de Uvicorn que indican que la aplicación inició correctamente.
+
+![Ejecución del contenedor de la API](imagenes/entrega4/05_contenedor_api.png)
+
+**Evidencia 06 — Peticiones HTTP reales a la API**
+
+La captura muestra pruebas realizadas mediante `curl` contra los endpoints de la API:
+
+- `POST /predict`: petición HTTP que devuelve una predicción y metadatos del modelo.
+- `GET /health`: comprobación del estado del servicio con respuesta `{"status":"ok"}`.
+
+![Peticiones HTTP a la API](imagenes/entrega4/06_peticion_http_real.png)
+
+**Alcance de estas evidencias:**
+
+Estas pruebas fueron realizadas por un integrante del equipo y permiten documentar la comunicación HTTP con el contenedor.
+
+Las pruebas individuales del cliente `proyecto_mibici/api/cliente.py` verifican la preparación y validación de las entradas. La ejecución HTTP exitosa de ese cliente específico, utilizando el registro real de la estación 519 y comparando la predicción con el valor observado, continúa pendiente de verificarse.
+
 ## 7. Verificación de Git e integración
 
 Rama utilizada:
@@ -137,18 +162,30 @@ Commits del trabajo:
 
 Después de la integración, se ejecutaron nuevamente las pruebas generales y Ruff, ambos con resultados satisfactorios.
 
-## 8. Evidencias pendientes para completar la entrega
 
-- Incorporar capturas de las pruebas unitarias del cliente.
-- Incorporar capturas de las pruebas generales y Ruff.
-- Incorporar captura de la validación del registro real.
-- Ejecutar la API con el modelo P1 exportado.
-- Obtener una respuesta real del endpoint `/predict`.
-- Registrar la predicción, el valor observado y el error absoluto.
-- Verificar la ejecución desde un entorno limpio, según los requisitos de la entrega.
+## 8. Estado de las evidencias y actividades pendientes
 
-## 9. Conclusión preliminar
+### Evidencias disponibles
 
-El cliente REST y sus pruebas automatizadas se encuentran implementados y pasan las verificaciones locales realizadas.
+- [x] Pruebas unitarias del cliente: 6 aprobadas.
+- [x] Pruebas generales del proyecto: 136 aprobadas y 1 omitida.
+- [x] Análisis estático con Ruff: sin errores.
+- [x] Validación de un registro real de la estación 519 con 24 variables históricas.
+- [x] Evidencia del arranque del contenedor proporcionada por un compañero.
+- [x] Evidencia de peticiones HTTP a `/predict` y `/health` realizadas por un compañero.
 
-La integración completa con la API y el modelo desplegado todavía requiere una ejecución HTTP satisfactoria, por lo que no se considera validada en esta etapa.
+### Actividades pendientes
+
+- [ ] Ejecutar el cliente `cliente.py` contra una API activa con el modelo P1.
+- [ ] Registrar la predicción de la estación 519, el valor observado y su error absoluto.
+- [ ] Completar la verificación desde un entorno limpio, según los requisitos de la entrega.
+
+## 9. Conclusión
+
+El cliente REST desarrollado para MiBici Equipo 25 permite seleccionar un registro real, preparar las 24 variables históricas y validar la petición antes de enviarla a la API.
+
+Las seis pruebas unitarias del cliente finalizaron correctamente. Después de integrar los cambios del contenedor, las pruebas generales del proyecto registraron 136 resultados aprobados, una prueba omitida y ningún error de Ruff.
+
+Adicionalmente, se incorporaron capturas proporcionadas por un compañero del equipo que muestran el arranque del contenedor y respuestas HTTP de los endpoints `/predict` y `/health`.
+
+Estas evidencias respaldan la integración de la API a nivel de equipo. Sin embargo, todavía está pendiente comprobar que el cliente Python desarrollado en este PR realice exitosamente la petición HTTP utilizando el registro de la estación 519 y calcule el error absoluto respecto al valor observado.
