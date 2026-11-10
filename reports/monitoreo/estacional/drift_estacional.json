@@ -1,0 +1,2884 @@
+{
+ "metrics": [
+  {
+   "id": "fbcfd50e82e96f9b1918769c744ccf34",
+   "metric_name": "DriftedColumnsCount(columns=hora_sin,hora_cos,dia_semana_sin,dia_semana_cos,fin_semana,mes,salidas_lag_1,salidas_lag_3,salidas_lag_24,salidas_lag_168,salidas_media_3,salidas_media_24,salidas_media_168,llegadas_lag_1,llegadas_lag_3,llegadas_lag_24,llegadas_lag_168,llegadas_media_3,llegadas_media_24,llegadas_media_168,balance_acumulado_3,balance_acumulado_24,salidas_lag_336,salidas_lag_504,salidas_lag_672,salidas_media_4_semanas,llegadas_lag_336,llegadas_lag_504,llegadas_lag_672,llegadas_media_4_semanas,salidas,drift_share=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:DriftedColumnsCount",
+    "columns": [
+     "hora_sin",
+     "hora_cos",
+     "dia_semana_sin",
+     "dia_semana_cos",
+     "fin_semana",
+     "mes",
+     "salidas_lag_1",
+     "salidas_lag_3",
+     "salidas_lag_24",
+     "salidas_lag_168",
+     "salidas_media_3",
+     "salidas_media_24",
+     "salidas_media_168",
+     "llegadas_lag_1",
+     "llegadas_lag_3",
+     "llegadas_lag_24",
+     "llegadas_lag_168",
+     "llegadas_media_3",
+     "llegadas_media_24",
+     "llegadas_media_168",
+     "balance_acumulado_3",
+     "balance_acumulado_24",
+     "salidas_lag_336",
+     "salidas_lag_504",
+     "salidas_lag_672",
+     "salidas_media_4_semanas",
+     "llegadas_lag_336",
+     "llegadas_lag_504",
+     "llegadas_lag_672",
+     "llegadas_media_4_semanas",
+     "salidas"
+    ],
+    "drift_share": 0.5
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "451f138451a234bf53f12684cf26453c",
+   "metric_name": "ValueDrift(column=hora_sin,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "hora_sin",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.006827202183831661
+  },
+  {
+   "id": "0406a9d36de47964186afe5977d7dab8",
+   "metric_name": "ValueDrift(column=hora_cos,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "hora_cos",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.00565690070836367
+  },
+  {
+   "id": "f0fd00e50a6a5257e79c0cd4f24feaad",
+   "metric_name": "ValueDrift(column=dia_semana_sin,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "dia_semana_sin",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.002575303921830948
+  },
+  {
+   "id": "53bba1f4e0330f4abf449552c302259f",
+   "metric_name": "ValueDrift(column=dia_semana_cos,method=Jensen-Shannon distance,threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "dia_semana_cos",
+    "method": "Jensen-Shannon distance",
+    "threshold": 0.1
+   },
+   "value": 0.001966874910068822
+  },
+  {
+   "id": "6337c568efcd5f71585144350000245e",
+   "metric_name": "ValueDrift(column=fin_semana,method=Jensen-Shannon distance,threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "fin_semana",
+    "method": "Jensen-Shannon distance",
+    "threshold": 0.1
+   },
+   "value": 0.0005086197163894495
+  },
+  {
+   "id": "f3c29b53859a30e6b2579bca2127dc32",
+   "metric_name": "ValueDrift(column=mes,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "mes",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.006071197228260354
+  },
+  {
+   "id": "90f391ebe72bdf3654d5c5a4c88956c1",
+   "metric_name": "ValueDrift(column=salidas_lag_1,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_lag_1",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.04508967085213604
+  },
+  {
+   "id": "086960415d26346a36253f62cf6b27f0",
+   "metric_name": "ValueDrift(column=salidas_lag_3,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_lag_3",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.05013084533817173
+  },
+  {
+   "id": "beaaf4358518d35141a6f4c9bdb2df09",
+   "metric_name": "ValueDrift(column=salidas_lag_24,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_lag_24",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.04131835235579361
+  },
+  {
+   "id": "9417a32bce13e0e6a694d112a1abe609",
+   "metric_name": "ValueDrift(column=salidas_lag_168,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_lag_168",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.044066110766629855
+  },
+  {
+   "id": "5e26e215425ccc7be91e1bb27a245cdd",
+   "metric_name": "ValueDrift(column=salidas_media_3,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_media_3",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.05540139733891722
+  },
+  {
+   "id": "43c2231c5dbe092beaac444ec8e0394f",
+   "metric_name": "ValueDrift(column=salidas_media_24,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_media_24",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.0806138830086325
+  },
+  {
+   "id": "55ba179d231264a43ba73b533c2ca8e0",
+   "metric_name": "ValueDrift(column=salidas_media_168,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_media_168",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.08395653263327972
+  },
+  {
+   "id": "ab97924165c76c16e7f38c76808af6dc",
+   "metric_name": "ValueDrift(column=llegadas_lag_1,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_lag_1",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.03627385047469418
+  },
+  {
+   "id": "c95689fc2dc7a36d923a84299c3f6eca",
+   "metric_name": "ValueDrift(column=llegadas_lag_3,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_lag_3",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.04434539058040482
+  },
+  {
+   "id": "2cdd8a8958ccc9510cc0b0d6af53a186",
+   "metric_name": "ValueDrift(column=llegadas_lag_24,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_lag_24",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.03089708802774373
+  },
+  {
+   "id": "d0be34851e0653fa8ed35b5badbff85e",
+   "metric_name": "ValueDrift(column=llegadas_lag_168,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_lag_168",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.03561000923889622
+  },
+  {
+   "id": "1013929bd2b970fbe24e47b9eac85e59",
+   "metric_name": "ValueDrift(column=llegadas_media_3,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_media_3",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.04550330348877309
+  },
+  {
+   "id": "b03937a7a351deb26f8149f717f0370c",
+   "metric_name": "ValueDrift(column=llegadas_media_24,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_media_24",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.0721017689890995
+  },
+  {
+   "id": "4cad6bf99d9d6fc030bede92a5ddbbcb",
+   "metric_name": "ValueDrift(column=llegadas_media_168,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_media_168",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.07444374829798357
+  },
+  {
+   "id": "0560f44159e328f3cf3424a6d0f0ce33",
+   "metric_name": "ValueDrift(column=balance_acumulado_3,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "balance_acumulado_3",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.06596862372886496
+  },
+  {
+   "id": "5d2003717ea35e4252e83fb07f70607b",
+   "metric_name": "ValueDrift(column=balance_acumulado_24,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "balance_acumulado_24",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.09924817541786189
+  },
+  {
+   "id": "baea7c8b6c7e1c4081b2dcfa9de8ebeb",
+   "metric_name": "ValueDrift(column=salidas_lag_336,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_lag_336",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.0444357064623528
+  },
+  {
+   "id": "28813a34ca059de2d4b69b5045baba21",
+   "metric_name": "ValueDrift(column=salidas_lag_504,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_lag_504",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.04819603978088932
+  },
+  {
+   "id": "21e2e3d53a83e3425bb388a4bd65a2d2",
+   "metric_name": "ValueDrift(column=salidas_lag_672,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_lag_672",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.0413738180576848
+  },
+  {
+   "id": "72b7d86185e19502d3a16ce30820d5c7",
+   "metric_name": "ValueDrift(column=salidas_media_4_semanas,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas_media_4_semanas",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.04772526599759313
+  },
+  {
+   "id": "2a9e5585e31fcc3ccf4c3a49ce036fa5",
+   "metric_name": "ValueDrift(column=llegadas_lag_336,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_lag_336",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.03615813364392396
+  },
+  {
+   "id": "708ea60add9515a5017501032426b9c7",
+   "metric_name": "ValueDrift(column=llegadas_lag_504,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_lag_504",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.03822827846266312
+  },
+  {
+   "id": "579802789f2f65a464e0bab07482fcfb",
+   "metric_name": "ValueDrift(column=llegadas_lag_672,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_lag_672",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.03574020940061797
+  },
+  {
+   "id": "b306c281bc5c22fcadb7005288ad737d",
+   "metric_name": "ValueDrift(column=llegadas_media_4_semanas,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "llegadas_media_4_semanas",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.03952171785521769
+  },
+  {
+   "id": "e151c9cb734af28a3e5f0deaf04370e5",
+   "metric_name": "ValueDrift(column=salidas,method=Wasserstein distance (normed),threshold=0.1)",
+   "config": {
+    "type": "evidently:metric_v2:ValueDrift",
+    "column": "salidas",
+    "method": "Wasserstein distance (normed)",
+    "threshold": 0.1
+   },
+   "value": 0.04136890807744616
+  },
+  {
+   "id": "00404ffe284d7862baa4095093452630",
+   "metric_name": "RowCount()",
+   "config": {
+    "type": "evidently:metric_v2:RowCount"
+   },
+   "value": 100000.0
+  },
+  {
+   "id": "91e498263b6502661774b15eb39ea154",
+   "metric_name": "ColumnCount()",
+   "config": {
+    "type": "evidently:metric_v2:ColumnCount"
+   },
+   "value": 31.0
+  },
+  {
+   "id": "31b8c78bad2b7108842265cd082d5abf",
+   "metric_name": "ColumnCount(column_type=ColumnType.Numerical)",
+   "config": {
+    "type": "evidently:metric_v2:ColumnCount",
+    "tests": [],
+    "column_type": "ColumnType.Numerical"
+   },
+   "value": 30.0
+  },
+  {
+   "id": "bb154bb9a843cad0d72fa3dc4983394d",
+   "metric_name": "ColumnCount(column_type=ColumnType.Categorical)",
+   "config": {
+    "type": "evidently:metric_v2:ColumnCount",
+    "tests": [],
+    "column_type": "ColumnType.Categorical"
+   },
+   "value": 1.0
+  },
+  {
+   "id": "012cbfb269361272d4773e1a68559396",
+   "metric_name": "ColumnCount(column_type=ColumnType.Datetime)",
+   "config": {
+    "type": "evidently:metric_v2:ColumnCount",
+    "tests": [],
+    "column_type": "ColumnType.Datetime"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "3f5e595e26bc8e120aadf51967bb0355",
+   "metric_name": "ColumnCount(column_type=ColumnType.Text)",
+   "config": {
+    "type": "evidently:metric_v2:ColumnCount",
+    "tests": [],
+    "column_type": "ColumnType.Text"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "ff1caea5e148b287bd5348d4bb40eccf",
+   "metric_name": "DuplicatedRowCount()",
+   "config": {
+    "type": "evidently:metric_v2:DuplicatedRowCount"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "02fbcbd017b30a0b075d9d5a72ce2a32",
+   "metric_name": "DuplicatedColumnsCount()",
+   "config": {
+    "type": "evidently:metric_v2:DuplicatedColumnsCount"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "4c2efb888b5c5f8afb50895b4b4abcec",
+   "metric_name": "AlmostDuplicatedColumnsCount()",
+   "config": {
+    "type": "evidently:metric_v2:AlmostDuplicatedColumnsCount"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "9e9fa5ec57528fadbf97a35ad5b66838",
+   "metric_name": "AlmostConstantColumnsCount()",
+   "config": {
+    "type": "evidently:metric_v2:AlmostConstantColumnsCount"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "c86e32eba7f3826051b804c0df7a97fe",
+   "metric_name": "EmptyRowsCount()",
+   "config": {
+    "type": "evidently:metric_v2:EmptyRowsCount"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "ce527bc2e35349e7f7a2e047a57f85ca",
+   "metric_name": "EmptyColumnsCount()",
+   "config": {
+    "type": "evidently:metric_v2:EmptyColumnsCount"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "5f958296980b95bddb41264800ab7a93",
+   "metric_name": "ConstantColumnsCount()",
+   "config": {
+    "type": "evidently:metric_v2:ConstantColumnsCount"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "89b8d715e93a15e3acbc483410aff2f4",
+   "metric_name": "DatasetMissingValueCount()",
+   "config": {
+    "type": "evidently:metric_v2:DatasetMissingValueCount"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "ee9b38939484f3ca526257959b7b58af",
+   "metric_name": "MissingValueCount(column=fin_semana)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "fin_semana"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "19e280e78d94af50d8c872c6b95f26f4",
+   "metric_name": "UniqueValueCount(column=fin_semana)",
+   "config": {
+    "type": "evidently:metric_v2:UniqueValueCount",
+    "column": "fin_semana"
+   },
+   "value": {
+    "counts": {
+     "0": 71445.0,
+     "1": 28555.0
+    },
+    "shares": {
+     "0": 0.71445,
+     "1": 0.28555
+    }
+   }
+  },
+  {
+   "id": "9b0421750326f7396bf5a331616c4e97",
+   "metric_name": "MissingValueCount(column=hora_sin)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "hora_sin"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "bac4bd793127916cce6eafaf2be44655",
+   "metric_name": "MinValue(column=hora_sin)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "hora_sin"
+   },
+   "value": -1.0
+  },
+  {
+   "id": "a13547590c776e7d48c617f96084af7a",
+   "metric_name": "MaxValue(column=hora_sin)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "hora_sin"
+   },
+   "value": 1.0
+  },
+  {
+   "id": "1c761c8bfe29d9a9cf6a8a1e5ac444d8",
+   "metric_name": "MeanValue(column=hora_sin)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "hora_sin"
+   },
+   "value": -0.0028509225230664015
+  },
+  {
+   "id": "50d2f7b2241b837b0a7e9b524398cca9",
+   "metric_name": "StdValue(column=hora_sin)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "hora_sin"
+   },
+   "value": 0.7075749635696411
+  },
+  {
+   "id": "005374061bd867cfc7bc8dfbfe1858aa",
+   "metric_name": "QuantileValue(column=hora_sin,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "hora_sin",
+    "quantile": 0.25
+   },
+   "value": -0.7071067690849304
+  },
+  {
+   "id": "0f696d683404ef8e597c491d851c733f",
+   "metric_name": "QuantileValue(column=hora_sin,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "hora_sin",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "865747bedbe7c0ba797652e0caf63d38",
+   "metric_name": "QuantileValue(column=hora_sin,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "hora_sin",
+    "quantile": 0.75
+   },
+   "value": 0.7071067690849304
+  },
+  {
+   "id": "f103af0e66fc695c7165495aa4dac2cc",
+   "metric_name": "MissingValueCount(column=hora_cos)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "hora_cos"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "b154f33b27f7586e2b961d31c1862e14",
+   "metric_name": "MinValue(column=hora_cos)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "hora_cos"
+   },
+   "value": -1.0
+  },
+  {
+   "id": "6c306369b14eca973480508eadcada10",
+   "metric_name": "MaxValue(column=hora_cos)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "hora_cos"
+   },
+   "value": 1.0
+  },
+  {
+   "id": "4181774eb34850f0fa3498fe5af39f50",
+   "metric_name": "MeanValue(column=hora_cos)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "hora_cos"
+   },
+   "value": -0.0015132910339161754
+  },
+  {
+   "id": "842bb505d34db98ad81c826e65b2e0f1",
+   "metric_name": "StdValue(column=hora_cos)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "hora_cos"
+   },
+   "value": 0.706637978553772
+  },
+  {
+   "id": "f294f7c552c1a448e9231eca41af2ee4",
+   "metric_name": "QuantileValue(column=hora_cos,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "hora_cos",
+    "quantile": 0.25
+   },
+   "value": -0.7071067690849304
+  },
+  {
+   "id": "b92c776aa21b68af6cc048d1eada9854",
+   "metric_name": "QuantileValue(column=hora_cos,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "hora_cos",
+    "quantile": 0.5
+   },
+   "value": -1.8369701465288538e-16
+  },
+  {
+   "id": "c2cf7f7ddd70b5e3475beeb30f8e1c0a",
+   "metric_name": "QuantileValue(column=hora_cos,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "hora_cos",
+    "quantile": 0.75
+   },
+   "value": 0.7071067690849304
+  },
+  {
+   "id": "f41279abdd244672d4676f7671027b8d",
+   "metric_name": "MissingValueCount(column=dia_semana_sin)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "dia_semana_sin"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "228a661ea69f46e6b3ad33614e3507e7",
+   "metric_name": "MinValue(column=dia_semana_sin)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "dia_semana_sin"
+   },
+   "value": -0.9749279022216797
+  },
+  {
+   "id": "9238492333c15dfd1c5e803372d59bc1",
+   "metric_name": "MaxValue(column=dia_semana_sin)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "dia_semana_sin"
+   },
+   "value": 0.9749279022216797
+  },
+  {
+   "id": "25b7cf134e9c6b00718915a4bc593dfe",
+   "metric_name": "MeanValue(column=dia_semana_sin)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "dia_semana_sin"
+   },
+   "value": 0.0011387101840227842
+  },
+  {
+   "id": "dde12282656aca7d634733ca3095f077",
+   "metric_name": "StdValue(column=dia_semana_sin)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "dia_semana_sin"
+   },
+   "value": 0.7069252729415894
+  },
+  {
+   "id": "01ba3b6f1d2b7ab6f8493e91890281e5",
+   "metric_name": "QuantileValue(column=dia_semana_sin,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "dia_semana_sin",
+    "quantile": 0.25
+   },
+   "value": -0.7818315029144287
+  },
+  {
+   "id": "9190b25dfb7e7b0a233b4ac3232b5396",
+   "metric_name": "QuantileValue(column=dia_semana_sin,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "dia_semana_sin",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "c92e12b3163b3a5282abc595b93a2e80",
+   "metric_name": "QuantileValue(column=dia_semana_sin,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "dia_semana_sin",
+    "quantile": 0.75
+   },
+   "value": 0.7818315029144287
+  },
+  {
+   "id": "23fff885e0c5f047b82e0dbcf89c115e",
+   "metric_name": "MissingValueCount(column=dia_semana_cos)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "dia_semana_cos"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "bcf5f845c41d2a8e3f33da9a4aa3da02",
+   "metric_name": "MinValue(column=dia_semana_cos)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "dia_semana_cos"
+   },
+   "value": -0.9009688496589661
+  },
+  {
+   "id": "f7315e0081796d029010af7952b866d8",
+   "metric_name": "MaxValue(column=dia_semana_cos)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "dia_semana_cos"
+   },
+   "value": 1.0
+  },
+  {
+   "id": "084c3909c016802761affd7e5a37fc5b",
+   "metric_name": "MeanValue(column=dia_semana_cos)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "dia_semana_cos"
+   },
+   "value": 0.00013862948981113732
+  },
+  {
+   "id": "ce55a7b887394f7f1dab922452b4627b",
+   "metric_name": "StdValue(column=dia_semana_cos)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "dia_semana_cos"
+   },
+   "value": 0.7072944045066833
+  },
+  {
+   "id": "2c937a21f98b4cdaa5e966c1b95b4d11",
+   "metric_name": "QuantileValue(column=dia_semana_cos,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "dia_semana_cos",
+    "quantile": 0.25
+   },
+   "value": -0.9009688496589661
+  },
+  {
+   "id": "6bcb9cd95d869e999750169634626e13",
+   "metric_name": "QuantileValue(column=dia_semana_cos,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "dia_semana_cos",
+    "quantile": 0.5
+   },
+   "value": -0.22252093255519867
+  },
+  {
+   "id": "ce6c66966f03611f19fe5f524d0fd832",
+   "metric_name": "QuantileValue(column=dia_semana_cos,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "dia_semana_cos",
+    "quantile": 0.75
+   },
+   "value": 0.6234897971153259
+  },
+  {
+   "id": "9274ae1a3c73496dbdb8d12bbe7871bc",
+   "metric_name": "MissingValueCount(column=mes)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "mes"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "c2ad86a4dee8aa95a4416f2359762caa",
+   "metric_name": "MinValue(column=mes)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "mes"
+   },
+   "value": 1.0
+  },
+  {
+   "id": "a3a3c1197bb3f89a496ab45ff39d062d",
+   "metric_name": "MaxValue(column=mes)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "mes"
+   },
+   "value": 12.0
+  },
+  {
+   "id": "1434f4c94e7c075972f0f3b77c0a43c9",
+   "metric_name": "MeanValue(column=mes)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "mes"
+   },
+   "value": 6.021639823913574
+  },
+  {
+   "id": "24cacbf2d0d06f63532b5e0355c2cd40",
+   "metric_name": "StdValue(column=mes)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "mes"
+   },
+   "value": 3.838489294052124
+  },
+  {
+   "id": "804ac3c792cee2c250a28426b172b388",
+   "metric_name": "QuantileValue(column=mes,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "mes",
+    "quantile": 0.25
+   },
+   "value": 3.0
+  },
+  {
+   "id": "a54eeb43124c90f5cdcf9cf3db297236",
+   "metric_name": "QuantileValue(column=mes,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "mes",
+    "quantile": 0.5
+   },
+   "value": 5.0
+  },
+  {
+   "id": "6b59272b3dee94ec2e43df2c69db55d3",
+   "metric_name": "QuantileValue(column=mes,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "mes",
+    "quantile": 0.75
+   },
+   "value": 10.0
+  },
+  {
+   "id": "d22f67f7bf749014778067928fc68d0b",
+   "metric_name": "MissingValueCount(column=salidas_lag_1)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_lag_1"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "0518a139a59bc5217e2ce79b42e8aebf",
+   "metric_name": "MinValue(column=salidas_lag_1)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_lag_1"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "ad2d012f72107550a9616ec4310928fb",
+   "metric_name": "MaxValue(column=salidas_lag_1)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_lag_1"
+   },
+   "value": 77.0
+  },
+  {
+   "id": "0161ff9eb4eec02fd6b088cb07438b94",
+   "metric_name": "MeanValue(column=salidas_lag_1)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_lag_1"
+   },
+   "value": 1.3261799812316895
+  },
+  {
+   "id": "7e5eaf922553d7279bca57290579a313",
+   "metric_name": "StdValue(column=salidas_lag_1)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_lag_1"
+   },
+   "value": 2.4699084758758545
+  },
+  {
+   "id": "8b6d16a3538915ada7f9cbcb849aab58",
+   "metric_name": "QuantileValue(column=salidas_lag_1,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_1",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "e5d0abb048745f0b4a75de03236fe94e",
+   "metric_name": "QuantileValue(column=salidas_lag_1,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_1",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "425ae280eb019d4b32d45ab9bad9a4c4",
+   "metric_name": "QuantileValue(column=salidas_lag_1,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_1",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "b3b0df78454e0d81a68a8fed9ca8c4bf",
+   "metric_name": "MissingValueCount(column=salidas_lag_3)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_lag_3"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "699db7035d6d5f4b40d34fee4ad296f3",
+   "metric_name": "MinValue(column=salidas_lag_3)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_lag_3"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "21f41f1be6d01022315a8c4cb72ccd79",
+   "metric_name": "MaxValue(column=salidas_lag_3)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_lag_3"
+   },
+   "value": 89.0
+  },
+  {
+   "id": "89d5c26d447d282a98d578f72a3a104b",
+   "metric_name": "MeanValue(column=salidas_lag_3)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_lag_3"
+   },
+   "value": 1.3289799690246582
+  },
+  {
+   "id": "a4b054e2d4db4ea93c0ac333d8c6a4a0",
+   "metric_name": "StdValue(column=salidas_lag_3)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_lag_3"
+   },
+   "value": 2.4981462955474854
+  },
+  {
+   "id": "75f3d475b437c28edd86fefbe17ac296",
+   "metric_name": "QuantileValue(column=salidas_lag_3,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_3",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "0b4a2c478f9a2962aff4dd9d9d9ea9ba",
+   "metric_name": "QuantileValue(column=salidas_lag_3,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_3",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "c8a85b2d4173c8352d124a677a32dd70",
+   "metric_name": "QuantileValue(column=salidas_lag_3,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_3",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "d108049b081459c48f4ee1694db8efe4",
+   "metric_name": "MissingValueCount(column=salidas_lag_24)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_lag_24"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "7b4e4b609a6d8b490bc6d8872d6b0e53",
+   "metric_name": "MinValue(column=salidas_lag_24)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_lag_24"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "04e7b68850cf6b0772d818460136b80a",
+   "metric_name": "MaxValue(column=salidas_lag_24)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_lag_24"
+   },
+   "value": 81.0
+  },
+  {
+   "id": "b504d6af20addef29093db0fa1cf5f0b",
+   "metric_name": "MeanValue(column=salidas_lag_24)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_lag_24"
+   },
+   "value": 1.3326200246810913
+  },
+  {
+   "id": "06bf3dd09d1b9295b9ac08f33f02df9b",
+   "metric_name": "StdValue(column=salidas_lag_24)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_lag_24"
+   },
+   "value": 2.518913984298706
+  },
+  {
+   "id": "58d73f3b09606f06a833641c44f81ac1",
+   "metric_name": "QuantileValue(column=salidas_lag_24,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_24",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "182c4aed4a4545a40d836792c6d22aa6",
+   "metric_name": "QuantileValue(column=salidas_lag_24,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_24",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "4dd7c09ae6bbd9babe79784c224d0159",
+   "metric_name": "QuantileValue(column=salidas_lag_24,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_24",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "86a04c6653c50140d55ad5fd5bb422d2",
+   "metric_name": "MissingValueCount(column=salidas_lag_168)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_lag_168"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "0febc4a2b7911b4b7348873cd4905442",
+   "metric_name": "MinValue(column=salidas_lag_168)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_lag_168"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "6f010ed3d6e9358859812a1f9f875553",
+   "metric_name": "MaxValue(column=salidas_lag_168)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_lag_168"
+   },
+   "value": 89.0
+  },
+  {
+   "id": "4c809413069cf421229fc051e11f5159",
+   "metric_name": "MeanValue(column=salidas_lag_168)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_lag_168"
+   },
+   "value": 1.3380299806594849
+  },
+  {
+   "id": "a03323721f5e80d470bbaa8c1020e3a7",
+   "metric_name": "StdValue(column=salidas_lag_168)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_lag_168"
+   },
+   "value": 2.5149569511413574
+  },
+  {
+   "id": "dc27811f11adf542866e71e994e2572c",
+   "metric_name": "QuantileValue(column=salidas_lag_168,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_168",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "a52bcde0714db9b05d281bb1506ee6c7",
+   "metric_name": "QuantileValue(column=salidas_lag_168,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_168",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "103aca8f756ffba23f8b8626288cada2",
+   "metric_name": "QuantileValue(column=salidas_lag_168,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_168",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "a84566c28a47d16ab2a3f8c5e598155b",
+   "metric_name": "MissingValueCount(column=salidas_media_3)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_media_3"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "9cd8906227530b1d33243489cd60b735",
+   "metric_name": "MinValue(column=salidas_media_3)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_media_3"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "60668cb33bfd697185f48f570cb3098a",
+   "metric_name": "MaxValue(column=salidas_media_3)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_media_3"
+   },
+   "value": 72.0
+  },
+  {
+   "id": "91bb63e6e106dd1ce637cce06db7817c",
+   "metric_name": "MeanValue(column=salidas_media_3)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_media_3"
+   },
+   "value": 1.3289765119552612
+  },
+  {
+   "id": "494e348a243193f532d8167350669e72",
+   "metric_name": "StdValue(column=salidas_media_3)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_media_3"
+   },
+   "value": 2.161240816116333
+  },
+  {
+   "id": "e75fda2fb04e8d001524704cccf12ca3",
+   "metric_name": "QuantileValue(column=salidas_media_3,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_3",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "f8b6e4f0774825c63ab677a557b6d3a0",
+   "metric_name": "QuantileValue(column=salidas_media_3,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_3",
+    "quantile": 0.5
+   },
+   "value": 0.6666666865348816
+  },
+  {
+   "id": "79da624a4300fdaddb0425b13335107c",
+   "metric_name": "QuantileValue(column=salidas_media_3,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_3",
+    "quantile": 0.75
+   },
+   "value": 1.6666666269302368
+  },
+  {
+   "id": "c30a6f0e76c9882470b8e14a8959b4dd",
+   "metric_name": "MissingValueCount(column=salidas_media_24)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_media_24"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "086f9768ae671e6920a701c5a82c4316",
+   "metric_name": "MinValue(column=salidas_media_24)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_media_24"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "6a295b486edd4b4c187eb29545b820c0",
+   "metric_name": "MaxValue(column=salidas_media_24)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_media_24"
+   },
+   "value": 26.95833396911621
+  },
+  {
+   "id": "5529a86e614195fa434663df9c988bd7",
+   "metric_name": "MeanValue(column=salidas_media_24)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_media_24"
+   },
+   "value": 1.3318833112716675
+  },
+  {
+   "id": "ee3712c23b96597f06d536c523b33e91",
+   "metric_name": "StdValue(column=salidas_media_24)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_media_24"
+   },
+   "value": 1.4139659404754639
+  },
+  {
+   "id": "0e2e504644844f49e2a57192aebfe8d8",
+   "metric_name": "QuantileValue(column=salidas_media_24,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_24",
+    "quantile": 0.25
+   },
+   "value": 0.4583333432674408
+  },
+  {
+   "id": "36051202d1c47e38add5e3ce4681b468",
+   "metric_name": "QuantileValue(column=salidas_media_24,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_24",
+    "quantile": 0.5
+   },
+   "value": 0.9166666865348816
+  },
+  {
+   "id": "a1662b316f2151ea32d9f7f0ac53f941",
+   "metric_name": "QuantileValue(column=salidas_media_24,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_24",
+    "quantile": 0.75
+   },
+   "value": 1.7916666269302368
+  },
+  {
+   "id": "a270ec87f158a5744d2a2b425d8e7353",
+   "metric_name": "MissingValueCount(column=salidas_media_168)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_media_168"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "55284f8346101ab0805fee417c5c9036",
+   "metric_name": "MinValue(column=salidas_media_168)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_media_168"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "bf7ce7b126642a2e5f92b3b930824410",
+   "metric_name": "MaxValue(column=salidas_media_168)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_media_168"
+   },
+   "value": 14.690476417541504
+  },
+  {
+   "id": "3e280f31f43c5d1205d381f8c124a8d5",
+   "metric_name": "MeanValue(column=salidas_media_168)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_media_168"
+   },
+   "value": 1.3338476419448853
+  },
+  {
+   "id": "a80dc1f2bf699c2bb551d209e0e1e320",
+   "metric_name": "StdValue(column=salidas_media_168)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_media_168"
+   },
+   "value": 1.3191912174224854
+  },
+  {
+   "id": "819b2cb8f61a8e9e83db9fb0d83b7c55",
+   "metric_name": "QuantileValue(column=salidas_media_168,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_168",
+    "quantile": 0.25
+   },
+   "value": 0.4821428656578064
+  },
+  {
+   "id": "371bfc9de2c6817ccfdaf73296fc67f1",
+   "metric_name": "QuantileValue(column=salidas_media_168,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_168",
+    "quantile": 0.5
+   },
+   "value": 0.9702380895614624
+  },
+  {
+   "id": "06db967912ae2b31c813cd10d862bae6",
+   "metric_name": "QuantileValue(column=salidas_media_168,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_168",
+    "quantile": 0.75
+   },
+   "value": 1.7440476417541504
+  },
+  {
+   "id": "de974deb4167d4dad83f07047d76b595",
+   "metric_name": "MissingValueCount(column=llegadas_lag_1)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_lag_1"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "fbd4b92c2bdb0b6d574b27725f6d662c",
+   "metric_name": "MinValue(column=llegadas_lag_1)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_lag_1"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "8ba9a6c6c32bce87afedd33f08a8dcb7",
+   "metric_name": "MaxValue(column=llegadas_lag_1)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_lag_1"
+   },
+   "value": 86.0
+  },
+  {
+   "id": "099adb486f30e7d50e8b8c7b3bc82179",
+   "metric_name": "MeanValue(column=llegadas_lag_1)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_lag_1"
+   },
+   "value": 1.3354699611663818
+  },
+  {
+   "id": "18a78206bfb3472e76ffaaee55bf0b2d",
+   "metric_name": "StdValue(column=llegadas_lag_1)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_lag_1"
+   },
+   "value": 2.539656400680542
+  },
+  {
+   "id": "2b98195e77456dc68f4e2a0e66eb8de5",
+   "metric_name": "QuantileValue(column=llegadas_lag_1,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_1",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "669d0594118990ab294eac4f19f03be3",
+   "metric_name": "QuantileValue(column=llegadas_lag_1,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_1",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "dbca6acb1ed8c452738952a35dc8621c",
+   "metric_name": "QuantileValue(column=llegadas_lag_1,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_1",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "c665920916c79a8710705327767c7cf8",
+   "metric_name": "MissingValueCount(column=llegadas_lag_3)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_lag_3"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "8a4287a2e9de0abdb66a5410ddba0c76",
+   "metric_name": "MinValue(column=llegadas_lag_3)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_lag_3"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "8fbcca5004ca5000faaa5cc771d0795c",
+   "metric_name": "MaxValue(column=llegadas_lag_3)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_lag_3"
+   },
+   "value": 90.0
+  },
+  {
+   "id": "1941d966daf88338db805f028bb695b1",
+   "metric_name": "MeanValue(column=llegadas_lag_3)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_lag_3"
+   },
+   "value": 1.3278299570083618
+  },
+  {
+   "id": "dcd7302f5223fb121ae7a77c58646522",
+   "metric_name": "StdValue(column=llegadas_lag_3)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_lag_3"
+   },
+   "value": 2.5331919193267822
+  },
+  {
+   "id": "1ce976849b66a0492feee1bf0be044c1",
+   "metric_name": "QuantileValue(column=llegadas_lag_3,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_3",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "e04b55c8caef4acce7de13ca6e712ead",
+   "metric_name": "QuantileValue(column=llegadas_lag_3,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_3",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "322914d710566d997ecb9dcaffb7431b",
+   "metric_name": "QuantileValue(column=llegadas_lag_3,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_3",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "a95f3b84843065a3838176eaac1f7e28",
+   "metric_name": "MissingValueCount(column=llegadas_lag_24)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_lag_24"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "5edf08ac1deb8946a3b10f7cf1ec8a68",
+   "metric_name": "MinValue(column=llegadas_lag_24)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_lag_24"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "4e434e0c76eedaf08a03ff3c3ff70e85",
+   "metric_name": "MaxValue(column=llegadas_lag_24)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_lag_24"
+   },
+   "value": 93.0
+  },
+  {
+   "id": "575b2727611fcff5358d8a99f73b2aef",
+   "metric_name": "MeanValue(column=llegadas_lag_24)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_lag_24"
+   },
+   "value": 1.3390799760818481
+  },
+  {
+   "id": "dcb6eaed287b54fe5450ee8e3a80a5c5",
+   "metric_name": "StdValue(column=llegadas_lag_24)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_lag_24"
+   },
+   "value": 2.5551066398620605
+  },
+  {
+   "id": "162b6143f51997bae1d42a10c53f9d9a",
+   "metric_name": "QuantileValue(column=llegadas_lag_24,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_24",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "b99d6d4994a575bb1e12ac53c0d6d741",
+   "metric_name": "QuantileValue(column=llegadas_lag_24,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_24",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "6f19c8bf90d5fcd7a669931a6b1ae0ba",
+   "metric_name": "QuantileValue(column=llegadas_lag_24,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_24",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "6ae3a57ae70c90504d16ffa50d829768",
+   "metric_name": "MissingValueCount(column=llegadas_lag_168)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_lag_168"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "a1996d79109c3c341a3881242676844c",
+   "metric_name": "MinValue(column=llegadas_lag_168)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_lag_168"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "7ca84b70bcfdac84742c248a4cdae9f8",
+   "metric_name": "MaxValue(column=llegadas_lag_168)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_lag_168"
+   },
+   "value": 92.0
+  },
+  {
+   "id": "f88fb5a35086574699eacf36d372884a",
+   "metric_name": "MeanValue(column=llegadas_lag_168)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_lag_168"
+   },
+   "value": 1.346060037612915
+  },
+  {
+   "id": "9cfbcf3fd028bbc0827712035f0598ec",
+   "metric_name": "StdValue(column=llegadas_lag_168)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_lag_168"
+   },
+   "value": 2.5772714614868164
+  },
+  {
+   "id": "5e564e327e77b8b787507c6296ab313a",
+   "metric_name": "QuantileValue(column=llegadas_lag_168,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_168",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "040ad03b434792c42a1af26822ac379b",
+   "metric_name": "QuantileValue(column=llegadas_lag_168,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_168",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "7005511f8f3a5d5aa702492f74f95c10",
+   "metric_name": "QuantileValue(column=llegadas_lag_168,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_168",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "a97e425c40ff9d726adaa2f9bf03a9cb",
+   "metric_name": "MissingValueCount(column=llegadas_media_3)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_media_3"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "a3044e962ec0da5b5dba7348f846e471",
+   "metric_name": "MinValue(column=llegadas_media_3)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_media_3"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "e8d2351d0181934ab9fbc584d4f86659",
+   "metric_name": "MaxValue(column=llegadas_media_3)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_media_3"
+   },
+   "value": 72.66666412353516
+  },
+  {
+   "id": "0922a2164d953ad1c602eaee13a9757e",
+   "metric_name": "MeanValue(column=llegadas_media_3)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_media_3"
+   },
+   "value": 1.3325034379959106
+  },
+  {
+   "id": "bde465861cbbeae82967c86537da89fd",
+   "metric_name": "StdValue(column=llegadas_media_3)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_media_3"
+   },
+   "value": 2.2528412342071533
+  },
+  {
+   "id": "ff55f045d94d16f7b848cca4d50d0aa5",
+   "metric_name": "QuantileValue(column=llegadas_media_3,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_3",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "5ac9fd28af750a91fdce156aa80a7b0a",
+   "metric_name": "QuantileValue(column=llegadas_media_3,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_3",
+    "quantile": 0.5
+   },
+   "value": 0.6666666865348816
+  },
+  {
+   "id": "5e09944dc7a82e8055fc4cda20bc83b3",
+   "metric_name": "QuantileValue(column=llegadas_media_3,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_3",
+    "quantile": 0.75
+   },
+   "value": 1.6666666269302368
+  },
+  {
+   "id": "c39b82281aedc3c848ebb502421a7b95",
+   "metric_name": "MissingValueCount(column=llegadas_media_24)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_media_24"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "8a21f9725bcad529bf534c842831f45e",
+   "metric_name": "MinValue(column=llegadas_media_24)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_media_24"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "ce799888f3231f7ec20ba68f763d5a93",
+   "metric_name": "MaxValue(column=llegadas_media_24)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_media_24"
+   },
+   "value": 26.79166603088379
+  },
+  {
+   "id": "dab630dfc6663a115a68b8c7ca0b9701",
+   "metric_name": "MeanValue(column=llegadas_media_24)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_media_24"
+   },
+   "value": 1.331423282623291
+  },
+  {
+   "id": "d1f14948de5b9a6917c091709b7412fa",
+   "metric_name": "StdValue(column=llegadas_media_24)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_media_24"
+   },
+   "value": 1.4873945713043213
+  },
+  {
+   "id": "07e09f645325ca3a07a9cab29edcd1fd",
+   "metric_name": "QuantileValue(column=llegadas_media_24,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_24",
+    "quantile": 0.25
+   },
+   "value": 0.4166666567325592
+  },
+  {
+   "id": "fee032a346dfb3b9d5bd2764bc43c57d",
+   "metric_name": "QuantileValue(column=llegadas_media_24,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_24",
+    "quantile": 0.5
+   },
+   "value": 0.9166666865348816
+  },
+  {
+   "id": "e9f5906c308ae3289934d2a547e3fd77",
+   "metric_name": "QuantileValue(column=llegadas_media_24,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_24",
+    "quantile": 0.75
+   },
+   "value": 1.75
+  },
+  {
+   "id": "cc4dcff1ed3b051358f3338ee73447ac",
+   "metric_name": "MissingValueCount(column=llegadas_media_168)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_media_168"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "2a02942971d1cf18fdc7408f208a4e1b",
+   "metric_name": "MinValue(column=llegadas_media_168)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_media_168"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "2638983baad404470a12685e3b140b3a",
+   "metric_name": "MaxValue(column=llegadas_media_168)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_media_168"
+   },
+   "value": 16.910715103149414
+  },
+  {
+   "id": "d9d7d1f5717f20d42bf8526313aa727a",
+   "metric_name": "MeanValue(column=llegadas_media_168)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_media_168"
+   },
+   "value": 1.3337115049362183
+  },
+  {
+   "id": "cdb343b4cd7fccbb4316292713503963",
+   "metric_name": "StdValue(column=llegadas_media_168)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_media_168"
+   },
+   "value": 1.3823004961013794
+  },
+  {
+   "id": "1db20fbbb4590be34af0b41c4eb219c0",
+   "metric_name": "QuantileValue(column=llegadas_media_168,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_168",
+    "quantile": 0.25
+   },
+   "value": 0.4464285671710968
+  },
+  {
+   "id": "f3f41719a860c97dcd5be39043a77caa",
+   "metric_name": "QuantileValue(column=llegadas_media_168,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_168",
+    "quantile": 0.5
+   },
+   "value": 0.988095223903656
+  },
+  {
+   "id": "c568fbaf04443fe631bb5425d635d100",
+   "metric_name": "QuantileValue(column=llegadas_media_168,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_168",
+    "quantile": 0.75
+   },
+   "value": 1.7559523582458496
+  },
+  {
+   "id": "dac4d6df301349a0a6806202146ae41f",
+   "metric_name": "MissingValueCount(column=balance_acumulado_3)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "balance_acumulado_3"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "a88d3188ef75ad8bed7ef2a6840afecb",
+   "metric_name": "MinValue(column=balance_acumulado_3)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "balance_acumulado_3"
+   },
+   "value": -114.0
+  },
+  {
+   "id": "dc3b19e5ed09777e0791946fb2ebc91e",
+   "metric_name": "MaxValue(column=balance_acumulado_3)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "balance_acumulado_3"
+   },
+   "value": 122.0
+  },
+  {
+   "id": "3b748770bf2a6a00c1816b149d55f789",
+   "metric_name": "MeanValue(column=balance_acumulado_3)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "balance_acumulado_3"
+   },
+   "value": -0.010579999536275864
+  },
+  {
+   "id": "a900be823aa7fad19723c454ab48b6ed",
+   "metric_name": "StdValue(column=balance_acumulado_3)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "balance_acumulado_3"
+   },
+   "value": 3.772928476333618
+  },
+  {
+   "id": "58abcd75eecc76b1d453e964482ca7cc",
+   "metric_name": "QuantileValue(column=balance_acumulado_3,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "balance_acumulado_3",
+    "quantile": 0.25
+   },
+   "value": -1.0
+  },
+  {
+   "id": "6998957c8e0d10c3287cfd1ea45838cb",
+   "metric_name": "QuantileValue(column=balance_acumulado_3,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "balance_acumulado_3",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "61608870bacb3432509cb164349c8a94",
+   "metric_name": "QuantileValue(column=balance_acumulado_3,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "balance_acumulado_3",
+    "quantile": 0.75
+   },
+   "value": 1.0
+  },
+  {
+   "id": "3c366382cb1069d9aabb76308ab182c4",
+   "metric_name": "MissingValueCount(column=balance_acumulado_24)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "balance_acumulado_24"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "af05710638821e5d23782f9f8f15d52a",
+   "metric_name": "MinValue(column=balance_acumulado_24)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "balance_acumulado_24"
+   },
+   "value": -162.0
+  },
+  {
+   "id": "f80d4e77064edf6ddf5f1856794f7faf",
+   "metric_name": "MaxValue(column=balance_acumulado_24)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "balance_acumulado_24"
+   },
+   "value": 168.0
+  },
+  {
+   "id": "c03567b82c7efc40638e44021c7301a7",
+   "metric_name": "MeanValue(column=balance_acumulado_24)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "balance_acumulado_24"
+   },
+   "value": 0.01104000024497509
+  },
+  {
+   "id": "929d47178ca20c913e00d0a7db16e127",
+   "metric_name": "StdValue(column=balance_acumulado_24)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "balance_acumulado_24"
+   },
+   "value": 10.262142181396484
+  },
+  {
+   "id": "591bcf81bae8e822a890197d9941cbe3",
+   "metric_name": "QuantileValue(column=balance_acumulado_24,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "balance_acumulado_24",
+    "quantile": 0.25
+   },
+   "value": -3.0
+  },
+  {
+   "id": "61e662d9d1367a94fd413240eb7265aa",
+   "metric_name": "QuantileValue(column=balance_acumulado_24,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "balance_acumulado_24",
+    "quantile": 0.5
+   },
+   "value": 1.0
+  },
+  {
+   "id": "dd69c57acf5f874600f7fc51ae0064e1",
+   "metric_name": "QuantileValue(column=balance_acumulado_24,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "balance_acumulado_24",
+    "quantile": 0.75
+   },
+   "value": 4.0
+  },
+  {
+   "id": "924e6ded6b95efbabcc5b88939b6682a",
+   "metric_name": "MissingValueCount(column=salidas_lag_336)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_lag_336"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "6d5bed90149e1b47b2eff4c04eb88547",
+   "metric_name": "MinValue(column=salidas_lag_336)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_lag_336"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "24a4728b52dc74693ce7482ab29f5608",
+   "metric_name": "MaxValue(column=salidas_lag_336)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_lag_336"
+   },
+   "value": 104.0
+  },
+  {
+   "id": "6eb2a56bdf8b01b77f553d9fa6574643",
+   "metric_name": "MeanValue(column=salidas_lag_336)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_lag_336"
+   },
+   "value": 1.3411699533462524
+  },
+  {
+   "id": "ab0e9760e79a79f8d88691fcaa4a9616",
+   "metric_name": "StdValue(column=salidas_lag_336)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_lag_336"
+   },
+   "value": 2.5245745182037354
+  },
+  {
+   "id": "478f812e8c75e82d90721976bc18d565",
+   "metric_name": "QuantileValue(column=salidas_lag_336,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_336",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "c7c7b7c680db53710bb3b300c5d4404d",
+   "metric_name": "QuantileValue(column=salidas_lag_336,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_336",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "7d33a2a4c68db0497364e0e796637bdf",
+   "metric_name": "QuantileValue(column=salidas_lag_336,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_336",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "9d2ccd3912fe4bf1d9c934fd4d80927f",
+   "metric_name": "MissingValueCount(column=salidas_lag_504)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_lag_504"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "32ecbab0f97a28c30e84c2f3833325ac",
+   "metric_name": "MinValue(column=salidas_lag_504)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_lag_504"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "79b99baa284eb11cd22d9b363e03a37b",
+   "metric_name": "MaxValue(column=salidas_lag_504)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_lag_504"
+   },
+   "value": 99.0
+  },
+  {
+   "id": "05dab3a3937ea53a48c0430b2f7dcd35",
+   "metric_name": "MeanValue(column=salidas_lag_504)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_lag_504"
+   },
+   "value": 1.3363499641418457
+  },
+  {
+   "id": "772c037b090bd0499ad93fcc212d7464",
+   "metric_name": "StdValue(column=salidas_lag_504)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_lag_504"
+   },
+   "value": 2.4826438426971436
+  },
+  {
+   "id": "a44cd3ad73d95cfcaacc1f3ea75707f8",
+   "metric_name": "QuantileValue(column=salidas_lag_504,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_504",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "1bb34af7007a2d0e229176b079df96c9",
+   "metric_name": "QuantileValue(column=salidas_lag_504,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_504",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "f3b0d40db266da29ca332798a47b0eef",
+   "metric_name": "QuantileValue(column=salidas_lag_504,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_504",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "a759f00b8491f2c00363d42a86d45f8e",
+   "metric_name": "MissingValueCount(column=salidas_lag_672)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_lag_672"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "fe1015f9a9d1beeb60febdffe586a6c3",
+   "metric_name": "MinValue(column=salidas_lag_672)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_lag_672"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "d5f6d915d27e1bf1a837df7793dfe9a6",
+   "metric_name": "MaxValue(column=salidas_lag_672)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_lag_672"
+   },
+   "value": 99.0
+  },
+  {
+   "id": "8cbf26941b4170b1de3ac5c1c1ef9956",
+   "metric_name": "MeanValue(column=salidas_lag_672)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_lag_672"
+   },
+   "value": 1.351580023765564
+  },
+  {
+   "id": "6ac9f400239b677dfc1139ced435131a",
+   "metric_name": "StdValue(column=salidas_lag_672)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_lag_672"
+   },
+   "value": 2.5321285724639893
+  },
+  {
+   "id": "76ad98345e2840922c47283829567eea",
+   "metric_name": "QuantileValue(column=salidas_lag_672,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_672",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "9c6c787c015ed506729529d5a2ef2b54",
+   "metric_name": "QuantileValue(column=salidas_lag_672,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_672",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "029a8ad83e7159e5c8d5d8a3bbd40534",
+   "metric_name": "QuantileValue(column=salidas_lag_672,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_lag_672",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "1f6c08556bfdd80da1f7b1167a34be3a",
+   "metric_name": "MissingValueCount(column=salidas_media_4_semanas)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas_media_4_semanas"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "a2eb91c2af516494ca67cb2f2ae5ef5e",
+   "metric_name": "MinValue(column=salidas_media_4_semanas)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas_media_4_semanas"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "4a9b4a238cdbcd8343b02b2dba95b089",
+   "metric_name": "MaxValue(column=salidas_media_4_semanas)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas_media_4_semanas"
+   },
+   "value": 63.75
+  },
+  {
+   "id": "674a96a01b94f5015b0dda92bd6c05c7",
+   "metric_name": "MeanValue(column=salidas_media_4_semanas)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas_media_4_semanas"
+   },
+   "value": 1.3417824506759644
+  },
+  {
+   "id": "de64596f267eb3676fa6d5d0a1f353a1",
+   "metric_name": "StdValue(column=salidas_media_4_semanas)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas_media_4_semanas"
+   },
+   "value": 2.1949384212493896
+  },
+  {
+   "id": "1999545761607ce558ac5d5852af43e7",
+   "metric_name": "QuantileValue(column=salidas_media_4_semanas,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_4_semanas",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "c6e4f9fe61aadaddfd18968bdfe0a48c",
+   "metric_name": "QuantileValue(column=salidas_media_4_semanas,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_4_semanas",
+    "quantile": 0.5
+   },
+   "value": 0.5
+  },
+  {
+   "id": "35aa4de82a64b068eb8643561bbcd101",
+   "metric_name": "QuantileValue(column=salidas_media_4_semanas,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas_media_4_semanas",
+    "quantile": 0.75
+   },
+   "value": 1.75
+  },
+  {
+   "id": "91befa351e9650daa5e6cc4dad8930de",
+   "metric_name": "MissingValueCount(column=llegadas_lag_336)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_lag_336"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "f6f82d77f3086e3fc213616e281cd692",
+   "metric_name": "MinValue(column=llegadas_lag_336)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_lag_336"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "e742cea6d23a536413586580ef3b1ebb",
+   "metric_name": "MaxValue(column=llegadas_lag_336)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_lag_336"
+   },
+   "value": 114.0
+  },
+  {
+   "id": "476c1df6b8c0e639b74bf34e64d2e92b",
+   "metric_name": "MeanValue(column=llegadas_lag_336)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_lag_336"
+   },
+   "value": 1.347190022468567
+  },
+  {
+   "id": "6f8a9f95c2ffe91b4f8431ef7dbd0238",
+   "metric_name": "StdValue(column=llegadas_lag_336)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_lag_336"
+   },
+   "value": 2.579956531524658
+  },
+  {
+   "id": "1b8aa7d5a694374f2a024f69f19fd11b",
+   "metric_name": "QuantileValue(column=llegadas_lag_336,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_336",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "528f7f7e9b4b0d1964c0c5928f0a7c6a",
+   "metric_name": "QuantileValue(column=llegadas_lag_336,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_336",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "48dd2ba9ddf53ea6d4f15deade89b354",
+   "metric_name": "QuantileValue(column=llegadas_lag_336,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_336",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "b375ee9181396b536d4e1ba0c9e889c2",
+   "metric_name": "MissingValueCount(column=llegadas_lag_504)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_lag_504"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "7e39eb418bed7a1cd4dd8dcdb0c402a2",
+   "metric_name": "MinValue(column=llegadas_lag_504)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_lag_504"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "15d538db39254b6b859fdbfcd30f95cb",
+   "metric_name": "MaxValue(column=llegadas_lag_504)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_lag_504"
+   },
+   "value": 99.0
+  },
+  {
+   "id": "6b6eea5d1e66dc0cb872bd48f244baa6",
+   "metric_name": "MeanValue(column=llegadas_lag_504)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_lag_504"
+   },
+   "value": 1.3361799716949463
+  },
+  {
+   "id": "56ff5fef21b5c6b929e0bf8aa90e2a11",
+   "metric_name": "StdValue(column=llegadas_lag_504)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_lag_504"
+   },
+   "value": 2.532557487487793
+  },
+  {
+   "id": "ef3399a6d826113a6e370bab41891bfd",
+   "metric_name": "QuantileValue(column=llegadas_lag_504,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_504",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "c786affcb25d99be193916d44b76cd8a",
+   "metric_name": "QuantileValue(column=llegadas_lag_504,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_504",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "425447be3f461c687283210b5ad2ec74",
+   "metric_name": "QuantileValue(column=llegadas_lag_504,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_504",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "15933f742a35eecb7d1f9090c94b9faf",
+   "metric_name": "MissingValueCount(column=llegadas_lag_672)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_lag_672"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "52700f953b967be765f7179f63082dd2",
+   "metric_name": "MinValue(column=llegadas_lag_672)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_lag_672"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "8e3d1998d68bca43f81b0c33727a99db",
+   "metric_name": "MaxValue(column=llegadas_lag_672)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_lag_672"
+   },
+   "value": 115.0
+  },
+  {
+   "id": "33202cfde5f99d9b379d58ef988fa174",
+   "metric_name": "MeanValue(column=llegadas_lag_672)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_lag_672"
+   },
+   "value": 1.3444900512695312
+  },
+  {
+   "id": "94e1c75a2da1e70535a694be56bb341a",
+   "metric_name": "StdValue(column=llegadas_lag_672)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_lag_672"
+   },
+   "value": 2.5960631370544434
+  },
+  {
+   "id": "e907a55a47479837b69647b89d4069ef",
+   "metric_name": "QuantileValue(column=llegadas_lag_672,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_672",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "dfb93ebff026abc4a01c11183d3a43a3",
+   "metric_name": "QuantileValue(column=llegadas_lag_672,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_672",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "818cdbf1a560b560f8ec2ce452986a3c",
+   "metric_name": "QuantileValue(column=llegadas_lag_672,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_lag_672",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  },
+  {
+   "id": "19408e92d572f1fb46445e01a30a09c1",
+   "metric_name": "MissingValueCount(column=llegadas_media_4_semanas)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "llegadas_media_4_semanas"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "d561deabf50daa97a7c9fc7e17597e0f",
+   "metric_name": "MinValue(column=llegadas_media_4_semanas)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "llegadas_media_4_semanas"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "1ed9c7de489b86df67dd7242cb291fee",
+   "metric_name": "MaxValue(column=llegadas_media_4_semanas)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "llegadas_media_4_semanas"
+   },
+   "value": 72.5
+  },
+  {
+   "id": "60b4da23a0cc91788d65fb6899c61340",
+   "metric_name": "MeanValue(column=llegadas_media_4_semanas)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "llegadas_media_4_semanas"
+   },
+   "value": 1.3434799909591675
+  },
+  {
+   "id": "2252fe9a02db2f3fe459557121ce84e0",
+   "metric_name": "StdValue(column=llegadas_media_4_semanas)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "llegadas_media_4_semanas"
+   },
+   "value": 2.2890501022338867
+  },
+  {
+   "id": "ca042d5a6032aa94bf9fa59399d081cb",
+   "metric_name": "QuantileValue(column=llegadas_media_4_semanas,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_4_semanas",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "246ce3a35b27e5f289bc7690de7241a7",
+   "metric_name": "QuantileValue(column=llegadas_media_4_semanas,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_4_semanas",
+    "quantile": 0.5
+   },
+   "value": 0.5
+  },
+  {
+   "id": "818da34b6ddca5ef831afbeb3b15ac34",
+   "metric_name": "QuantileValue(column=llegadas_media_4_semanas,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "llegadas_media_4_semanas",
+    "quantile": 0.75
+   },
+   "value": 1.75
+  },
+  {
+   "id": "f3ba18702cd13cbc14fee2b5d16e98eb",
+   "metric_name": "MissingValueCount(column=salidas)",
+   "config": {
+    "type": "evidently:metric_v2:MissingValueCount",
+    "column": "salidas"
+   },
+   "value": {
+    "count": 0.0,
+    "share": 0.0
+   }
+  },
+  {
+   "id": "7512fe56c9da8af8a776cf7c15e74398",
+   "metric_name": "MinValue(column=salidas)",
+   "config": {
+    "type": "evidently:metric_v2:MinValue",
+    "column": "salidas"
+   },
+   "value": 0.0
+  },
+  {
+   "id": "93766b06648a73a075a1b7ec3a0b4467",
+   "metric_name": "MaxValue(column=salidas)",
+   "config": {
+    "type": "evidently:metric_v2:MaxValue",
+    "column": "salidas"
+   },
+   "value": 72.0
+  },
+  {
+   "id": "54cc2e44501fc00b7b56acc736b4f2cb",
+   "metric_name": "MeanValue(column=salidas)",
+   "config": {
+    "type": "evidently:metric_v2:MeanValue",
+    "column": "salidas"
+   },
+   "value": 1.3352400064468384
+  },
+  {
+   "id": "17c1448ed47e5c9ceaac2f1d690685bf",
+   "metric_name": "StdValue(column=salidas)",
+   "config": {
+    "type": "evidently:metric_v2:StdValue",
+    "column": "salidas"
+   },
+   "value": 2.49259614944458
+  },
+  {
+   "id": "72a5ca5a7aab596a565f85c1386ff35d",
+   "metric_name": "QuantileValue(column=salidas,quantile=0.25)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas",
+    "quantile": 0.25
+   },
+   "value": 0.0
+  },
+  {
+   "id": "a8f97beeea3470af4f96e2c0f7fa4f3d",
+   "metric_name": "QuantileValue(column=salidas,quantile=0.5)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas",
+    "quantile": 0.5
+   },
+   "value": 0.0
+  },
+  {
+   "id": "17d61e9ee47d5f3c929c4b1e5bcd997a",
+   "metric_name": "QuantileValue(column=salidas,quantile=0.75)",
+   "config": {
+    "type": "evidently:metric_v2:QuantileValue",
+    "column": "salidas",
+    "quantile": 0.75
+   },
+   "value": 2.0
+  }
+ ],
+ "tests": []
+}
