@@ -6,9 +6,11 @@ Todos los nombres, etiquetas y métricas se obtienen de los runs existentes.
 
 import json
 import os
+import re
 from typing import Any
 
 import mlflow
+from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
 import typer
 
@@ -22,7 +24,27 @@ MODELS = {
     "p3": ("mibici-equipo25-p3-grupos", "validation_silhouette", "max"),
 }
 REQUIRED_TAGS = ("team", "question", "git_commit", "data_version", "model_family")
+DEFAULT_ALIAS = "champion"
+_ALIAS_PATTERN = re.compile(r"[a-z0-9_-]{1,255}")
 
+def _validate_alias(alias: str) -> str:
+    """Normaliza y valida el alias antes de registrar nada en el Registry."""
+    a = alias.strip().lower()
+    if not _ALIAS_PATTERN.fullmatch(a):
+        raise ValueError(
+            "El alias solo admite letras, números, guion y guion bajo (máximo 255)."
+        )
+    if a == "latest" or re.fullmatch(r"v\d+", a):
+        raise ValueError("El alias no puede ser 'latest' ni parecerse a una versión (v1, v2...).")
+    return a
+
+
+def _alias_version(client: MlflowClient, name: str, alias: str) -> str | None:
+    """Versión a la que apunta un alias, o None si el alias no existe."""
+    try:
+        return str(client.get_model_version_by_alias(name, alias).version)
+    except MlflowException:
+        return None
 
 def _tracking_client() -> MlflowClient:
     """Exige apuntar al servidor; no se admite registrar en un mlruns accidental."""
@@ -114,7 +136,6 @@ def _load_registered_model(uri: str):
     """Carga una versión del Registry; permite aislar el acceso externo en pruebas."""
     return mlflow.pyfunc.load_model(uri)
 
-
 def promote_candidate(
     client: MlflowClient,
     question: str,
@@ -122,13 +143,17 @@ def promote_candidate(
     reason: str,
     *,
     approve: bool = False,
+    alias: str = DEFAULT_ALIAS,
 ) -> dict[str, Any]:
-    """Previsualiza por defecto. Con approve crea versión y cambia alias champion.
+    """Previsualiza por defecto. Con approve crea versión y asigna el alias.
 
+    Con alias="champion" (por defecto) la versión pasa a ser champion. Con otro
+    alias (por ejemplo "challenger") solo se mueve ese alias: champion no se toca.
     La decisión de negocio es explícita: no se selecciona automáticamente por test.
     """
     if len(reason.strip()) < 12:
         raise ValueError("Documenta la selección en --reason (al menos 12 caracteres).")
+    alias = _validate_alias(alias)
     q, name, metric, direction, run, uri = validate_candidate(client, question, run_id)
     result = {
         "question": q,
@@ -141,10 +166,17 @@ def promote_candidate(
         "data_version": run.data.tags["data_version"],
         "git_commit": run.data.tags["git_commit"],
         "justification": reason.strip(),
+        "alias": alias,
         "operation": "preview" if not approve else "promote",
     }
     if not approve:
         return result
+
+    # Con un alias alternativo, recordar a qué versión apunta champion para
+    # comprobar al final que no se movió.
+    champion_antes = (
+        _alias_version(client, name, DEFAULT_ALIAS) if alias != DEFAULT_ALIAS else None
+    )
 
     version = mlflow.register_model(model_uri=uri, name=name, await_registration_for=300)
     v = str(version.version)
@@ -170,15 +202,19 @@ def promote_candidate(
     ):
         client.set_model_version_tag(name, v, tag, value)
 
-    # Antes de cambiar champion, verificar que esta versión es cargable y tiene firma.
+    # Antes de asignar el alias, verificar que esta versión es cargable y tiene firma.
     loaded = _load_registered_model(f"models:/{name}/{v}")
     if loaded.metadata.signature is None:
-        raise ValueError("El modelo registrado no tiene firma: no se modificó el alias champion.")
-    client.set_registered_model_alias(name, "champion", v)
-    champion = client.get_model_version_by_alias(name, "champion")
-    if str(champion.version) != v:
-        raise RuntimeError("El alias champion no apunta a la versión recién registrada.")
-    result.update(version=v, alias="champion", load_uri=f"models:/{name}@champion")
+        raise ValueError(f"El modelo registrado no tiene firma: no se modificó el alias {alias}.")
+    client.set_registered_model_alias(name, alias, v)
+    asignado = client.get_model_version_by_alias(name, alias)
+    if str(asignado.version) != v:
+        raise RuntimeError(f"El alias {alias} no apunta a la versión recién registrada.")
+    if alias != DEFAULT_ALIAS:
+        if _alias_version(client, name, DEFAULT_ALIAS) != champion_antes:
+            raise RuntimeError("El alias champion cambió al registrar una versión alternativa.")
+        result["champion_version"] = champion_antes
+    result.update(version=v, alias=alias, load_uri=f"models:/{name}@{alias}")
     return result
 
 
@@ -194,10 +230,17 @@ def promote_cmd(
     question: str = typer.Option(..., help="p1, p2 o p3"),
     run_id: str = typer.Option(..., help="ID exacto de la corrida candidata"),
     reason: str = typer.Option(..., help="Justificación humana de la elección"),
-    approve: bool = typer.Option(False, "--approve", help="Registrar y cambiar champion"),
+    approve: bool = typer.Option(False, "--approve", help="Registrar y asignar el alias"),
+    alias: str = typer.Option(
+        DEFAULT_ALIAS,
+        "--alias",
+        help="Alias a asignar. Por defecto champion; con otro (p. ej. challenger) no se mueve champion.",
+    ),
 ):
-    """Vista previa sin --approve; con él registra y verifica una versión champion."""
-    result = promote_candidate(_tracking_client(), question, run_id, reason, approve=approve)
+    """Vista previa sin --approve; con él registra y verifica la versión con el alias dado."""
+    result = promote_candidate(
+        _tracking_client(), question, run_id, reason, approve=approve, alias=alias
+    )
     typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
 
 
