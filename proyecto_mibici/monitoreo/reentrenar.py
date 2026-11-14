@@ -224,7 +224,7 @@ def reentrenar(
         train=entrenar,
         extra_parameters=extra_parameters,
         extra_tags=extra_tags,
-        run_name=f"p1-hgb-challenger-{p_train.inicio}-{p_train.fin}",
+        run_name=f"p1-hgb-challenger-{config.start_month}-{config.end_month}",
     )
 
     # Extraer el run_id tolerando si devuelve un diccionario o un objeto Run
