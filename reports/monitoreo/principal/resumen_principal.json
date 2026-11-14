@@ -1,0 +1,46 @@
+{
+  "comparacion": "principal",
+  "pregunta": "P1",
+  "data_version": "09a6a584dd5d",
+  "tabla_supervisada_sha256": "ef203b6a1150da061f1d8f9d24ce38a7ceede6f77bc07334a0db2ab33d307bdd",
+  "max_filas_por_periodo": 100000,
+  "semilla": 42,
+  "version_evidently": "0.7.23",
+  "periodos": {
+    "referencia": {
+      "nombre": "referencia",
+      "inicio": "2023-10-01T00:00:00",
+      "fin_exclusivo": "2025-07-01T00:00:00",
+      "descripcion": "Entrenamiento de la v1 (champion)",
+      "filas": 100000,
+      "estaciones": 370,
+      "primera_hora": "2023-11-05T00:00:00",
+      "ultima_hora": "2025-06-30T23:00:00"
+    },
+    "actual": {
+      "nombre": "actual",
+      "inicio": "2025-10-01T00:00:00",
+      "fin_exclusivo": "2026-10-01T00:00:00",
+      "descripcion": "Prueba de la v1: no participó en su entrenamiento ni en su selección",
+      "filas": 100000,
+      "estaciones": 469,
+      "primera_hora": "2025-10-01T00:00:00",
+      "ultima_hora": "2026-09-30T23:00:00"
+    }
+  },
+  "columnas_con_drift": 3,
+  "proporcion_con_drift": 0.0967741935483871,
+  "umbral_drift_conjunto": 0.5,
+  "actual_filas": 100000.0,
+  "actual_filas_duplicadas": 0.0,
+  "actual_columnas_casi_constantes": 0.0,
+  "actual_columnas_vacias": 0.0,
+  "actual_columnas_constantes": 0.0,
+  "actual_valores_faltantes": 0.0,
+  "drift_del_conjunto": false,
+  "variables_con_drift": [
+    "mes",
+    "balance_acumulado_24",
+    "salidas_media_168"
+  ]
+}

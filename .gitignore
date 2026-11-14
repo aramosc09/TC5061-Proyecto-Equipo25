@@ -258,6 +258,7 @@ cython_debug/
 /reports/figures/baselines/
 /reports/figures/candidates/
 /reports/data_quality/
+/reports/monitoreo/**/*.html
 /tmp/
 *.db-shm
 *.db-wal

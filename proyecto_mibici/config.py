@@ -60,6 +60,7 @@ ARTIFACTS_DIR = PROJ_ROOT / "mlartifacts" / EXPERIMENT_NAME
 BASELINE_FIGURES_DIR = FIGURES_DIR / "baselines"
 # Copia del modelo del Registry que empaqueta la imagen de la API (no se versiona).
 API_MODEL_DIR = MODELS_DIR / "api" / "p1"
+MONITORING_REPORTS_DIR = REPORTS_DIR / "monitoreo"
 SUPERVISED_HORIZON_HOURS = 1
 FEATURE_LAGS = (1, 3, 24, 168)
 ROLLING_WINDOWS = (3, 24, 168)

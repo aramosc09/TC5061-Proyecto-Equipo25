@@ -1,0 +1,32 @@
+variable,metodo,valor,umbral,drift
+mes,Wasserstein distance (normed),0.181726,0.100000,True
+balance_acumulado_24,Wasserstein distance (normed),0.120638,0.100000,True
+salidas_media_168,Wasserstein distance (normed),0.107404,0.100000,True
+salidas_media_24,Wasserstein distance (normed),0.098214,0.100000,False
+llegadas_media_168,Wasserstein distance (normed),0.095612,0.100000,False
+llegadas_media_24,Wasserstein distance (normed),0.088720,0.100000,False
+balance_acumulado_3,Wasserstein distance (normed),0.079750,0.100000,False
+salidas_media_4_semanas,Wasserstein distance (normed),0.073161,0.100000,False
+salidas_media_3,Wasserstein distance (normed),0.071372,0.100000,False
+salidas_lag_504,Wasserstein distance (normed),0.069839,0.100000,False
+salidas_lag_672,Wasserstein distance (normed),0.069555,0.100000,False
+salidas_lag_336,Wasserstein distance (normed),0.064366,0.100000,False
+salidas_lag_3,Wasserstein distance (normed),0.063190,0.100000,False
+llegadas_media_3,Wasserstein distance (normed),0.062408,0.100000,False
+llegadas_lag_504,Wasserstein distance (normed),0.061743,0.100000,False
+llegadas_media_4_semanas,Wasserstein distance (normed),0.061599,0.100000,False
+salidas_lag_1,Wasserstein distance (normed),0.061330,0.100000,False
+salidas_lag_168,Wasserstein distance (normed),0.060749,0.100000,False
+salidas,Wasserstein distance (normed),0.059889,0.100000,False
+llegadas_lag_672,Wasserstein distance (normed),0.058983,0.100000,False
+llegadas_lag_336,Wasserstein distance (normed),0.054295,0.100000,False
+salidas_lag_24,Wasserstein distance (normed),0.053963,0.100000,False
+llegadas_lag_3,Wasserstein distance (normed),0.053660,0.100000,False
+llegadas_lag_1,Wasserstein distance (normed),0.052735,0.100000,False
+llegadas_lag_168,Wasserstein distance (normed),0.048734,0.100000,False
+llegadas_lag_24,Wasserstein distance (normed),0.045962,0.100000,False
+hora_sin,Wasserstein distance (normed),0.011908,0.100000,False
+dia_semana_cos,Jensen-Shannon distance,0.003177,0.100000,False
+dia_semana_sin,Wasserstein distance (normed),0.002156,0.100000,False
+hora_cos,Wasserstein distance (normed),0.001800,0.100000,False
+fin_semana,Jensen-Shannon distance,0.000868,0.100000,False

@@ -1,0 +1,42 @@
+{
+  "comparacion": "estacional",
+  "pregunta": "P1",
+  "data_version": "09a6a584dd5d",
+  "tabla_supervisada_sha256": "ef203b6a1150da061f1d8f9d24ce38a7ceede6f77bc07334a0db2ab33d307bdd",
+  "max_filas_por_periodo": 100000,
+  "semilla": 42,
+  "version_evidently": "0.7.23",
+  "periodos": {
+    "referencia": {
+      "nombre": "referencia_estacional",
+      "inicio": "2024-10-01T00:00:00",
+      "fin_exclusivo": "2025-07-01T00:00:00",
+      "descripcion": "Meses de la referencia con su equivalente en el periodo actual",
+      "filas": 100000,
+      "estaciones": 368,
+      "primera_hora": "2024-10-01T00:00:00",
+      "ultima_hora": "2025-06-30T23:00:00"
+    },
+    "actual": {
+      "nombre": "actual_estacional",
+      "inicio": "2025-10-01T00:00:00",
+      "fin_exclusivo": "2026-07-01T00:00:00",
+      "descripcion": "Mismos meses de calendario que la referencia estacional, un año después",
+      "filas": 100000,
+      "estaciones": 383,
+      "primera_hora": "2025-10-01T00:00:00",
+      "ultima_hora": "2026-06-30T23:00:00"
+    }
+  },
+  "columnas_con_drift": 0,
+  "proporcion_con_drift": 0.0,
+  "umbral_drift_conjunto": 0.5,
+  "actual_filas": 100000.0,
+  "actual_filas_duplicadas": 0.0,
+  "actual_columnas_casi_constantes": 0.0,
+  "actual_columnas_vacias": 0.0,
+  "actual_columnas_constantes": 0.0,
+  "actual_valores_faltantes": 0.0,
+  "drift_del_conjunto": false,
+  "variables_con_drift": []
+}

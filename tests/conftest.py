@@ -56,3 +56,46 @@ def candidate_config(tmp_path):
 @pytest.fixture
 def synthetic_repository():
     return SyntheticRepository
+
+
+@pytest.fixture
+def tabla_monitoreo(tmp_path):
+    """Tabla supervisada diaria con un solo drift sembrado: salidas_media_168 en el periodo actual."""
+    import json
+
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from proyecto_mibici.modeling.datasets import P1_FEATURES
+
+    config = ProjectConfig(root=tmp_path)
+    horas = pd.date_range(config.start, config.end, freq="D", inclusive="left") + pd.Timedelta(
+        hours=8
+    )
+    rng = np.random.default_rng(11)
+    partes = []
+    for estacion in (1, 2):
+        frame = pd.DataFrame(
+            rng.gamma(2.0, 1.5, size=(len(horas), len(P1_FEATURES))).astype("float32"),
+            columns=P1_FEATURES,
+        )
+        frame["fin_semana"] = (horas.dayofweek >= 5).astype("float32")
+        frame["mes"] = horas.month.astype("float32")
+        frame.loc[horas >= pd.Timestamp(config.validation_end), "salidas_media_168"] += 5
+        frame.insert(0, "hora", horas)
+        frame.insert(0, "estacion", estacion)
+        frame["salidas"] = rng.poisson(2.0, len(horas)).astype("float32")
+        partes.append(frame)
+    tabla = pd.concat(partes, ignore_index=True)
+    config.supervised_table_path.parent.mkdir(parents=True)
+    pq.write_table(pa.Table.from_pandas(tabla, preserve_index=False), config.supervised_table_path)
+    metadatos = {
+        "data_version": "sintetica-v1",
+        "sha256": "sintetico",
+        **{
+            c: getattr(config, c)
+            for c in ("start_month", "end_month", "train_end", "validation_end")
+        },
+    }
+    config.supervised_table_path.with_suffix(".json").write_text(json.dumps(metadatos))
+    return config, tabla
