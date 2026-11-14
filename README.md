@@ -501,7 +501,7 @@ Equipo 25, TC5061 — Operaciones de Aprendizaje Automático (MLOps).
 
 La configuración de protección de `main`, las revisiones requeridas y la evidencia de contribuciones individuales deben confirmarse en GitHub; este README no presupone que las reglas estén activadas.
 
-## Model Registry: selección y promoción (Entrega 2)
+## Model Registry: selección y promoción
 
 El proceso de promoción está documentado en [Registro de modelos y evidencia](docs/docs/registro_modelos_entrega2.md). Los modelos candidatos nuevos se guardan en MLflow con firma y ejemplo de entrada; el registro requiere elegir y justificar explícitamente un run de cada pregunta. Para inspeccionar, sin modificar el Registry:
 
@@ -515,6 +515,10 @@ uv run --frozen python -m proyecto_mibici.registry candidates --question p3
 La promoción a `champion` debe realizarse **solo después de comparar y aprobar** los resultados, utilizando `python -m proyecto_mibici.registry promote --question p1 --run-id ID --reason "..." --approve`. Sin `--approve` el comando únicamente muestra una vista previa. Para verificar los tres modelos registrados y cargables: `uv run --frozen python -m proyecto_mibici.registry status`.
 
 **No declarar cumplido el Model Registry hasta que los tres alias existan realmente en el servidor y se hayan capturado sus evidencias.**
+
+### Reentrenamiento y versión challenger
+
+Para el monitoreo y la prueba A/B, el modelo de demanda P1 puede reentrenarse con la ventana ampliada de datos (octubre de 2023 a junio de 2026), heredando los hiperparámetros del *champion* vigente, y registrarse en el Model Registry con el alias `challenger` sin desplazar a `champion`. Con el servidor de MLflow abierto y `MLFLOW_TRACKING_URI` definida, el reentrenamiento se ejecuta con `uv run --frozen python -m proyecto_mibici.<modulo_reentrenamiento>` y la promoción con `uv run --frozen python -m proyecto_mibici.registry promote --question p1 --run-id <RUN_ID> --alias challenger --reason "<justificación>" --approve`. El detalle, las métricas y los errores comunes están en `docs/docs/entrenamiento_challenger.md`.
 
 ## Referencias
 
