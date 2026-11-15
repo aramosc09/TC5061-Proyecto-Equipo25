@@ -1,0 +1,64 @@
+{
+  "generado_en": "2026-11-15T22:33:56.917418+00:00",
+  "tracking_uri": "http://127.0.0.1:5001",
+  "pregunta": "P1",
+  "data_version": "09a6a584dd5d",
+  "periodo": {
+    "inicio": "2026-07-01T00:00:00",
+    "fin_exclusivo": "2026-10-01T00:00:00",
+    "descripcion": "Evaluación A/B: ninguna versión la vio"
+  },
+  "filas": 955951,
+  "batch_size": 100000,
+  "semilla": 42,
+  "modelos": {
+    "champion": {
+      "uri": "models:/mibici-equipo25-p1-demanda@champion",
+      "registered_model": "mibici-equipo25-p1-demanda",
+      "version": "1",
+      "alias": "champion",
+      "load_uri": "models:/mibici-equipo25-p1-demanda/1",
+      "run_id": "70a3e2abefbc49ab93da82b0afbcb7f2",
+      "source_run_id": "70a3e2abefbc49ab93da82b0afbcb7f2",
+      "git_commit": "8dcc009e4ee7b127808e3166e97de7fbdb5cca69",
+      "data_version": "09a6a584dd5d",
+      "model_family": "gradient_boosting",
+      "selection_metric": "validation_rmse",
+      "selection_value": "1.4285373414760512",
+      "source": "registry"
+    },
+    "challenger": {
+      "uri": "models:/mibici-equipo25-p1-demanda@challenger",
+      "registered_model": "mibici-equipo25-p1-demanda",
+      "version": "2",
+      "alias": "challenger",
+      "load_uri": "models:/mibici-equipo25-p1-demanda/2",
+      "run_id": "5e0bb62c94d14aa5a29d03cf17d58b71",
+      "source_run_id": "5e0bb62c94d14aa5a29d03cf17d58b71",
+      "git_commit": "359191c5013adb915e0e222f1b741382ad68e5f4",
+      "data_version": "09a6a584dd5d",
+      "model_family": "gradient_boosting",
+      "selection_metric": "validation_rmse",
+      "selection_value": "1.4078347439319734",
+      "source": "registry"
+    }
+  },
+  "metricas": {
+    "champion": {
+      "rmse": 1.4397825650186178,
+      "mae": 0.7744794876591965,
+      "r2": 0.6797436965670319
+    },
+    "challenger": {
+      "rmse": 1.4078347439319734,
+      "mae": 0.7715167492828806,
+      "r2": 0.6937985633587314
+    },
+    "baseline": {
+      "rmse": 1.9478254443042882,
+      "mae": 0.9662116572920578,
+      "r2": 0.4138565239951576
+    }
+  },
+  "mejor_modelo_por_rmse": "challenger"
+}

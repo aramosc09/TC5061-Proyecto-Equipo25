@@ -95,3 +95,63 @@ se documenta en la sección de interpretación.
 Las capturas se tomaron del HTML de cada reporte con Edge sin interfaz:
 `msedge --headless --blink-settings=preferredColorScheme=1 --window-size=1400,1560
 --virtual-time-budget=20000 --screenshot=<png> <html>`.
+
+## 3. Interpretación del drift y sus implicaciones
+
+El drift global no se activa en ninguna comparación: 3 de 31 variables (9.7 %)
+superan el umbral en la comparación principal, muy por debajo del 50 % requerido,
+y ninguna lo supera en el control estacional. Por ello, no hay evidencia de un
+cambio generalizado en la distribución de las entradas ni de un problema de
+calidad del periodo actual.
+
+Las variables deben interpretarse de la siguiente manera:
+
+1. **`mes` (0.182 en la comparación principal y 0.006 en la estacional).**
+   Es un efecto de composición del calendario: la referencia tiene 21 meses y
+   el periodo actual 12. Al comparar meses equivalentes desaparece, por lo que
+   no justifica por sí solo un reentrenamiento.
+2. **`balance_acumulado_24` (0.121 y 0.099 en la estacional).** La diferencia
+   persiste débilmente al controlar por calendario. Puede indicar un cambio en
+   el balance neto de las estaciones o en la cobertura de estaciones observadas.
+   Como esta variable resume actividad histórica, una diferencia sostenida puede
+   mover las predicciones fuera de la distribución más frecuente del
+   entrenamiento.
+3. **`salidas_media_168` (0.107 y 0.084 en la estacional).** La diferencia es
+   cercana al umbral y se reduce al comparar los mismos meses. Puede reflejar
+   cambios de nivel en la demanda semanal, pero no demuestra por sí misma una
+   degradación del modelo.
+
+El crecimiento de estaciones observadas (370 en la referencia principal frente a
+469 en el periodo actual) también debe vigilarse. Puede cambiar la composición
+de la muestra y afectar el desempeño agregado, aunque no sea una variable de
+entrada del modelo. Los reportes no muestran faltantes, duplicados ni columnas
+constantes en el periodo actual, por lo que el problema observado no es de
+calidad estructural de los datos.
+
+## 4. Comparación A/B y recomendación
+
+Ambas versiones se evaluaron sobre las mismas 955,951 filas de `evaluacion_ab`
+(julio a septiembre de 2026), que ninguna versión utilizó para entrenarse:
+
+| Modelo | RMSE | MAE | R² |
+|---|---:|---:|---:|
+| Champion, versión 1 | 1.4398 | 0.7745 | 0.6797 |
+| Challenger, versión 2 | **1.4078** | **0.7715** | **0.6938** |
+| Baseline semanal | 1.9478 | 0.9662 | 0.4139 |
+
+![Comparación A/B de modelos P1](../../reports/figures/entrega5/ab_metricas_modelos.png)
+
+El challenger reduce el RMSE en 0.0319 (2.22 %) y el MAE en 0.0030 (0.38 %)
+frente al champion; además, aumenta R² en 0.0141. La mejora es consistente
+respecto al baseline y se obtuvo en un conjunto común, por lo que la comparación
+es metodológicamente válida. La reducción del MAE es pequeña, así que no debe
+presentarse como una transformación radical del servicio.
+
+**Recomendación:** promover el challenger como nueva versión vigente de P1,
+manteniendo el champion como referencia y posibilidad de reversión. La
+promoción está respaldada principalmente por el A/B testing, no por el drift
+global: el drift observado es bajo y en buena parte estacional. Mantener un
+monitoreo periódico de `balance_acumulado_24`, `salidas_media_168`, cobertura de
+estaciones y RMSE/MAE sobre datos etiquetados. Reentrenar de nuevo solo cuando
+se observe degradación sostenida o drift no estacional acompañado de pérdida de
+desempeño.
