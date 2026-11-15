@@ -268,6 +268,9 @@ class RegistroExperimentos:
         family: str,
         train,
         extra_parameters: dict,
+        *,
+        run_name: str | None = None,
+        extra_tags: dict | None = None,
     ) -> dict:
         """Registra un candidato en un solo run; train(output_dir) devuelve CandidateResult."""
         experiment_id = self.configure()
@@ -281,8 +284,10 @@ class RegistroExperimentos:
                     "run_kind": "candidate",
                     "model_family": family,
                     "stage_of_work": "candidate",
-                    "mlflow.runName": f"{question}-{model}-candidate-"
+                    "mlflow.runName": run_name
+                    or f"{question}-{model}-candidate-"
                     f"{self.config.start_month}-{self.config.end_month}",
+                    **(extra_tags or {}),
                 }
             )
             output_dir = output_root / question.upper()

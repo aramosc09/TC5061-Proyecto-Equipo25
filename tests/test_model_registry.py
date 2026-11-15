@@ -1,5 +1,6 @@
 """Pruebas del proceso de promoción; NO requieren viajes reales ni alteran champion real."""
 
+from mlflow.exceptions import MlflowException
 from types import SimpleNamespace
 
 import pytest
@@ -58,6 +59,29 @@ class ClientFake:
     def get_model_version_by_alias(self, name, alias):
         assert self.alias == (name, alias, "3")
         return SimpleNamespace(version="3")
+
+class ClientFakeConAliases(ClientFake):
+    """Cliente simulado con varios alias, como el Registry real."""
+
+    def __init__(self, aliases=None, run=None):
+        super().__init__(run)
+        self.aliases = dict(aliases or {})
+        self.alias_calls = []  # cada vez que se asigna un alias
+
+    def set_registered_model_alias(self, name, alias, version):
+        self.alias_calls.append((name, alias, str(version)))
+        self.aliases[alias] = str(version)
+
+    def get_model_version_by_alias(self, name, alias):
+        if alias not in self.aliases:
+            raise MlflowException(f"El alias {alias} no existe")
+        return SimpleNamespace(version=self.aliases[alias])
+
+
+@pytest.fixture
+def client_mock():
+    """Registry simulado donde champion ya apunta a la versión 1."""
+    return ClientFakeConAliases({"champion": "1"})
 
 
 def test_selection_preview_does_not_write_to_registry(monkeypatch):
@@ -137,3 +161,70 @@ def test_refuses_dirty_worktree_candidate():
     run.data.tags["git_worktree_dirty"] = "true"
     with pytest.raises(ValueError, match="sin commit"):
         registry.validate_candidate(ClientFake(run), "p1", "run-01")
+
+
+def test_promote_with_challenger_alias_preserves_champion(client_mock, monkeypatch):
+    """Promover con --alias challenger no debe alterar el alias champion existente."""
+    name = "mibici-equipo25-p1-demanda"
+    # La nueva versión registrada será la 2
+    monkeypatch.setattr(
+        registry.mlflow, "register_model", lambda **kwargs: SimpleNamespace(version=2)
+    )
+    monkeypatch.setattr(
+        registry, "_load_registered_model",
+        lambda uri: SimpleNamespace(metadata=SimpleNamespace(signature="signed")),
+    )
+
+    result = registry.promote_candidate(
+        client_mock, "p1", "run-01", "Challenger: modelo alterno para comparar",
+        approve=True, alias="challenger",
+    )
+
+    # champion sigue en la versión 1 y challenger apunta a la 2
+    assert client_mock.get_model_version_by_alias(name, "champion").version == "1"
+    assert client_mock.get_model_version_by_alias(name, "challenger").version == "2"
+    # Solo se asignó un alias, y fue challenger: champion nunca se tocó
+    assert client_mock.alias_calls == [(name, "challenger", "2")]
+    # Resultado devuelto
+    assert result["alias"] == "challenger"
+    assert result["version"] == "2"
+    assert result["champion_version"] == "1"
+    assert result["load_uri"] == f"models:/{name}@challenger"
+
+
+
+@pytest.mark.parametrize("alias", ["latest", "v1", "mal alias", "a/b", ""])
+def test_invalid_alias_is_rejected_before_registering(client_mock, monkeypatch, alias):
+    def must_not_register(**kwargs):
+        raise AssertionError("un alias inválido no debe registrar una versión")
+
+    monkeypatch.setattr(registry.mlflow, "register_model", must_not_register)
+    with pytest.raises(ValueError, match="alias"):
+        registry.promote_candidate(
+            client_mock, "p1", "run-01", "Challenger: modelo alterno para comparar",
+            approve=True, alias=alias,
+        )
+    assert client_mock.alias_calls == []
+
+
+def test_challenger_aborts_if_champion_moves(client_mock, monkeypatch):
+    """Si algo mueve champion al asignar challenger, se debe abortar con error."""
+    monkeypatch.setattr(
+        registry.mlflow, "register_model", lambda **kwargs: SimpleNamespace(version=2)
+    )
+    monkeypatch.setattr(
+        registry, "_load_registered_model",
+        lambda uri: SimpleNamespace(metadata=SimpleNamespace(signature="signed")),
+    )
+    original = client_mock.set_registered_model_alias
+
+    def asigna_y_mueve_champion(name, alias, version):
+        original(name, alias, version)
+        client_mock.aliases["champion"] = str(version)  # efecto secundario indebido
+
+    monkeypatch.setattr(client_mock, "set_registered_model_alias", asigna_y_mueve_champion)
+    with pytest.raises(RuntimeError, match="champion cambió"):
+        registry.promote_candidate(
+            client_mock, "p1", "run-01", "Challenger: modelo alterno para comparar",
+            approve=True, alias="challenger",
+        )
