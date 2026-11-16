@@ -4,7 +4,8 @@ Proyecto académico de Machine Learning y MLOps para analizar datos abiertos del
 
 ## Inicio rápido: cómo ejecutar el proyecto
 
-Desde la raíz del repositorio, con `uv` instalado. El entorno actual usa **MLflow 3.17.2**, la versión estable más reciente publicada en PyPI al **21 de octubre de 2026**.
+Desde la raíz del repositorio, con `uv` instalado. El entorno reproducible usa
+**Python 3.13.2** y **MLflow 3.17.2**, fijados en `pyproject.toml` y `uv.lock`.
 
 ```bash
 # 1. Crear/restaurar el entorno bloqueado y comprobar MLflow 3.17.2.
@@ -154,7 +155,8 @@ El programa admite los argumentos `--parquet`, `--estacion`, `--fecha-hora`, `--
 uv run --frozen python -m pytest tests/test_api_cliente.py -q
 ```
 
-Las seis pruebas unitarias del cliente fueron aprobadas. La ejecución HTTP real queda pendiente de verificar con el modelo exportado.
+Las pruebas unitarias del cliente están incluidas en la suite. La ejecución HTTP
+real se valida iniciando la API con el modelo exportado.
 
 **Justificación técnica del despliegue:** consultar [Estrategia de despliegue e inferencia — Entrega 4](docs/docs/despliegue_inferencia_entrega4.md), donde se explica la elección de inferencia en tiempo real frente a procesamiento por lotes, las limitaciones y las referencias utilizadas.
 
@@ -193,8 +195,9 @@ data/
 docs/docs/                 # Contexto, propuesta y documentación del proyecto
 notebooks/                 # Exploración y auditoría; no ejecutan el experimento base
 references/                # ML Canvas y diagrama de arquitectura
-reports/figures/baselines/  # Resultados agregados por run padre (locales)
-tests/                     # Pruebas de ingesta, causalidad, baselines y tracking
+reports/figures/            # Gráficas versionadas y artefactos agregados locales
+reports/monitoreo/          # JSON/CSV de drift y métricas A/B
+tests/                      # Pruebas de ingesta, modelos, API, tracking y monitoreo
 MLproject                  # Entry points ingest, train, main y features
 python_env.yaml            # Entorno virtual de MLflow Projects
 requirements.txt           # Dependencias runtime exactas, exportadas de uv.lock
@@ -210,6 +213,8 @@ proyecto_mibici/
     ├── base.py             # Contratos PipelinePregunta y BaselineResult
     ├── supervised_baselines.py # PipelineP1 y PipelineP2
     └── p3_baseline.py      # PipelineP3
+├── api/                    # Esquemas, carga/exportación del modelo y cliente HTTP
+└── monitoreo/              # Periodos, drift, reentrenamiento y evaluación A/B
 ```
 
 Los CSV, Parquet, bases de tracking, artefactos de MLflow y modelos serializados son locales y están excluidos de Git. Solo se versiona el manifiesto, que no incluye las filas de viajes.
@@ -226,7 +231,9 @@ uv sync --frozen
 
 El entorno único usa Python 3.13.2 y **MLflow 3.17.2**, con versiones directas fijadas y dependencias transitivas en el lockfile. No se necesita activar un entorno ni instalar paquetes globalmente.
 
-**Decisión de versión:** se eligió [MLflow 3.17.2](https://pypi.org/project/mlflow/3.17.2/), la última versión estable publicada al 21 de octubre de 2026. La actualización se validó con **35 pruebas aprobadas**, ejecución de MLflow Projects y los tres baselines sobre la base completa. Sus métricas coinciden con las de la ejecución anterior: cambió el entorno de tracking, no los modelos ni los datos.
+La actualización a MLflow 3.17.2 se validó con la suite de pruebas, la
+ejecución de MLflow Projects y los tres baselines sobre la base completa. Las
+versiones exactas se conservan en `uv.lock`.
 
 ## MLflow Projects
 
@@ -379,6 +386,10 @@ históricos de MiBici ni un servidor MLflow levantado.
 | `test_nested_tracking.py` | Runs padre/hijo, etiquetas y artefactos | Impedir selección usando métricas de test y parámetros inválidos |
 | `test_feature_engineering.py` | Calendario y perfiles semanales | Variables que no deben incorporar información actual o futura |
 | `test_tracking.py` | Contexto de proyectos y copia del código | Ausencia del ejecutable `git` |
+| `test_monitoreo_periodos.py` | Periodos de drift, entrenamiento y evaluación | Traslapes indebidos y cortes temporales inválidos |
+| `test_monitoreo_drift.py` | Resumen e interpretación estructurada de Evidently | Conteos de drift inconsistentes |
+| `test_monitoreo_reentrenamiento.py` | Preparación y trazabilidad del challenger | Configuración o ventana de reentrenamiento inválida |
+| `test_monitoreo_ab.py` | Métricas y predicción por lotes de la comparación A/B | Tamaños de lote no positivos |
 
 **Reproducibilidad:** `test_random_forest_training_is_reproducible_with_same_seed`
 en `test_candidate_models.py` repite el entrenamiento con la misma semilla y verifica
@@ -402,8 +413,8 @@ uv run --no-project --python 3.12 \
 El comando compara muestras reproducibles de train y test, revisa tipos, faltantes
 y duplicados, y ejecuta la `full_suite` de Deepchecks para detectar inconsistencias
 y drift. Los reportes se guardan por pregunta en
-`reports/data_quality/deepchecks_p1.json` y `.html` (análogamente para `p2` y
-`p3`). Es necesario haber ejecutado la ingesta y la construcción de features.
+`reports/data_quality/deepchecks.json`. Es necesario haber ejecutado la ingesta y
+la construcción de features.
 Para validar las tres preguntas:
 
 ```bash
@@ -518,7 +529,38 @@ La promoción a `champion` debe realizarse **solo después de comparar y aprobar
 
 ### Reentrenamiento y versión challenger
 
-Para el monitoreo y la prueba A/B, el modelo de demanda P1 puede reentrenarse con la ventana ampliada de datos (octubre de 2023 a junio de 2026), heredando los hiperparámetros del *champion* vigente, y registrarse en el Model Registry con el alias `challenger` sin desplazar a `champion`. Con el servidor de MLflow abierto y `MLFLOW_TRACKING_URI` definida, el reentrenamiento se ejecuta con `uv run --frozen python -m proyecto_mibici.<modulo_reentrenamiento>` y la promoción con `uv run --frozen python -m proyecto_mibici.registry promote --question p1 --run-id <RUN_ID> --alias challenger --reason "<justificación>" --approve`. El detalle, las métricas y los errores comunes están en `docs/docs/entrenamiento_challenger.md`.
+Para el monitoreo y la prueba A/B, el modelo de demanda P1 puede reentrenarse con la ventana ampliada de datos (octubre de 2023 a junio de 2026), heredando los hiperparámetros del *champion* vigente, y registrarse en el Model Registry con el alias `challenger` sin desplazar a `champion`. Con el servidor de MLflow abierto y `MLFLOW_TRACKING_URI` definida, el reentrenamiento se ejecuta con `uv run --frozen python -m proyecto_mibici.monitoreo.reentrenar` y la promoción con `uv run --frozen python -m proyecto_mibici.registry promote --question p1 --run-id <RUN_ID> --alias challenger --reason "<justificación>" --approve`. El detalle, las métricas y los errores comunes están en `docs/docs/entrenamiento_challenger.md`.
+
+La comparación reproducible sobre el mismo periodo `evaluacion_ab` se ejecuta con:
+
+```bash
+MLFLOW_TRACKING_URI=http://127.0.0.1:5000 \
+  uv run --frozen python -m proyecto_mibici.monitoreo.ab
+```
+
+El resultado se guarda en `reports/monitoreo/ab/resultado_ab.json` y
+`reports/monitoreo/ab/metricas_ab.csv`. También se genera la gráfica
+[`ab_metricas_modelos.png`](reports/figures/entrega5/ab_metricas_modelos.png),
+con un panel para RMSE, MAE y R².
+
+### Monitoreo de drift con Evidently
+
+El reporte compara la referencia y el periodo actual, además de un control
+estacional:
+
+```bash
+uv sync --frozen --extra monitoreo
+uv run --frozen --extra monitoreo \
+  python -m proyecto_mibici.monitoreo.drift --comparacion principal --sin-mlflow
+uv run --frozen --extra monitoreo \
+  python -m proyecto_mibici.monitoreo.drift --comparacion estacional --sin-mlflow
+```
+
+Los resultados JSON/CSV quedan en `reports/monitoreo/principal/` y
+`reports/monitoreo/estacional/`; las gráficas resumidas de Evidently están en
+[`reports/figures/entrega5/`](reports/figures/entrega5). La interpretación,
+los periodos y la recomendación de Continuous Training están documentados en
+[`drift_entrega5.md`](docs/docs/drift_entrega5.md).
 
 ## Referencias
 

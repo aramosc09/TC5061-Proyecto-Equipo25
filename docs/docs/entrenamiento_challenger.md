@@ -6,7 +6,9 @@ Describe cómo reentrenar el modelo de demanda (P1, `HistGradientBoostingRegress
 
 1. **Reentrenar:** crea un run candidato en MLflow con los hiperparámetros del champion.
 2. **Promover con `--alias challenger`:** crea una versión nueva en el Registry y le asigna ese alias. `champion` no cambia.
-3. **Evaluar y comparar** (pendiente): puntuar champion y challenger sobre las mismas filas de `evaluacion_ab`.
+3. **Evaluar y comparar:** puntuar champion y challenger sobre las mismas filas de
+   `evaluacion_ab` con el evaluador reproducible de
+   `proyecto_mibici.monitoreo.ab`.
 
 ## Requisitos
 
@@ -82,6 +84,24 @@ $env:MODEL_URI = "models:/mibici-equipo25-p1-demanda@challenger"
 ## Cómo interpretar las métricas
 
 `validation_rmse` se llama igual en el champion y en el challenger, pero **no mide las mismas filas**: el champion se validó sobre su ventana original y el challenger sobre `evaluacion_ab`. No se deben comparar directamente. La comparación válida del A/B es evaluar ambos modelos sobre las mismas filas de `evaluacion_ab`.
+
+La evaluación A/B ejecutada sobre julio-septiembre de 2026 produjo:
+
+| Modelo | RMSE | MAE | R² |
+|---|---:|---:|---:|
+| Champion, versión 1 | 1.4398 | 0.7745 | 0.6797 |
+| Challenger, versión 2 | **1.4078** | **0.7715** | **0.6938** |
+| Baseline semanal | 1.9478 | 0.9662 | 0.4139 |
+
+El challenger reduce el RMSE en 0.0319 (2.22 %) frente al champion y en 0.5400
+frente al baseline. El detalle reproducible queda en
+`reports/monitoreo/ab/resultado_ab.json` y
+`reports/monitoreo/ab/metricas_ab.csv`, generados con:
+
+```bash
+MLFLOW_TRACKING_URI=http://127.0.0.1:5001 \
+  uv run --frozen python -m proyecto_mibici.monitoreo.ab
+```
 
 ## Cambios en el código
 
