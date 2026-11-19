@@ -10,7 +10,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN useradd --create-home --uid 10001 appuser
+# /mlflow: punto de montaje del volumen del servidor MLflow en Compose. Al crearse vacío, el
+# volumen hereda este dueño y appuser puede escribir la base SQLite y los artefactos.
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir /mlflow && chown appuser:appuser /mlflow
 
 COPY --chown=appuser:appuser proyecto_mibici ./proyecto_mibici
 COPY --chown=appuser:appuser models/api/p1 ./models/api/p1

@@ -1,0 +1,101 @@
+# Sistema MiBici P1 con un solo comando:  podman compose up -d --build  (o docker compose)
+#
+#   mlflow            servidor de tracking y Model Registry, con SQLite y artefactos en un volumen
+#   registrar-modelo  de un solo uso: sube la copia exportada del champion al Registry de este
+#                     servidor (idempotente) y termina
+#   api               FastAPI de la Entrega 4; carga el modelo desde el Registry (MODEL_SOURCE)
+#
+# Requisito: models/api/p1 exportado (python -m proyecto_mibici.api.modelo exportar).
+# Variables opcionales en .env (ver .env.example).
+
+name: mibici
+
+x-imagen: &imagen
+  image: localhost/mibici-api:${MIBICI_TAG:-latest}
+  pull_policy: never
+  networks: [mibici]
+  restart: unless-stopped
+
+services:
+  mlflow:
+    <<: *imagen
+    build:
+      context: .
+      dockerfile: Containerfile
+    command:
+      - mlflow
+      - server
+      - --backend-store-uri=sqlite:////mlflow/mlflow.db
+      - --artifacts-destination=/mlflow/mlartifacts
+      - --serve-artifacts
+      - --host=0.0.0.0
+      - --port=5000
+      - --workers=1
+      # Por defecto MLflow solo acepta localhost; "mlflow" es su nombre dentro de la red.
+      - --allowed-hosts=mlflow,mlflow:5000,localhost,localhost:5000,127.0.0.1,127.0.0.1:5000
+    environment:
+      MLFLOW_DISABLE_AGENT_HINT: "1"
+      # El servidor solo guarda el Registry y sirve artefactos; el ejecutor de trabajos de GenAI
+      # (procesos huey) no se usa y consume memoria y CPU aun en reposo.
+      MLFLOW_SERVER_ENABLE_JOB_EXECUTION: "false"
+    volumes:
+      - mlflow-data:/mlflow
+    ports:
+      - "127.0.0.1:${MLFLOW_PORT:-5000}:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 6
+
+  registrar-modelo:
+    <<: *imagen
+    command: ["python", "-m", "proyecto_mibici.api.registrar"]
+    restart: "no"
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_DISABLE_AGENT_HINT: "1"
+    depends_on:
+      mlflow:
+        condition: service_healthy
+
+  api:
+    <<: *imagen
+    command:
+      - sh
+      - -c
+      - exec uvicorn proyecto_mibici.api.main:app --host 0.0.0.0 --port 8000 --workers "$${API_WORKERS:-1}"
+    environment:
+      MODEL_SOURCE: ${MODEL_SOURCE:-registry}
+      MODEL_URI: ${MODEL_URI:-models:/mibici-equipo25-p1-demanda@champion}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_DISABLE_AGENT_HINT: "1"
+      API_WORKERS: ${API_WORKERS:-1}
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    depends_on:
+      mlflow:
+        condition: service_healthy
+      registrar-modelo:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 4
+    # Límites fijos: la prueba de carga y el costo por inferencia se miden contra estos recursos.
+    deploy:
+      resources:
+        limits:
+          cpus: "${API_CPUS:-1.0}"
+          memory: ${API_MEMORY:-1g}
+
+networks:
+  mibici:
+    name: mibici
+
+volumes:
+  mlflow-data:
+    name: mibici-mlflow-data
