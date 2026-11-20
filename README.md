@@ -162,6 +162,30 @@ real se valida iniciando la API con el modelo exportado.
 
 
 
+## Sistema completo con Docker Compose (Entrega 6)
+
+`docker-compose.yml` levanta con un solo comando el servidor MLflow (tracking y Model Registry),
+registra en él la copia exportada del modelo `champion` y arranca la API, que carga el modelo
+desde el Registry. Requisito: haber exportado el modelo a `models/api/p1/` (sección
+[Modelo servido por la API](#modelo-servido-por-la-api)).
+
+```bash
+podman compose up -d --build        # o: docker compose up -d --build
+podman compose ps -a                # registrar-modelo debe quedar "Exited (0)"
+curl http://127.0.0.1:8000/model-info   # "source": "registry"
+curl -X POST http://127.0.0.1:8000/predict -H 'Content-Type: application/json' -d @peticion.json
+```
+
+La UI de MLflow del sistema queda en <http://127.0.0.1:5000>. Para detenerlo:
+`podman compose down` (conserva el Registry) o `podman compose down -v` (lo borra; el siguiente
+`up` vuelve a registrar el modelo). En Windows, `podman compose` usa el `docker-compose` de Docker
+Desktop si está instalado; si no, instala `podman-compose` con `pip install podman-compose`.
+
+Las variables (puertos, `MODEL_SOURCE=registry|local`, workers y límites de CPU y memoria de la
+API) se documentan en `.env.example`. Si el servidor MLflow local ya ocupa el puerto 5000, se
+cambia el del sistema con `MLFLOW_PORT=5001 podman compose up -d`. Detalle de servicios, decisiones y verificación en
+`docs/docs/operacion_entrega6.md`.
+
 ## Propósito y preguntas
 
 | Pregunta | Tarea y unidad | Objetivo implementado | Horizonte / uso esperado |
@@ -198,6 +222,9 @@ references/                # ML Canvas y diagrama de arquitectura
 reports/figures/            # Gráficas versionadas y artefactos agregados locales
 reports/monitoreo/          # JSON/CSV de drift y métricas A/B
 tests/                      # Pruebas de ingesta, modelos, API, tracking y monitoreo
+Containerfile              # Imagen única: API, servidor MLflow y registro del modelo
+docker-compose.yml         # Sistema completo: mlflow + registrar-modelo + api (Entrega 6)
+.env.example               # Variables locales y de Compose (copiar a .env)
 MLproject                  # Entry points ingest, train, main y features
 python_env.yaml            # Entorno virtual de MLflow Projects
 requirements.txt           # Dependencias runtime exactas, exportadas de uv.lock
@@ -213,7 +240,7 @@ proyecto_mibici/
     ├── base.py             # Contratos PipelinePregunta y BaselineResult
     ├── supervised_baselines.py # PipelineP1 y PipelineP2
     └── p3_baseline.py      # PipelineP3
-├── api/                    # Esquemas, carga/exportación del modelo y cliente HTTP
+├── api/                    # Esquemas, carga/exportación/registro del modelo y cliente HTTP
 └── monitoreo/              # Periodos, drift, reentrenamiento y evaluación A/B
 ```
 

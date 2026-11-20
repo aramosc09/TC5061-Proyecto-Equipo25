@@ -11,3 +11,7 @@ notebooks
 tests
 docs
 *.ipynb_checkpoints
+.env
+.github
+tmp
+*.pdf
