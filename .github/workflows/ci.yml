@@ -38,7 +38,7 @@ jobs:
         run: uv run --frozen bandit -r proyecto_mibici
 
       - name: Auditoría de dependencias con pip-audit
-        run: uv run --frozen pip-audit -r requirements.txt
+        run: uv run --frozen pip-audit -r requirements.txt --no-deps --disable-pip
 
   pruebas:
     name: Pruebas Automatizadas
