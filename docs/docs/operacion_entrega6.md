@@ -95,12 +95,12 @@ El flujo de integración continua (`.github/workflows/ci.yml`) automatiza la ver
 
 | Trabajo (`job`) | Depende de | Qué ejecuta | Tiempo en Actions |
 | :--- | :--- | :--- | :--- |
-| `calidad` | — (en paralelo) | `ruff check`, `bandit -r proyecto_mibici` y `pip-audit -r requirements.txt` | *Pendiente (completar tras corrida en GitHub)* |
-| `pruebas` | — (en paralelo) | `uv sync --frozen --extra monitoreo` y `pytest tests -q` con caché de `uv` | *Pendiente (completar tras corrida en GitHub)* |
-| `imagen` | `calidad`, `pruebas` | Genera modelo sintético (`modelo_humo.py`), levanta `docker compose up -d --build`, valida `/health`, `/model-info` (`registry`) y `/predict`, y limpia con `down -v` | *Pendiente (completar tras corrida en GitHub)* |
+| `calidad` | — (en paralelo) | `ruff check`, `bandit -r proyecto_mibici` y `pip-audit -r requirements.txt` | *12s* |
+| `pruebas` | — (en paralelo) | `uv sync --frozen --extra monitoreo` y `pytest tests -q` con caché de `uv` | *1m 1s* |
+| `imagen` | `calidad`, `pruebas` | Genera modelo sintético (`modelo_humo.py`), levanta `docker compose up -d --build`, valida `/health`, `/model-info` (`registry`) y `/predict`, y limpia con `down -v` | *1m 42s* |
 
 ### Modelo sintético para CI (`modelo_humo.py`)
 
 Dado que `models/api/p1/` está excluido del control de versiones (`.gitignore`), el job `imagen` ejecuta `python -m proyecto_mibici.api.modelo_humo` para entrenar un `HistGradientBoostingRegressor(loss="poisson", max_iter=5)` sobre datos aleatorios de las 30 columnas de `COLUMNAS_MODELO` en `float32`. El artefacto se guarda con `version="0"` y `model_family="humo"`, y el comando bloquea cualquier sobrescritura sobre un modelo real existente salvo que se indique explícitamente `--forzar`.
 
-*(Insertar captura del workflow en verde en GitHub Actions tras abrir el PR y fusionar en `main`)*.
+![Pipeline de CI/CD en verde en GitHub Actions](../../reports/figures/entrega6/ci_workflow_verde.png)
