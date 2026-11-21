@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calidad:
+    name: Calidad y Seguridad
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar uv con caché
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.5"
+          enable-cache: true
+
+      - name: Instalar dependencias
+        run: uv sync --frozen
+
+      - name: Linter con Ruff
+        run: uv run --frozen ruff check proyecto_mibici tests
+
+      - name: Análisis estático con Bandit
+        run: uv run --frozen bandit -r proyecto_mibici
+
+      - name: Auditoría de dependencias con pip-audit
+        run: uv run --frozen pip-audit -r requirements.txt
+
+  pruebas:
+    name: Pruebas Automatizadas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar uv con caché
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.5"
+          enable-cache: true
+
+      - name: Instalar dependencias con monitoreo
+        run: uv sync --frozen --extra monitoreo
+
+      - name: Ejecutar suite PyTest
+        run: uv run --frozen python -m pytest tests -q
+
+  imagen:
+    name: Construcción y Humo con Compose
+    needs: [calidad, pruebas]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar uv con caché
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.5"
+          enable-cache: true
+
+      - name: Instalar dependencias base
+        run: uv sync --frozen
+
+      - name: Generar modelo sintético de humo
+        run: uv run --frozen python -m proyecto_mibici.api.modelo_humo
+
+      - name: Levantar servicios con Docker Compose
+        run: docker compose up -d --build
+
+      - name: Esperar disponibilidad de /health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health; then
+              echo "API saludable"
+              exit 0
+            fi
+            sleep 5
+          done
+          docker compose logs
+          exit 1
+
+      - name: Verificar fuente del modelo (/model-info) y predicción (/predict)
+        run: |
+          INFO=$(curl -sf http://127.0.0.1:8000/model-info)
+          echo "Model info: $INFO"
+          echo "$INFO" | grep -q '"source":"registry"' || echo "$INFO" | grep -q '"source": "registry"'
+          curl -sf -X POST http://127.0.0.1:8000/predict \
+            -H 'Content-Type: application/json' \
+            -d @peticion.json
+
+      - name: Mostrar logs en caso de fallo
+        if: failure()
+        run: docker compose logs
+
+      - name: Limpiar contenedores y volúmenes
+        if: always()
+        run: docker compose down -v
