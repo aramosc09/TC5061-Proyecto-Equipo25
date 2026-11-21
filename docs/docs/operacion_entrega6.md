@@ -85,3 +85,22 @@ de `.env.example`) o se pasan en la línea de comandos.
 | Lotes en `/predict` | 1,000 registros → 1,000 predicciones (HTTP 200); 1,001 → HTTP 422 |
 | `podman stats` en reposo | `api` ~205 MB; `mlflow` ~370 MB (1.97 GB antes de desactivar el ejecutor de trabajos) |
 | Pruebas | `tests/test_api_registrar.py`: registro con linaje, carga desde el Registry, idempotencia, error sin copia exportada y rechazo de un modelo que no es P1 |
+
+
+## 2. Pipeline de CI/CD con GitHub Actions
+
+El flujo de integración continua (`.github/workflows/ci.yml`) automatiza la verificación de calidad, las pruebas automatizadas y la validación del despliegue contenerizado en cada `push` y `pull_request` hacia `main`, además de permitir su ejecución manual mediante `workflow_dispatch`.
+
+### Arquitectura de los trabajos (Jobs)
+
+| Trabajo (`job`) | Depende de | Qué ejecuta | Tiempo en Actions |
+| :--- | :--- | :--- | :--- |
+| `calidad` | — (en paralelo) | `ruff check`, `bandit -r proyecto_mibici` y `pip-audit -r requirements.txt` | *Pendiente (completar tras corrida en GitHub)* |
+| `pruebas` | — (en paralelo) | `uv sync --frozen --extra monitoreo` y `pytest tests -q` con caché de `uv` | *Pendiente (completar tras corrida en GitHub)* |
+| `imagen` | `calidad`, `pruebas` | Genera modelo sintético (`modelo_humo.py`), levanta `docker compose up -d --build`, valida `/health`, `/model-info` (`registry`) y `/predict`, y limpia con `down -v` | *Pendiente (completar tras corrida en GitHub)* |
+
+### Modelo sintético para CI (`modelo_humo.py`)
+
+Dado que `models/api/p1/` está excluido del control de versiones (`.gitignore`), el job `imagen` ejecuta `python -m proyecto_mibici.api.modelo_humo` para entrenar un `HistGradientBoostingRegressor(loss="poisson", max_iter=5)` sobre datos aleatorios de las 30 columnas de `COLUMNAS_MODELO` en `float32`. El artefacto se guarda con `version="0"` y `model_family="humo"`, y el comando bloquea cualquier sobrescritura sobre un modelo real existente salvo que se indique explícitamente `--forzar`.
+
+*(Insertar captura del workflow en verde en GitHub Actions tras abrir el PR y fusionar en `main`)*.
