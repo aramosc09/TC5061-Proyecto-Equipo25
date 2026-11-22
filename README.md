@@ -1,4 +1,5 @@
 # MiBici ML · Equipo 25
+[![CI](https://github.com/aramosc09/TC5061-Proyecto-Equipo25/actions/workflows/ci.yml/badge.svg)](https://github.com/aramosc09/TC5061-Proyecto-Equipo25/actions/workflows/ci.yml)
 
 Proyecto académico de Machine Learning y MLOps para analizar datos abiertos del sistema de bicicleta pública MiBici del Área Metropolitana de Guadalajara. El repositorio contiene la ingesta y validación de datos, la construcción de variables, experimentos reproducibles para tres preguntas operativas y el registro de resultados con MLflow.
 
@@ -185,6 +186,14 @@ Las variables (puertos, `MODEL_SOURCE=registry|local`, workers y límites de CPU
 API) se documentan en `.env.example`. Si el servidor MLflow local ya ocupa el puerto 5000, se
 cambia el del sistema con `MLFLOW_PORT=5001 podman compose up -d`. Detalle de servicios, decisiones y verificación en
 `docs/docs/operacion_entrega6.md`.
+
+#### Pipeline de CI/CD
+
+El flujo definido en `.github/workflows/ci.yml` se ejecuta automáticamente en cada `push` y `pull_request` hacia `main`, y también puede lanzarse manualmente desde la pestaña **Actions** (`workflow_dispatch`). Está dividido en tres trabajos:
+
+* **`calidad`:** Ejecuta `ruff check`, `bandit -r proyecto_mibici` y `pip-audit -r requirements.txt` sin tolerancia a fallos.
+* **`pruebas`:** Instala el entorno con `--extra monitoreo` y ejecuta `pytest tests -q` usando caché de `uv`.
+* **`imagen`:** Depende de los dos anteriores; genera un modelo sintético con `python -m proyecto_mibici.api.modelo_humo`, levanta los servicios con `docker compose up -d --build`, verifica `/health`, `/model-info` (`"source": "registry"`) y `/predict`, y limpia los volúmenes al finalizar.
 
 ## Propósito y preguntas
 
