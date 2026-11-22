@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import time
 
 import matplotlib
@@ -59,7 +59,13 @@ def muestrear(runtime: str, contenedores: list[str]) -> list[dict]:
         "--format",
         "json",
     ]
-    salida = subprocess.run(comando, check=True, capture_output=True, text=True)
+    # Runtime y argumentos son constantes; no se pasa entrada libre al shell.
+    salida = subprocess.run(  # nosec B603
+        comando,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
     payload = json.loads(salida.stdout)
     filas = payload if isinstance(payload, list) else [payload]
     seleccionados = set(contenedores)
