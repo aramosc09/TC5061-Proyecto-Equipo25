@@ -104,3 +104,100 @@ El flujo de integración continua (`.github/workflows/ci.yml`) automatiza la ver
 Dado que `models/api/p1/` está excluido del control de versiones (`.gitignore`), el job `imagen` ejecuta `python -m proyecto_mibici.api.modelo_humo` para entrenar un `HistGradientBoostingRegressor(loss="poisson", max_iter=5)` sobre datos aleatorios de las 30 columnas de `COLUMNAS_MODELO` en `float32`. El artefacto se guarda con `version="0"` y `model_family="humo"`, y el comando bloquea cualquier sobrescritura sobre un modelo real existente salvo que se indique explícitamente `--forzar`.
 
 ![Pipeline de CI/CD en verde en GitHub Actions](../../reports/figures/entrega6/ci_workflow_verde.png)
+
+## 3. Pruebas de carga con Locust
+
+### 3.1 Diseño del escenario
+
+La carga se ejecuta contra `/predict` sobre el sistema levantado con Compose.
+[`locustfile.py`](../../locustfile.py) genera entradas válidas para el esquema
+Pydantic de P1 y usa una semilla configurable para reproducir la misma distribución.
+Cada petición contiene lotes de registros, de modo que se mide también el costo de
+procesamiento por lote permitido por la API.
+
+| Parámetro | Valor usado |
+| --- | --- |
+| Usuarios concurrentes | 20 |
+| Crecimiento | 5 usuarios por segundo |
+| Duración | 60 segundos |
+| Registros por petición | 10 |
+| Semilla | 42 |
+| Endpoint | `POST /predict` |
+| Recursos de la API | 1 CPU y 1 GB por defecto |
+
+Los archivos y gráficas se generan con:
+
+```bash
+uv sync --frozen --extra carga
+make load-test
+uv run --frozen --extra carga python -m proyecto_mibici.carga_reporte
+```
+
+El HTML generado por Locust contiene las gráficas de latencia y throughput, y el
+historial CSV permite reproducirlas:
+
+- [`Reporte interactivo de Locust`](../../reports/figures/entrega6/locust_report.html)
+- [`Gráfica resumen de rendimiento`](../../reports/figures/entrega6/locust_desempeno.png)
+- [`Resumen estructurado`](../../reports/monitoreo/carga/locust_2026-11-22_resumen.json)
+- [`Estadísticas finales`](../../reports/monitoreo/carga/locust_2026-11-22_stats.csv)
+
+### 3.2 Resultados
+
+La prueba se realizó el 22 de noviembre de 2026 contra la API de Compose cargada
+desde el Registry. La API respondió correctamente sin fallos:
+
+| Métrica | Resultado |
+| --- | --- |
+| Solicitudes | 4,372 |
+| Fallos | 0 (0 %) |
+| Throughput promedio | 73.97 solicitudes/s |
+| Latencia mediana | 8 ms |
+| Latencia promedio | 10.32 ms |
+| Latencia p95 | 26 ms |
+| Latencia máxima | 103.34 ms |
+
+El throughput mantuvo aproximadamente 74–78 solicitudes por segundo una vez
+alcanzados los 20 usuarios. La latencia p95 permaneció mayormente entre 26 y
+40 ms durante el periodo estable, sin respuestas con error.
+
+![Desempeño de /predict bajo carga](../../reports/figures/entrega6/locust_desempeno.png)
+
+## 4. Monitoreo de uso de recursos
+
+### 4.1 Método
+
+El uso de CPU y memoria se muestreó cada segundo con `podman stats`
+simultáneamente a Locust. El módulo
+[`monitoreo_recursos.py`](../../proyecto_mibici/monitoreo_recursos.py) conserva
+la evidencia en CSV y genera una gráfica para API y MLflow. También admite
+Docker mediante `--runtime docker`.
+
+```bash
+podman compose up -d --build
+make load-test
+make monitor-resources
+```
+
+Para que ambos procesos cubran exactamente la misma ventana, deben iniciarse
+simultáneamente. `make monitor-resources` usa una duración de 60 segundos y un
+intervalo de un segundo por defecto.
+
+### 4.2 Evidencia
+
+La prueba final tuvo 20 usuarios concurrentes, lotes de 10 registros y 60
+segundos de duración:
+
+| Contenedor | CPU promedio | CPU máximo | Memoria promedio | Memoria máxima | Límite |
+| --- | ---:| ---:| ---:| ---:| ---:|
+| `mibici-api-1` | 18.88 % | 20.99 % | 205.71 MB | 212.50 MB | 1 GB |
+| `mibici-mlflow-1` | 4.11 % | 4.78 % | 378.61 MB | 391.30 MB | 2 GB |
+
+En `mibici-api-1`, el límite efectivo fue alrededor de 1.075 GB y la memoria
+máxima observada representó aproximadamente 19.9 % de ese límite. En
+`mibici-mlflow-1`, la memoria máxima representó 18.7 % de su límite observado
+de aproximadamente 2.034 GB.
+
+- [Evidencia CSV de recursos](../../reports/monitoreo/recursos/recursos_carga.csv)
+- [Gráfica de CPU y memoria](../../reports/figures/entrega6/recursos_carga.png)
+
+![Uso de CPU y memoria durante la carga](../../reports/figures/entrega6/recursos_carga.png)

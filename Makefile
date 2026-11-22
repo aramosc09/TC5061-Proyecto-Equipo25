@@ -84,6 +84,29 @@ features:
 experiment:
 	$(PYTHON_INTERPRETER) -m proyecto_mibici.experiments ejecutar-proyecto
 
+## Run a reproducible Locust load test against the API
+.PHONY: load-test
+load-test:
+	mkdir -p reports/figures/entrega6 reports/monitoreo/carga
+	LOCUST_BATCH_SIZE=$${LOCUST_BATCH_SIZE:-10} \
+	LOCUST_SEED=$${LOCUST_SEED:-42} \
+	uv run --frozen --extra carga locust -f locustfile.py \
+	--host $${LOCUST_HOST:-http://127.0.0.1:8000} \
+	--users $${LOCUST_USERS:-20} \
+	--spawn-rate $${LOCUST_SPAWN_RATE:-5} \
+	--run-time $${LOCUST_RUN_TIME:-60s} \
+	--headless \
+	--html reports/figures/entrega6/locust_report.html \
+	--csv reports/monitoreo/carga/locust
+
+## Monitor CPU and memory while Compose is under load
+.PHONY: monitor-resources
+monitor-resources:
+	uv run --frozen python -m proyecto_mibici.monitoreo_recursos \
+		--duracion $${MONITOR_DURATION:-60} \
+		--intervalo $${MONITOR_INTERVAL:-1} \
+		--runtime $${MONITOR_RUNTIME:-auto}
+
 ## Verify recorded runs and artifacts
 .PHONY: verify
 verify:

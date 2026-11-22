@@ -195,6 +195,38 @@ El flujo definido en `.github/workflows/ci.yml` se ejecuta automáticamente en c
 * **`pruebas`:** Instala el entorno con `--extra monitoreo` y ejecuta `pytest tests -q` usando caché de `uv`.
 * **`imagen`:** Depende de los dos anteriores; genera un modelo sintético con `python -m proyecto_mibici.api.modelo_humo`, levanta los servicios con `docker compose up -d --build`, verifica `/health`, `/model-info` (`"source": "registry"`) y `/predict`, y limpia los volúmenes al finalizar.
 
+#### Prueba de carga con Locust
+
+El escenario [`locustfile.py`](locustfile.py) envía solicitudes reproducibles al
+endpoint `/predict`. Instala el extra opcional y ejecuta la prueba contra Compose:
+
+```bash
+uv sync --frozen --extra carga
+make load-test
+```
+
+Por defecto usa 20 usuarios, crecimiento de 5 usuarios por segundo, 60 segundos
+y lotes de 10 registros. Las opciones se pueden ajustar con `LOCUST_USERS`,
+`LOCUST_SPAWN_RATE`, `LOCUST_RUN_TIME`, `LOCUST_BATCH_SIZE`, `LOCUST_HOST` y
+`LOCUST_SEED`.
+
+Los archivos generados quedan en `reports/monitoreo/carga/` y las gráficas en
+`reports/figures/entrega6/`. El escenario valida el número de predicciones
+devuelto y registra como fallos las respuestas HTTP distintas de 200 o las
+respuestas con formato incorrecto.
+
+El consumo de CPU y memoria se puede muestrear simultáneamente con:
+
+```bash
+make monitor-resources
+```
+
+El comando usa `podman stats` o `docker stats` según esté disponible y guarda
+el CSV en `reports/monitoreo/recursos/recursos_carga.csv`. La gráfica
+`reports/figures/entrega6/recursos_carga.png` compara API y MLflow. Duración,
+intervalo y runtime pueden configurarse con `MONITOR_DURATION`,
+`MONITOR_INTERVAL` y `MONITOR_RUNTIME`.
+
 ## Propósito y preguntas
 
 | Pregunta | Tarea y unidad | Objetivo implementado | Horizonte / uso esperado |
