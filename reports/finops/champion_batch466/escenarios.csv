@@ -1,0 +1,10 @@
+escenario,predicciones_mes,peticiones_estimadas_mes,tasa_media_pred_s,proveedor,opcion,region,facturacion,costo_mensual_usd_estimado,costo_por_inferencia_usd,costo_por_peticion_http_usd,costo_teorico_capacidad_100pct_usd,costo_teorico_capacidad_60pct_usd,segundos_facturados_estimados,fuente_precio
+base,324000,696,0.125,AWS,t3.small,us-east-1,siempre_encendido,15.257,4.708951e-05,0.02192097701,9.1e-10,1.51e-09,,https://aws.amazon.com/ec2/instance-types/t3/
+base,324000,696,0.125,AWS,t3.medium,us-east-1,siempre_encendido,30.514,9.417901e-05,0.04384195402,1.81e-09,3.02e-09,,https://aws.amazon.com/ec2/instance-types/t3/
+base,324000,696,0.125,Google Cloud,2 vCPU + 1 GiB,us-central1,escala_a_cero,0.019977,6.166e-08,2.870288e-05,,,390.08,https://cloud.google.com/run/pricing
+10x,3240000,6953,1.25,AWS,t3.small,us-east-1,siempre_encendido,15.257,4.70895e-06,0.00219430462,9.1e-10,1.51e-09,,https://aws.amazon.com/ec2/instance-types/t3/
+10x,3240000,6953,1.25,AWS,t3.medium,us-east-1,siempre_encendido,30.514,9.4179e-06,0.00438860923,1.81e-09,3.02e-09,,https://aws.amazon.com/ec2/instance-types/t3/
+10x,3240000,6953,1.25,Google Cloud,2 vCPU + 1 GiB,us-central1,escala_a_cero,0.199571,6.16e-08,2.870288e-05,,,3896.83,https://cloud.google.com/run/pricing
+100x,32400000,69528,12.5,AWS,t3.small,us-east-1,siempre_encendido,15.257,4.709e-07,0.00021943677,9.1e-10,1.51e-09,,https://aws.amazon.com/ec2/instance-types/t3/
+100x,32400000,69528,12.5,AWS,t3.medium,us-east-1,siempre_encendido,30.514,9.4179e-07,0.00043887355,1.81e-09,3.02e-09,,https://aws.amazon.com/ec2/instance-types/t3/
+100x,32400000,69528,12.5,Google Cloud,2 vCPU + 1 GiB,us-central1,escala_a_cero,1.995654,6.159e-08,2.870288e-05,,,38967.18,https://cloud.google.com/run/pricing

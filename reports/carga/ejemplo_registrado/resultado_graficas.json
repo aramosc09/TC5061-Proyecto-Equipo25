@@ -1,0 +1,9 @@
+{
+  "fuente": "reports/monitoreo/carga/locust_2026-11-22_stats_history.csv",
+  "recursos": "reports/monitoreo/recursos/recursos_carga.csv",
+  "niveles_estables": [
+    20
+  ],
+  "nota_percentiles": "Los percentiles del historial son acumulados, no independientes por escal\u00f3n.",
+  "punto_saturacion_confirmado": null
+}

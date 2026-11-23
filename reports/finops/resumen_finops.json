@@ -1,0 +1,37 @@
+{
+  "fuente_recursos": "reports/monitoreo/recursos/recursos_carga.csv",
+  "recursos_observados": [
+    {
+      "contenedor": "mibici-api-1",
+      "cpu_promedio_pct": 18.88,
+      "cpu_maximo_pct": 20.99,
+      "memoria_promedio_mb": 205.71,
+      "memoria_maxima_mb": 212.5
+    },
+    {
+      "contenedor": "mibici-mlflow-1",
+      "cpu_promedio_pct": 4.11,
+      "cpu_maximo_pct": 4.78,
+      "memoria_promedio_mb": 378.61,
+      "memoria_maxima_mb": 391.3
+    }
+  ],
+  "fuente_locust": "reports/monitoreo/carga/locust_2026-11-22_resumen.json",
+  "fuente_precios": "references/precios_nube.csv",
+  "capacidad_observada_pred_s": 739.665,
+  "lote_del_ensayo": 10,
+  "estaciones_supuesto": 450,
+  "horas_mes_vm": 730,
+  "utilizacion_objetivo_vm": 0.6,
+  "concurrencia_facturable_cloud_run": 1,
+  "estado": "estimacion_con_una_carga_observada_no_saturada",
+  "limitaciones": [
+    "Solo hay evidencia de 20 usuarios y lotes de diez registros; no es la capacidad máxima.",
+    "No hay ensayo 2 workers/2 CPU ni de lotes 1 y sistema_hora.",
+    "AWS EC2 T3 usa créditos de CPU; costos adicionales por créditos no incluidos.",
+    "Cloud Run requiere MODEL_SOURCE=local si MLflow no está siempre disponible.",
+    "Cloud Run usa concurrencia facturable 1 y mínimo de 0.1 s por solicitud como hipótesis.",
+    "No incluye transferencia de red, almacenamiento, imagen, MLflow externo ni impuestos.",
+    "El nivel gratuito de Cloud Run está excluido para comparar costos brutos."
+  ]
+}

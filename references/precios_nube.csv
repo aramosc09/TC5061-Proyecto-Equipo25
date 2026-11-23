@@ -1,0 +1,5 @@
+proveedor,servicio,instancia,region,modelo_facturacion,usd_hora,usd_vcpu_segundo,usd_gib_segundo,usd_millon_peticiones,vcpus,gib_memoria,fecha_consulta,fuente_url,nota
+AWS,EC2,t3.small,us-east-1,siempre_encendido,0.0209,0,0,0,2,2,2026-11-22,https://aws.amazon.com/ec2/instance-types/t3/,Precio publicado de referencia; créditos CPU T3 pueden generar cargos
+AWS,EC2,t3.medium,us-east-1,siempre_encendido,0.0418,0,0,0,2,4,2026-11-22,https://aws.amazon.com/ec2/instance-types/t3/,Precio publicado de referencia; créditos CPU T3 pueden generar cargos
+Google Cloud,Cloud Run,1 vCPU + 1 GiB,us-central1,escala_a_cero,0,0.000024,0.0000025,0.40,1,1,2026-11-22,https://cloud.google.com/run/pricing,Facturación por petición; sin descuentos ni nivel gratuito; tiempo activo estimado
+Google Cloud,Cloud Run,2 vCPU + 1 GiB,us-central1,escala_a_cero,0,0.000024,0.0000025,0.40,2,1,2026-11-22,https://cloud.google.com/run/pricing,"Escenario 2 vCPU y 1 GiB; benchmark local, rendimiento en nube no verificado"

@@ -227,6 +227,30 @@ el CSV en `reports/monitoreo/recursos/recursos_carga.csv`. La gráfica
 intervalo y runtime pueden configurarse con `MONITOR_DURATION`,
 `MONITOR_INTERVAL` y `MONITOR_RUNTIME`.
 
+### Entrega 6 — FinOps (PR 4)
+
+La unidad de costo es **una predicción de estación-hora**. Se conservan los
+resultados históricos de 20 usuarios como referencia, pero la estimación
+principal usa el modelo **champion real P1 v1** con **2 workers y 2 vCPU**:
+18.011 pred/s para solicitudes individuales (p95 610 ms), frente a
+6,401.792 pred/s con lotes de 466 (p95 2,200 ms). Ninguna modalidad
+cumple p95 ≤ 500 ms en esas condiciones. Los costos son **proyecciones**,
+no gastos realmente facturados ni capacidad con SLO garantizado.
+
+Con una hipótesis de 450 estaciones (324,000 predicciones/mes), el costo
+mensual modelado en Cloud Run **2 vCPU + 1 GiB** es **USD 2.479** (individual)
+o **USD 0.020** (batch 466), suponiendo escala a cero y excluyendo gastos
+adicionales. Una EC2 `t3.small` siempre encendida cuesta **USD 15.257/mes**,
+independientemente de la demanda dentro de la simplificación; eso **no
+prueba** que una sola VM alcance los objetivos de rendimiento.
+
+Los resultados y fuentes reproducibles están en
+[`reports/finops/champion_una/`](reports/finops/champion_una/),
+[`reports/finops/champion_batch466/`](reports/finops/champion_batch466/) y
+[`references/precios_nube_2vcpu.csv`](references/precios_nube_2vcpu.csv).
+Consultar los supuestos, tablas base/10×/100× y comandos en
+[`operacion_entrega6.md §4`](docs/docs/operacion_entrega6.md).
+
 ## Propósito y preguntas
 
 | Pregunta | Tarea y unidad | Objetivo implementado | Horizonte / uso esperado |
@@ -408,6 +432,45 @@ uv run --frozen python -m proyecto_mibici.experiments features
 ```
 
 La interfaz ya es parte del servidor iniciado en el inicio rápido. Visita <http://127.0.0.1:5000>, selecciona `mibici-equipo25` y expande los hijos del run padre. Los artefactos están en `resultados/` y `reproducibilidad/`. Para comparar repeticiones, selecciona runs de la misma pregunta y usa **Compare**; no interpretes los tres baselines de tareas distintas como modelos rivales.
+
+## Entrega 6 — Pruebas de carga adicionales (PR 3)
+
+El perfil optativo `carga` de Compose permite pruebas de Locust con JSON
+válidos derivados de `data/processed/tabla_supervisada.parquet`, usando
+`pruebas_carga/generar_peticiones.py`. Se probaron **10, 25, 50 y 100
+usuarios (120 s por escalón)**, con el modelo **champion real P1 v1** en
+**macOS Intel/Docker Desktop**, comparando **1 worker / 1 vCPU** frente a
+**2 workers / 2 vCPU**; también se contrastaron las solicitudes de 1 frente
+a 466 inferencias, ambas con 25 usuarios. Las pruebas fueron locales:
+los resultados no prueban igual rendimiento en infraestructura de nube.
+
+Para reproducir la configuración base en Docker Desktop (con el ZIP del
+modelo extraído en `models/api/p1/` y validado localmente):
+
+```bash
+uv sync --frozen --extra monitoreo --extra carga
+uv run --frozen python -m pruebas_carga.generar_peticiones \
+  --fecha 2026-09-10 --estacion 2 --hora 22
+MLFLOW_PORT=5001 MODEL_SOURCE=local docker compose up -d --build
+MLFLOW_PORT=5001 MODEL_SOURCE=local API_WORKERS=1 API_CPUS=1.0 API_MEMORY=1g \
+  docker compose up -d --no-deps --force-recreate api
+MLFLOW_PORT=5001 MODEL_SOURCE=local API_WORKERS=1 API_CPUS=1.0 API_MEMORY=1g \
+  uv run --frozen --extra monitoreo python -m pruebas_carga.ejecutar \
+  --runtime docker --prefijo champion_1worker_1cpu --tipo mixto \
+  --escalones 10:120,25:120,50:120,100:120
+```
+
+Para 2 workers, recrear la API con `API_WORKERS=2 API_CPUS=2.0` y
+repetir con el prefijo `champion_2workers_2cpu`. Para batching, usar
+`--escalones 25:120` y `--tipo una` o `--tipo sistema_hora`, con prefijos
+distintos. El punto exacto de saturación **no se ha confirmado** porque
+los p95 históricos por escalón son acumulados; ambos ensayos superan el
+umbral de 500 ms al aumentar la carga.
+
+Las tablas, gráficas, consumo de recursos y límites metodológicos están en
+[`operacion_entrega6.md §3.3`](docs/docs/operacion_entrega6.md).
+El modelo champion real permanece fuera de Git; el modelo sintético
+`humo` se utiliza únicamente para validar CI y arranque técnico.
 
 ## Pruebas
 
