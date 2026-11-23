@@ -1,0 +1,2 @@
+usuarios,duracion_observada_s,rps_observado,predicciones_s_observadas,p50_acumulado_ms,p95_acumulado_ms,tasa_error_aproximada,umbral_incumplido
+20,55.0,75.05,750.5,8.0,26.0,0.0,False

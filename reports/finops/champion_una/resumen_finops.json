@@ -1,0 +1,44 @@
+{
+  "fuente_recursos": "reports/carga/champion_2workers_una_recursos.csv",
+  "recursos_observados": [
+    {
+      "contenedor": "mibici-api-1",
+      "cpu_promedio_pct": 117.35,
+      "cpu_maximo_pct": 244.85,
+      "memoria_promedio_mb": 489.49,
+      "memoria_maxima_mb": 499.7
+    },
+    {
+      "contenedor": "mibici-mlflow-1",
+      "cpu_promedio_pct": 4.36,
+      "cpu_maximo_pct": 40.5,
+      "memoria_promedio_mb": 366.68,
+      "memoria_maxima_mb": 375.8
+    }
+  ],
+  "fuente_locust": "reports/carga/champion_2workers_una_resumen_finops.json",
+  "fuente_precios": "references/precios_nube_2vcpu.csv",
+  "capacidad_observada_pred_s": 18.011,
+  "lote_del_ensayo": 1,
+  "estaciones_supuesto": 450,
+  "horas_mes_vm": 730,
+  "utilizacion_objetivo_vm": 0.6,
+  "concurrencia_facturable_cloud_run": 1,
+  "modelo_benchmark": "mibici-equipo25-p1-demanda",
+  "version_modelo": "1",
+  "workers_benchmark": 2,
+  "vcpus_benchmark": 2,
+  "latencia_p95_ms": 610.0,
+  "cumple_objetivo_p95": false,
+  "estado": "benchmark_fuera_objetivo_p95",
+  "limitaciones": [
+    "La capacidad observada no equivale necesariamente a la capacidad sostenida que cumple p95 <= 500 ms.",
+    "Las mediciones de Docker local no garantizan el mismo rendimiento en infraestructura de nube.",
+    "El benchmark de 2 vCPU no valida el rendimiento de Cloud Run configurado con 1 vCPU.",
+    "Las instancias AWS EC2 T3 utilizan creditos de CPU; los cargos adicionales no estan incluidos.",
+    "Cloud Run utiliza concurrencia facturable 1 y un minimo de 0.1 segundos por solicitud como hipotesis.",
+    "Los costos son estimaciones, no importes facturados.",
+    "No incluye transferencia de red, almacenamiento, MLflow externo ni impuestos.",
+    "Se excluye el nivel gratuito de Cloud Run."
+  ]
+}

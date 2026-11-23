@@ -66,7 +66,15 @@ def muestrear(runtime: str, contenedores: list[str]) -> list[dict]:
         capture_output=True,
         text=True,
     )
-    payload = json.loads(salida.stdout)
+    texto = salida.stdout.strip()
+    try:
+        payload = json.loads(texto)
+    except json.JSONDecodeError:
+        payload = [
+            json.loads(linea)
+            for linea in texto.splitlines()
+            if linea.strip()
+        ]
     filas = payload if isinstance(payload, list) else [payload]
     seleccionados = set(contenedores)
     filas_normalizadas = []

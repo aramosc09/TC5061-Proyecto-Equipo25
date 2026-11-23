@@ -1,0 +1,18 @@
+{
+  "ensayo": "champion_2workers_una",
+  "modelo": "mibici-equipo25-p1-demanda",
+  "version_modelo": "1",
+  "workers": 2,
+  "vcpus": 2,
+  "memoria_gib": 1,
+  "usuarios": 25,
+  "lote_registros": 1,
+  "request_count": 2176,
+  "failure_count": 0,
+  "requests_per_second": 18.011153469327276,
+  "latencia_p95_ms": 610.0,
+  "cumple_objetivo_p95": false,
+  "predicciones_por_segundo_observadas": 18.011153469327276,
+  "fuente": "reports/carga/champion_2workers_una_stats.csv",
+  "average_response_time_ms": 143.59646764936716
+}

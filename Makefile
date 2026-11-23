@@ -107,6 +107,23 @@ monitor-resources:
 		--intervalo $${MONITOR_INTERVAL:-1} \
 		--runtime $${MONITOR_RUNTIME:-auto}
 
+## Generar los tres JSON reales para Locust
+.PHONY: load-peticiones
+load-peticiones:
+	uv run --frozen python -m pruebas_carga.generar_peticiones
+
+## Ejecutar cuatro escalones con uso de recursos simultáneo
+.PHONY: load-escalones
+load-escalones:
+	uv run --frozen python -m pruebas_carga.ejecutar --runtime $${MONITOR_RUNTIME:-podman} \
+		--prefijo $${CARGA_PREFIJO:-base_1cpu} --tipo $${LOCUST_TIPO:-mixto} \
+		--escalones $${LOCUST_ESCALONES:-10:120,25:120,50:120,100:120}
+
+## Estimar costo mensual por inferencia según las mediciones de Locust
+.PHONY: finops
+finops:
+	uv run --frozen python -m proyecto_mibici.finops
+
 ## Verify recorded runs and artifacts
 .PHONY: verify
 verify:

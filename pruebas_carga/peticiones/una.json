@@ -1,0 +1,31 @@
+{
+  "registros": [
+    {
+      "fecha_hora": "2026-09-10T22:00:00",
+      "salidas_lag_1": 0.0,
+      "salidas_lag_3": 5.0,
+      "salidas_lag_24": 0.0,
+      "salidas_lag_168": 0.0,
+      "salidas_lag_336": 0.0,
+      "salidas_lag_504": 1.0,
+      "salidas_lag_672": 1.0,
+      "salidas_media_3": 2.0,
+      "salidas_media_24": 2.3333332538604736,
+      "salidas_media_168": 2.1785714626312256,
+      "salidas_media_4_semanas": 0.5,
+      "llegadas_lag_1": 0.0,
+      "llegadas_lag_3": 4.0,
+      "llegadas_lag_24": 0.0,
+      "llegadas_lag_168": 0.0,
+      "llegadas_lag_336": 2.0,
+      "llegadas_lag_504": 0.0,
+      "llegadas_lag_672": 1.0,
+      "llegadas_media_3": 1.6666666269302368,
+      "llegadas_media_24": 2.2916667461395264,
+      "llegadas_media_168": 2.232142925262451,
+      "llegadas_media_4_semanas": 0.75,
+      "balance_acumulado_3": 1.0,
+      "balance_acumulado_24": 1.0
+    }
+  ]
+}

@@ -92,6 +92,33 @@ services:
           cpus: "${API_CPUS:-1.0}"
           memory: ${API_MEMORY:-1g}
 
+  # Perfil opcional: ejecutar solamente durante las mediciones de carga.
+  locust:
+    image: locustio/locust:2.42.3
+    profiles: [carga]
+    networks: [mibici]
+    environment:
+      LOCUST_ESCALONES: ${LOCUST_ESCALONES:-10:120,25:120,50:120,100:120}
+      LOCUST_SPAWN_RATE: ${LOCUST_SPAWN_RATE:-10}
+      LOCUST_TIPO: ${LOCUST_TIPO:-mixto}
+    volumes:
+      - ./pruebas_carga:/mnt/locust:ro
+      - ./reports/carga:/resultados
+    command:
+      - -f
+      - /mnt/locust/locustfile.py
+      - --host
+      - http://api:8000
+      - --headless
+      - --csv-full-history
+      - --csv
+      - /resultados/${CARGA_PREFIJO:-escalones}
+      - --html
+      - /resultados/${CARGA_PREFIJO:-escalones}.html
+    depends_on:
+      api:
+        condition: service_healthy
+
 networks:
   mibici:
     name: mibici

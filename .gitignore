@@ -276,3 +276,8 @@ cython_debug/
 /Construye*.pdf
 /planExperimentacion.md
 /planExperimentacion.pdf
+
+# Resultados locales de verificacion con modelo sintetico
+/reports/carga/verificacion_humo*
+
+/reports/carga/verificacion_champion*

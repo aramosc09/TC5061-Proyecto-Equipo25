@@ -1,0 +1,12 @@
+{
+  "fuente": "reports/carga/champion_1worker_1cpu_stats_history.csv",
+  "recursos": "reports/carga/champion_1worker_1cpu_recursos.csv",
+  "niveles_estables": [
+    10,
+    25,
+    50,
+    100
+  ],
+  "nota_percentiles": "Los percentiles del historial son acumulados, no independientes por escal\u00f3n.",
+  "punto_saturacion_confirmado": null
+}
