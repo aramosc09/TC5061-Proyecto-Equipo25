@@ -1,0 +1,16 @@
+{
+  "endpoint": "/predict",
+  "lote_registros": 10,
+  "usuarios": 20,
+  "spawn_rate": 5,
+  "duracion_segundos": 60,
+  "semilla": 42,
+  "request_count": 4372,
+  "failure_count": 0,
+  "requests_per_second": 73.9665468586569,
+  "median_response_time_ms": 8.0,
+  "average_response_time_ms": 10.323586123501013,
+  "min_response_time_ms": 3.680416997667635,
+  "max_response_time_ms": 103.3390420016076,
+  "p95_response_time_ms": 26.0
+}
