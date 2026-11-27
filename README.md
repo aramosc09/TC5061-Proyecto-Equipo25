@@ -1,552 +1,121 @@
 # MiBici ML · Equipo 25
-[![CI](https://github.com/aramosc09/TC5061-Proyecto-Equipo25/actions/workflows/ci.yml/badge.svg)](https://github.com/aramosc09/TC5061-Proyecto-Equipo25/actions/workflows/ci.yml)
 
-Proyecto académico de Machine Learning y MLOps para analizar datos abiertos del sistema de bicicleta pública MiBici del Área Metropolitana de Guadalajara. El repositorio contiene la ingesta y validación de datos, la construcción de variables, experimentos reproducibles para tres preguntas operativas y el registro de resultados con MLflow.
+Sistema integrador de Machine Learning y MLOps sobre datos abiertos del sistema de bicicleta pública **MiBici** (Área Metropolitana de Guadalajara). El proyecto abarca de extremo a extremo la ingesta reproducible, ingeniería de variables sin fuga temporal, experimentación con MLflow Projects, versionado en Model Registry, despliegue contenerizado con FastAPI y Docker Compose, CI/CD con GitHub Actions, pruebas de carga con Locust, análisis FinOps, monitoreo de drift con Evidently, evaluación A/B y documentación de gobernanza.
 
-## Inicio rápido: cómo ejecutar el proyecto
+**Curso:** TC5061 — Operaciones de Aprendizaje Automático (MLOps) · **Equipo 25**  
+**Documentación clave:** [Model Card (P1)](docs/docs/model_card.md) · [Arquitectura](references/arquitectura_propuesta_mibici.mmd) · [ML Canvas](references/ml_canvas_mibici.pdf) · [Operación y FinOps](docs/docs/operacion_entrega6.md)
 
-Desde la raíz del repositorio, con `uv` instalado. El entorno reproducible usa
-**Python 3.13.2** y **MLflow 3.17.2**, fijados en `pyproject.toml` y `uv.lock`.
+---
+
+## 1. Propósito y preguntas operativas
+
+El usuario principal es el equipo de rebalanceo y logística de MiBici. Sobre 36 meses de viajes abiertos (octubre de 2023 a septiembre de 2026) se abordan tres preguntas operativas:
+
+| Pregunta | Tarea y unidad | Objetivo implementado | Horizonte / uso esperado |
+| :--- | :--- | :--- | :--- |
+| **P1 — Demanda** *(modelo servido)* | Regresión por estación y hora | Predecir viajes iniciados (salidas); baseline de persistencia semanal (rezago de 168 h). | Siguiente hora. Apoya la planeación de flota antes de la demanda. |
+| **P2 — Presión de flujo** | Clasificación por estación y hora | Clasificar dirección e intensidad del flujo (7 clases: sin presión neta o extracción/acumulación baja, moderada o alta). Baseline de clase mayoritaria. | Siguiente hora. Orienta verificaciones operativas, no órdenes automáticas de rebalanceo. |
+| **P3 — Perfiles de estaciones** | Agrupamiento por estación | Agrupar estaciones por perfiles semanales normalizados de salidas y llegadas (coordenadas reservadas solo para visualización). | Descripción histórica de patrones de uso para planeación de cobertura. |
+
+> **Limitación de P2:** Los datos abiertos contienen viajes y capacidad de catálogo, pero no inventario por hora ni eventos de desabasto/saturación. La etiqueta es un *proxy* de presión de flujo basada en la nomenclatura de septiembre de 2026.
+
+---
+
+## 2. Arquitectura y estructura del repositorio
+
+El proyecto sigue una estructura **Cookiecutter Data Science** con entorno bloqueado mediante `uv` (**Python 3.13.2** y **MLflow 3.17.2**). Los datos crudos, archivos Parquet, bases SQLite de MLflow y modelos serializados permanecen locales y fuera de Git; solo se versionan código, configuración, pruebas, manifiesto de datos y reportes agregados.
+
+```text
+├── .github/workflows/ci.yml   # Pipeline CI/CD (calidad, seguridad, PyTest y humo en Compose)
+├── data/
+│   ├── raw/                   # CSV de origen y catálogo (locales, no versionados)
+│   ├── interim/               # Parquet unificados (locales, no versionados)
+│   ├── processed/             # Tablas de features (locales, no versionados)
+│   └── data_manifest.json     # Manifiesto versionado con hashes SHA-256 y data_version
+├── docs/docs/                 # Documentación técnica, evidencias y Model Card
+├── models/                    # Artefactos exportados localmente (no versionados)
+├── notebooks/                 # Exploración y auditoría reproducible
+├── proyecto_mibici/
+│   ├── config.py              # Configuración centralizada (rutas, fechas, espacios de búsqueda)
+│   ├── dataset.py             # Ingesta reproducible, limpieza y DataManifest
+│   ├── features.py            # RepositorioParquet y variables causales sin fuga temporal
+│   ├── experiments.py         # Orquestación de experimentos y CLI de MLflow Projects
+│   ├── tracking.py            # Registro de parámetros, métricas, etiquetas y código
+│   ├── registry.py            # Selección, validación y promoción controlada con aliases
+│   ├── data_quality.py        # Validación estadística y drift train/test con Deepchecks
+│   ├── modeling/              # Contratos, baselines y modelos candidatos (P1, P2, P3)
+│   ├── api/                   # FastAPI (/health, /model-info, /predict), cliente y exportación
+│   └── monitoreo/             # Periodos, drift (Evidently), reentrenamiento y prueba A/B
+├── pruebas_carga/             # Generación de payloads reales y ejecución escalonada con Locust
+├── references/                # ML Canvas, diagrama de arquitectura y tarifas de nube
+├── reports/                   # Gráficas versionadas, reportes de monitoreo, carga y FinOps
+├── tests/                     # Suite de 195 pruebas automatizadas en PyTest
+├── Containerfile              # Imagen única para API, servidor MLflow y registro del modelo
+├── docker-compose.yml         # Orquestación completa: mlflow + registrar-modelo + api
+├── locustfile.py              # Escenario de pruebas de carga contra /predict
+├── MLproject                  # Entry points: ingest, features, train, search, main
+├── python_env.yaml            # Entorno virtual declarado para MLflow Projects
+├── pyproject.toml / uv.lock   # Dependencias directas y transitivas bloqueadas
+└── requirements.txt           # Dependencias runtime exportadas desde uv.lock
+```
+
+---
+
+## 3. Instalación e inicio rápido
+
+Requisitos: **Git**, **Python 3.13**, **[uv](https://docs.astral.sh/uv/)** y **Docker** o **Podman** (para el despliegue contenerizado).
 
 ```bash
-# 1. Crear/restaurar el entorno bloqueado y comprobar MLflow 3.17.2.
+# 1. Clonar el repositorio y restaurar el entorno bloqueado (Python 3.13.2 + MLflow 3.17.2)
+git clone [https://github.com/aramosc09/TC5061-Proyecto-Equipo25.git](https://github.com/aramosc09/TC5061-Proyecto-Equipo25.git)
+cd TC5061-Proyecto-Equipo25
 uv sync --frozen
 uv run --frozen mlflow --version
 
-# 2. En una primera terminal, iniciar Tracking, UI y Model Registry locales.
+# 2. En una primera terminal, iniciar el servidor local de MLflow (Tracking + Model Registry)
 uv run --frozen mlflow server \
   --backend-store-uri sqlite:///mlflow.db \
   --artifacts-destination "file://$PWD/mlartifacts" \
   --host 127.0.0.1 --port 5000
 
-# 3. En otra terminal, usar el servidor para las ejecuciones posteriores.
-export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
+# 3. En una segunda terminal, apuntar al servidor local
+export MLFLOW_TRACKING_URI=[http://127.0.0.1:5000](http://127.0.0.1:5000)
 
-# 4. Descargar los CSV faltantes y construir la base limpia de 36 meses.
+# 4. Descargar los CSV de MiBici y construir la base limpia de 36 meses
 uv run --frozen python -m proyecto_mibici.dataset procesar-datos
 
-# 5. Ejecutar P1, P2 y P3 mediante MLflow Projects y registrar los resultados.
+# 5. Ejecutar el proyecto MLflow (P1, P2 y P3) y verificar artefactos
 uv run --frozen python -m proyecto_mibici.experiments ejecutar-proyecto
-
-# 6. Comprobar que los tres runs y sus artefactos estén completos.
 uv run --frozen python -m proyecto_mibici.experiments verificar-experimento
 ```
 
-La interfaz y API están en <http://127.0.0.1:5000>, incluido el experimento **mibici-equipo25** y el Model Registry. Mantener el servidor abierto mientras se ejecuta el proyecto. El comando de experimento exige la base de ingesta; no descarga datos por sí mismo. Repetirlo añade runs, no borra los existentes.
+La interfaz de MLflow queda disponible en `http://127.0.0.1:5000` bajo el experimento **`mibici-equipo25`**.
 
-**Qué ejecuta cada pieza:** `uv` restaura y usa las dependencias; [dataset.py](proyecto_mibici/dataset.py) obtiene y limpia datos; [experiments.py](proyecto_mibici/experiments.py) inicia el proyecto declarado en [MLproject](MLproject), prepara las horas y coordina los baselines; [tracking.py](proyecto_mibici/tracking.py) registra parámetros, métricas y artefactos. La UI solo permite consultar/comparar lo ya registrado: no ejecuta el pipeline. Los resultados agregados quedan en `reports/figures/baselines/` y los artefactos de MLflow en `mlartifacts/mibici-equipo25/`.
+> **Extras opcionales:** `uv sync --frozen --extra notebooks` (exploración), `--extra monitoreo` (Evidently) y `--extra carga` (Locust).
 
-## Modelo servido por la API
+---
 
-La API sirve el modelo P1 `mibici-equipo25-p1-demanda`. La estrategia elegida es
-empaquetar una copia local descargada del Registry, para que la inferencia en
-tiempo real no dependa de que el servidor MLflow esté disponible dentro del
-contenedor. Se recupera mediante un alias o versión concreta:
+## 4. Datos, ingesta y validación
 
-```bash
-export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
-uv run --frozen python -m proyecto_mibici.registry status
-uv run --frozen python -m proyecto_mibici.api.modelo exportar \
-  --model-uri models:/mibici-equipo25-p1-demanda@champion \
-  --destino models/api/p1
-uv run --frozen python -m proyecto_mibici.api.modelo verificar
-```
+* **Fuente:** [Datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/) (`datos_abiertos_AAAA_MM.csv` y `nomenclatura_2026_09.csv`).
+* **Ventana y volumen:** octubre de 2023 a septiembre de 2026 (36 meses). De 13,621,885 registros crudos se obtienen **13,621,127 viajes limpios** y 473 estaciones observadas (471 presentes en el catálogo de 484 filas).
+* **Trazabilidad:** `data/data_manifest.json` guarda hashes SHA-256, conteos de descartes, esquemas y la versión reproducible **`data_version=09a6a584dd5d`**.
+* **Partición temporal estricta (sin fuga de datos):**
+  * Entrenamiento: octubre de 2023 – junio de 2025
+  * Validación: julio de 2025 – septiembre de 2025
+  * Prueba: octubre de 2025 – septiembre de 2026
+* **Privacidad:** La ingesta elimina identificadores de usuario y variables demográficas (sexo, edad). MLflow nunca recibe filas individuales.
 
-La exportación genera `models/api/p1/metadata_registro.json` con la versión,
-alias, `run_id`, commit, `data_version` y métrica de selección, además de la
-copia del modelo. Los modelos serializados son artefactos locales ignorados por
-Git y deben regenerarse cuando cambie el modelo `champion`.
-
-## API en Docker o Podman
-
-La imagen usa inferencia en tiempo real con la copia local del modelo; no
-necesita conexión al servidor MLflow durante la ejecución. Después de exportar
-el modelo, construye y ejecuta el contenedor con Docker:
-
-```bash
-docker build -f Containerfile -t mibici-api:p1 .
-docker run --rm --name mibici-api -p 8000:8000 mibici-api:p1
-```
-
-Con Podman, usa el formato Docker para conservar el `HEALTHCHECK` de la
-imagen:
-
-```bash
-podman build --format docker -f Containerfile -t mibici-api:p1 .
-podman run --rm --name mibici-api -p 8000:8000 mibici-api:p1
-```
-
-En Windows, si el puerto publicado no responde desde el navegador, configura
-la máquina de Podman en modo rootful antes de ejecutar el contenedor:
-
-```bash
-podman machine set --rootful=true
-```
-
-En otra terminal, comprueba el servicio:
-
-```bash
-curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8000/model-info
-curl -X POST http://127.0.0.1:8000/predict \
-  -H 'Content-Type: application/json' \
-  -d '{"registros":[{"fecha_hora":"2026-03-10T08:00:00","salidas_lag_1":4,"salidas_lag_3":2,"salidas_lag_24":5,"salidas_lag_168":6,"salidas_lag_336":5,"salidas_lag_504":7,"salidas_lag_672":4,"salidas_media_3":3.0,"salidas_media_24":1.2,"salidas_media_168":1.4,"salidas_media_4_semanas":5.5,"llegadas_lag_1":3,"llegadas_lag_3":1,"llegadas_lag_24":4,"llegadas_lag_168":5,"llegadas_lag_336":4,"llegadas_lag_504":6,"llegadas_lag_672":3,"llegadas_media_3":2.3,"llegadas_media_24":1.1,"llegadas_media_168":1.3,"llegadas_media_4_semanas":4.5,"balance_acumulado_3":2.0,"balance_acumulado_24":2.4}]}'
-```
-
-Respuesta esperada:
-
-```json
-{
-  "predicciones": [
-    {
-      "salidas_esperadas": 5.2267
-    }
-  ],
-  "modelo": {
-    "registered_model": "mibici-equipo25-p1-demanda",
-    "version": "1",
-    "alias": "champion",
-    "source": "local"
-  }
-}
-```
-
-La respuesta contiene `predicciones` con `salidas_esperadas` y los metadatos de
-linaje del modelo servido. La API y sus esquemas también pueden inspeccionarse
-en <http://127.0.0.1:8000/docs>.
-
-### Cliente de prueba de la API (Entrega 4)
-
-El módulo `proyecto_mibici/api/cliente.py` permite probar el endpoint `/predict` utilizando un registro real del conjunto de datos MiBici.
-
-El cliente selecciona una estación y una fecha, prepara las 24 variables históricas requeridas por el modelo y valida la petición mediante Pydantic.
-
-**Validación local sin iniciar la API:**
-
-```bash
-uv run --frozen python -m proyecto_mibici.api.cliente --solo-validar
-```
-
-Por defecto, el programa utiliza:
-- Estación: 519.
-- Fecha y hora: `2026-09-10T22:00:00`.
-- Conjunto: 2.
-- Salidas observadas: 1.
-- Variables históricas: 24.
-
-Este comando valida los datos de entrada sin realizar una predicción.
-
-**Predicción utilizando la API REST:**
-
-Con la API iniciada y el modelo P1 exportado:
-
-```bash
-uv run --frozen python -m proyecto_mibici.api.cliente
-```
-
-El cliente envía una petición HTTP a `http://127.0.0.1:8000/predict`, valida la respuesta y muestra las salidas esperadas, las salidas observadas y el error absoluto.
-
-El programa admite los argumentos `--parquet`, `--estacion`, `--fecha-hora`, `--conjunto`, `--api-url` y `--solo-validar`.
-
-**Requisitos:** disponer del archivo `data/processed/tabla_supervisada.parquet`. Para la predicción HTTP, también se requiere que la API esté funcionando con el modelo P1 exportado.
-
-**Pruebas automatizadas del cliente:**
-
-```bash
-uv run --frozen python -m pytest tests/test_api_cliente.py -q
-```
-
-Las pruebas unitarias del cliente están incluidas en la suite. La ejecución HTTP
-real se valida iniciando la API con el modelo exportado.
-
-**Justificación técnica del despliegue:** consultar [Estrategia de despliegue e inferencia — Entrega 4](docs/docs/despliegue_inferencia_entrega4.md), donde se explica la elección de inferencia en tiempo real frente a procesamiento por lotes, las limitaciones y las referencias utilizadas.
-
-
-
-## Sistema completo con Docker Compose (Entrega 6)
-
-`docker-compose.yml` levanta con un solo comando el servidor MLflow (tracking y Model Registry),
-registra en él la copia exportada del modelo `champion` y arranca la API, que carga el modelo
-desde el Registry. Requisito: haber exportado el modelo a `models/api/p1/` (sección
-[Modelo servido por la API](#modelo-servido-por-la-api)).
-
-```bash
-podman compose up -d --build        # o: docker compose up -d --build
-podman compose ps -a                # registrar-modelo debe quedar "Exited (0)"
-curl http://127.0.0.1:8000/model-info   # "source": "registry"
-curl -X POST http://127.0.0.1:8000/predict -H 'Content-Type: application/json' -d @peticion.json
-```
-
-La UI de MLflow del sistema queda en <http://127.0.0.1:5000>. Para detenerlo:
-`podman compose down` (conserva el Registry) o `podman compose down -v` (lo borra; el siguiente
-`up` vuelve a registrar el modelo). En Windows, `podman compose` usa el `docker-compose` de Docker
-Desktop si está instalado; si no, instala `podman-compose` con `pip install podman-compose`.
-
-Las variables (puertos, `MODEL_SOURCE=registry|local`, workers y límites de CPU y memoria de la
-API) se documentan en `.env.example`. Si el servidor MLflow local ya ocupa el puerto 5000, se
-cambia el del sistema con `MLFLOW_PORT=5001 podman compose up -d`. Detalle de servicios, decisiones y verificación en
-`docs/docs/operacion_entrega6.md`.
-
-#### Pipeline de CI/CD
-
-El flujo definido en `.github/workflows/ci.yml` se ejecuta automáticamente en cada `push` y `pull_request` hacia `main`, y también puede lanzarse manualmente desde la pestaña **Actions** (`workflow_dispatch`). Está dividido en tres trabajos:
-
-* **`calidad`:** Ejecuta `ruff check`, `bandit -r proyecto_mibici` y `pip-audit -r requirements.txt` sin tolerancia a fallos.
-* **`pruebas`:** Instala el entorno con `--extra monitoreo` y ejecuta `pytest tests -q` usando caché de `uv`.
-* **`imagen`:** Depende de los dos anteriores; genera un modelo sintético con `python -m proyecto_mibici.api.modelo_humo`, levanta los servicios con `docker compose up -d --build`, verifica `/health`, `/model-info` (`"source": "registry"`) y `/predict`, y limpia los volúmenes al finalizar.
-
-#### Prueba de carga con Locust
-
-El escenario [`locustfile.py`](locustfile.py) envía solicitudes reproducibles al
-endpoint `/predict`. Instala el extra opcional y ejecuta la prueba contra Compose:
-
-```bash
-uv sync --frozen --extra carga
-make load-test
-```
-
-Por defecto usa 20 usuarios, crecimiento de 5 usuarios por segundo, 60 segundos
-y lotes de 10 registros. Las opciones se pueden ajustar con `LOCUST_USERS`,
-`LOCUST_SPAWN_RATE`, `LOCUST_RUN_TIME`, `LOCUST_BATCH_SIZE`, `LOCUST_HOST` y
-`LOCUST_SEED`.
-
-Los archivos generados quedan en `reports/monitoreo/carga/` y las gráficas en
-`reports/figures/entrega6/`. El escenario valida el número de predicciones
-devuelto y registra como fallos las respuestas HTTP distintas de 200 o las
-respuestas con formato incorrecto.
-
-El consumo de CPU y memoria se puede muestrear simultáneamente con:
-
-```bash
-make monitor-resources
-```
-
-El comando usa `podman stats` o `docker stats` según esté disponible y guarda
-el CSV en `reports/monitoreo/recursos/recursos_carga.csv`. La gráfica
-`reports/figures/entrega6/recursos_carga.png` compara API y MLflow. Duración,
-intervalo y runtime pueden configurarse con `MONITOR_DURATION`,
-`MONITOR_INTERVAL` y `MONITOR_RUNTIME`.
-
-### Entrega 6 — FinOps (PR 4)
-
-La unidad de costo es **una predicción de estación-hora**. Se conservan los
-resultados históricos de 20 usuarios como referencia, pero la estimación
-principal usa el modelo **champion real P1 v1** con **2 workers y 2 vCPU**:
-18.011 pred/s para solicitudes individuales (p95 610 ms), frente a
-6,401.792 pred/s con lotes de 466 (p95 2,200 ms). Ninguna modalidad
-cumple p95 ≤ 500 ms en esas condiciones. Los costos son **proyecciones**,
-no gastos realmente facturados ni capacidad con SLO garantizado.
-
-Con una hipótesis de 450 estaciones (324,000 predicciones/mes), el costo
-mensual modelado en Cloud Run **2 vCPU + 1 GiB** es **USD 2.479** (individual)
-o **USD 0.020** (batch 466), suponiendo escala a cero y excluyendo gastos
-adicionales. Una EC2 `t3.small` siempre encendida cuesta **USD 15.257/mes**,
-independientemente de la demanda dentro de la simplificación; eso **no
-prueba** que una sola VM alcance los objetivos de rendimiento.
-
-Los resultados y fuentes reproducibles están en
-[`reports/finops/champion_una/`](reports/finops/champion_una/),
-[`reports/finops/champion_batch466/`](reports/finops/champion_batch466/) y
-[`references/precios_nube_2vcpu.csv`](references/precios_nube_2vcpu.csv).
-Consultar los supuestos, tablas base/10×/100× y comandos en
-[`operacion_entrega6.md §4`](docs/docs/operacion_entrega6.md).
-
-## Propósito y preguntas
-
-| Pregunta | Tarea y unidad | Objetivo implementado | Horizonte / uso esperado |
-|---|---|---|---|
-| **P1 — Demanda** | Regresión por estación y hora | Predecir viajes iniciados; baseline de la misma hora de la semana anterior. | Siguiente hora. Apoya la planificación de flota. |
-| **P2 — Presión de flujo** | Clasificación por estación y hora | Clasificar dirección e intensidad del flujo: sin presión neta o extracción/acumulación baja, moderada o alta. Baseline de clase mayoritaria de entrenamiento. | Siguiente hora. Orienta verificaciones, no órdenes automáticas de rebalanceo. |
-| **P3 — Perfiles de estaciones** | Agrupamiento por estación | Agrupar estaciones por perfiles semanales normalizados de salidas y llegadas. Las coordenadas se reservan para visualización, no son variables del agrupamiento. | Descripción histórica de patrones de uso que puede apoyar análisis y planeación de cobertura. |
-
-**Limitación importante de P2:** los datos abiertos contienen viajes y capacidad de catálogo, pero no inventario por hora ni eventos de desabasto o saturación. Por tanto, la etiqueta es un proxy de presión de flujo y no una observación del riesgo real de quedarse sin bicicletas o anclajes. La capacidad usada proviene de la nomenclatura de septiembre de 2026.
-
-## Datos
-
-- **Fuente:** [Datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/). Se usan archivos mensuales `datos_abiertos_AAAA_MM.csv` y el catálogo de estaciones `nomenclatura_2026_09.csv`.
-- **Ventana documentada:** octubre de 2023 a septiembre de 2026 (36 meses).
-- **Volumen obtenido:** 13,621,885 registros de viajes y 484 filas de nomenclatura. La ingesta completa produce **13,621,127 viajes limpios**; los descartes se detallan en el manifiesto.
-- **Estaciones:** 473 IDs observados en las fuentes; 471 coinciden con el catálogo. La cobertura efectiva se vuelve a contabilizar por pregunta y periodo después de limpiar.
-- **Trazabilidad:** [data_manifest.json](data/data_manifest.json) contiene hashes, conteos crudos/limpios y `data_version=09a6a584dd5d` para la base ejecutada. La versión incluye las reglas de normalización.
-- **Partición común P1/P2/P3:** entrenamiento octubre de 2023–junio de 2025; validación julio–septiembre de 2025; prueba octubre de 2025–septiembre de 2026. No hay división aleatoria.
-- **Cobertura analítica:** se requieren archivos mensuales completos y actividad observada en las 168 horas anteriores al corte. El arranque sin ventana completa y las ausencias prolongadas quedan fuera. Un cero es una hipótesis analítica tras actividad reciente, no prueba de disponibilidad o actividad operacional continua. P1 exige también cobertura histórica de la hora de referencia semanal.
-- **Datos personales:** la base común excluye usuario y demografía. Los CSV/Parquet permanecen locales; MLflow recibe metadatos y artefactos agregados, nunca filas individuales.
-- **Uso:** consultar las condiciones vigentes en el [portal de datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/) y citar la fuente. Este repositorio académico no redistribuye los archivos de datos.
-
-## Estructura del repositorio
-
-```text
-data/
-├── raw/                   # CSV de origen y catálogo (locales, no versionados)
-├── interim/               # Parquet de trabajo (local, no versionado)
-├── processed/             # Datos derivados (locales, no versionados)
-└── data_manifest.json     # Manifiesto de versión y hashes, versionado
-docs/docs/                 # Contexto, propuesta y documentación del proyecto
-notebooks/                 # Exploración y auditoría; no ejecutan el experimento base
-references/                # ML Canvas y diagrama de arquitectura
-reports/figures/            # Gráficas versionadas y artefactos agregados locales
-reports/monitoreo/          # JSON/CSV de drift y métricas A/B
-tests/                      # Pruebas de ingesta, modelos, API, tracking y monitoreo
-Containerfile              # Imagen única: API, servidor MLflow y registro del modelo
-docker-compose.yml         # Sistema completo: mlflow + registrar-modelo + api (Entrega 6)
-.env.example               # Variables locales y de Compose (copiar a .env)
-MLproject                  # Entry points ingest, train, main y features
-python_env.yaml            # Entorno virtual de MLflow Projects
-requirements.txt           # Dependencias runtime exactas, exportadas de uv.lock
-pyproject.toml             # Dependencias directas fijadas
-uv.lock                    # Entorno común y dependencias transitivas bloqueadas
-proyecto_mibici/
-├── config.py              # ProjectConfig: rutas, fechas, ventanas y semilla
-├── dataset.py             # Ingesta reproducible y DataManifest
-├── features.py            # RepositorioParquet y features causales
-├── experiments.py         # IngestorMiBici y ProyectoMiBici; CLI/MLflow Projects
-├── tracking.py            # RegistroExperimentos y copia exacta de código
-└── modeling/
-    ├── base.py             # Contratos PipelinePregunta y BaselineResult
-    ├── supervised_baselines.py # PipelineP1 y PipelineP2
-    └── p3_baseline.py      # PipelineP3
-├── api/                    # Esquemas, carga/exportación/registro del modelo y cliente HTTP
-└── monitoreo/              # Periodos, drift, reentrenamiento y evaluación A/B
-```
-
-Los CSV, Parquet, bases de tracking, artefactos de MLflow y modelos serializados son locales y están excluidos de Git. Solo se versiona el manifiesto, que no incluye las filas de viajes.
-
-## Instalación
-
-Se necesita Git, Python 3.13 y [`uv`](https://docs.astral.sh/uv/). Desde la raíz del repositorio:
-
-```bash
-git clone https://github.com/aramosc09/TC5061-Proyecto-Equipo25.git
-cd TC5061-Proyecto-Equipo25
-uv sync --frozen
-```
-
-El entorno único usa Python 3.13.2 y **MLflow 3.17.2**, con versiones directas fijadas y dependencias transitivas en el lockfile. No se necesita activar un entorno ni instalar paquetes globalmente.
-
-La actualización a MLflow 3.17.2 se validó con la suite de pruebas, la
-ejecución de MLflow Projects y los tres baselines sobre la base completa. Las
-versiones exactas se conservan en `uv.lock`.
-
-## MLflow Projects
-
-[MLproject](MLproject) declara el entorno [python_env.yaml](python_env.yaml), cuya lista exacta de dependencias runtime está en [requirements.txt](requirements.txt) y se exporta desde [uv.lock](uv.lock). Los valores de rango, rutas y semilla no se duplican en el descriptor: se resuelven desde [config.py](proyecto_mibici/config.py).
-
-Con el servidor local activo y `MLFLOW_TRACKING_URI=http://127.0.0.1:5000`, se pueden ejecutar los entry points mediante MLflow:
-
-```bash
-# Ingesta con los defaults centralizados en config.py.
-uv run --frozen mlflow run . -e ingest --env-manager uv \
-  --experiment-name mibici-equipo25
-
-# Baseline de una pregunta.
-uv run --frozen mlflow run . -e train --env-manager uv \
-  --experiment-name mibici-equipo25 -P question=p1 -P model=baseline
-
-# Candidato con hiperparámetros individuales (los omitidos toman el default de config.py).
-uv run --frozen mlflow run . -e train --env-manager uv \
-  --experiment-name mibici-equipo25 -P question=p1 -P model=rf -P n_estimators=300
-
-# Búsqueda de hiperparámetros como nested runs (rejillas en SEARCH_SPACES de config.py:
-# p1/hgb, p2/hgb, p3/kmeans y p3/gmm).
-uv run --frozen mlflow run . -e search --env-manager uv \
-  --experiment-name mibici-equipo25 -P question=p1 -P model=hgb
-```
-
-`train` acepta `question` (`p1`, `p2` o `p3`), `model` y cada hiperparámetro como parámetro individual. Los hiperparámetros se pasan por separado porque en Windows un argumento JSON se parte en varios. Los modelos disponibles y sus defaults están en `CANDIDATE_MODELS` de [config.py](proyecto_mibici/config.py). Se rechaza cualquier hiperparámetro que no pertenezca al modelo solicitado, para que no se registren parámetros sin efecto.
-
-| Pregunta | `model` | Hiperparámetros |
-|---|---|---|
-| P1 | `baseline`, `poisson`, `hgb`, `rf` | `alpha`, `max_iter` · `learning_rate`, `max_iter`, `max_leaf_nodes`, `min_samples_leaf`, `l2_regularization` · `n_estimators`, `max_depth`, `min_samples_leaf`, `max_features`, `max_samples` |
-| P2 | `baseline`, `logistic`, `hgb`, `rf` | `c`, `class_weight`, `max_iter` · los de `hgb` y `rf` de P1, más `class_weight` (`balanced` o `none`) |
-| P3 | `baseline`, `kmeans`, `agglomerative`, `gmm` | `n_clusters`, `n_init` · `n_clusters`, `linkage` · `n_clusters`, `covariance_type`, `pca_components` (`0` = sin PCA) |
-
-P1 y P2 entrenan con una submuestra de entrenamiento con semilla (`max_train_rows`: 2,000,000 en candidatos y 500,000 en búsquedas, `0` para usar todas las filas). Validación y prueba siempre se evalúan completas. Cada candidato registra métricas `train_`, `validation_` y `test_`, y también el baseline evaluado sobre sus mismas filas (`validation_baseline_rmse`, `validation_baseline_f1_macro`, `validation_baseline_silhouette`). Los trials de búsqueda solo registran `train_` y `validation_`. El mejor trial se elige con validación y se vuelve a correr como candidato con `train`. Todas las corridas llevan las etiquetas `team`, `question`, `git_commit`, `data_version`, `model_family` y `stage_of_work` (`baseline`, `search` o `candidate`).
-
-Desde un clon limpio, después de la ingesta, reproduzcan el baseline de cada pregunta con:
-
-```bash
-for question in p1 p2 p3; do
-  uv run --frozen mlflow run . -e train --env-manager uv \
-    --experiment-name mibici-equipo25 -P question="$question" -P model=baseline
-done
-```
-
-**Migración de una instalación anterior:** antes de migrar una base SQLite, detener el servidor y cualquier escritor, realizar un respaldo mediante la API de backup de SQLite y ejecutar `uv run --frozen mlflow db upgrade sqlite:///mlflow.db`. No abrir la base migrada con MLflow 2.x; una reversión requiere restaurar el respaldo. Desde un clon nuevo, los comandos de inicio rápido crean el almacenamiento sin necesitar una base previa.
-```bash
-uv run --frozen python --version
-uv run --frozen python -m proyecto_mibici.experiments --help
-```
-
-Para exploración interactiva se puede instalar el extra opcional con `uv sync --frozen --extra notebooks`.
-
-## Ingesta y validación
-
-La ingesta del punto 10 descarga automáticamente los CSV faltantes de octubre de 2023 a septiembre de 2026 y la nomenclatura de septiembre de 2026, resolviendo los enlaces publicados por MiBici. No requiere descargar ni consolidar archivos manualmente. Las rutas, fechas y tamaño de lote se centralizan en [config.py](proyecto_mibici/config.py).
+Comandos de ingesta, features y verificación:
 
 ```bash
 uv run --frozen python -m proyecto_mibici.dataset procesar-datos
 uv run --frozen python -m proyecto_mibici.dataset verificar-manifiesto
 uv run --frozen python -m proyecto_mibici.dataset verificar-parquet
-```
-
-La ejecución normaliza codificación, nombres, IDs y fechas explícitas; descarta registros inválidos e inicios fuera del mes fuente, deduplica viajes por ID y procesa por lotes sin cargar los 36 meses completos en memoria. No recorta llegadas posteriores al fin del rango ni infiere inventario o actividad histórica desde el catálogo. Produce:
-
-- `data/interim/viajes_unificados.parquet`: `viaje_id`, `inicio_viaje`, `fin_viaje`, `origen_id`, `destino_id`, `fecha_archivo`.
-- `data/interim/estaciones.parquet`: catálogo normalizado; capacidad no utilizable y coordenadas inválidas quedan nulas y se contabilizan.
-- `data/data_manifest.json`: hashes de fuentes/salidas, rango, filas crudas/limpias, descartes, esquemas y `data_version`, recuperable con `obtener_version_datos()` para MLflow.
-
-Los Parquet comunes **siempre excluyen identificadores de usuario y demografía**; aun así no se versionan ni se publican viajes individuales. Los CSV originales permanecen locales y excluidos de Git. El manifiesto, sin filas individuales, debe revisarse y versionarse mediante PR al cambiar la base; los runs anteriores conservan su versión histórica. La versión incluye las reglas de normalización además del contenido de las fuentes.
-
-Por defecto se reutilizan los CSV existentes; `--actualizar` solicita descargarlos de nuevo. Para procesar exclusivamente copias locales completas se admite `--sin-descarga`; un mes faltante provoca error. `--input-path`, `--output-path` y `--manifiesto-path` permiten validar en rutas separadas sin reemplazar la base compartida. La escritura se prepara en temporales y el manifiesto se publica al final.
-
-La [propuesta de pipelines](docs/docs/propuestaSolucion.md) y los tres baselines parten de estas mismas salidas. Las pruebas de [ingesta](tests/test_dataset_ingestion.py) cubren descarga, limpieza, privacidad y versionado. El [notebook de validación](notebooks/1.4-ARC-validacion-ingesta-reproducible.ipynb) conserva una prueba aislada de un mes; el experimento base utiliza el rango completo.
-
-## Ejecutar los experimentos MLflow
-
-Con el servidor local del inicio rápido activo y `MLFLOW_TRACKING_URI=http://127.0.0.1:5000`, este comando valida la base, genera/reutiliza la tabla horaria y ejecuta los tres baselines mediante **MLflow Projects**:
-
-```bash
-export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
-uv run --frozen python -m proyecto_mibici.experiments ejecutar-proyecto
-uv run --frozen python -m proyecto_mibici.experiments verificar-experimento
-```
-
-[MLproject](MLproject) declara los entry points `ingest`, `train`, `main` y `features`. MLflow Projects usa `env_manager=uv` y [python_env.yaml](python_env.yaml), por lo que instala el entorno fijo sin depender de paquetes globales ni requerir Conda/Docker. El comando prepara primero el experimento `mibici-equipo25` en el servidor local y luego crea un run padre y tres hijos P1/P2/P3. Repetirlo añade otra ejecución; nunca borra runs automáticamente.
-
-| Pregunta | Baseline implementado | Métricas |
-|---|---|---|
-| P1 | Persistencia semanal, rezago de 168 horas | MAE, RMSE y error medio firmado. |
-| P2 | `DummyClassifier(strategy="most_frequent")`, ajustado solo en entrenamiento | F1 macro sobre siete clases fijas; precisión/recall cuando su denominador está definido, soporte, matriz de confusión y frecuencia de alertas altas. |
-| P3 | Mediana de proporción de uso en fin de semana, aprendida solo en entrenamiento | Silhouette cuando es definido, ARI entre periodos sobre estaciones comunes, tamaños y cobertura. |
-
-Los candidatos del punto 4 siguen siendo propuestas: este comando ejecuta únicamente los baselines. Los percentiles 75/90 de P2 y la mediana de P3 quedan congelados antes de validación/prueba.
-
-Cada hijo registra configuración, rango, partición, versión/hash de datos, semilla, modelo e hiperparámetros; métricas prefijadas por conjunto; tags `team`, `question`, `git_commit`; y tablas/PNG agregados. También conserva [el manifiesto](data/data_manifest.json), un resumen JSON y una copia exacta del código y del entorno bloqueado. Si hay cambios sin commit se identifica `git_worktree_dirty=true` y `source_tree_sha256`: HEAD por sí solo no representa esos cambios y la copia adjunta permite recuperarlos. Los resultados locales se guardan por run padre en `reports/figures/baselines/`.
-
-No se necesita un Parquet creado manualmente en notebooks. La entrada de los tres modelos es exclusivamente la base común de ingesta. Las métricas de distintas preguntas no son comparables entre sí aunque compartan fechas.
-
-Para generar solo las horas/features, sin registrar runs:
-
-```bash
 uv run --frozen python -m proyecto_mibici.experiments features
 ```
 
-La interfaz ya es parte del servidor iniciado en el inicio rápido. Visita <http://127.0.0.1:5000>, selecciona `mibici-equipo25` y expande los hijos del run padre. Los artefactos están en `resultados/` y `reproducibilidad/`. Para comparar repeticiones, selecciona runs de la misma pregunta y usa **Compare**; no interpretes los tres baselines de tareas distintas como modelos rivales.
-
-## Entrega 6 — Pruebas de carga adicionales (PR 3)
-
-El perfil optativo `carga` de Compose permite pruebas de Locust con JSON
-válidos derivados de `data/processed/tabla_supervisada.parquet`, usando
-`pruebas_carga/generar_peticiones.py`. Se probaron **10, 25, 50 y 100
-usuarios (120 s por escalón)**, con el modelo **champion real P1 v1** en
-**macOS Intel/Docker Desktop**, comparando **1 worker / 1 vCPU** frente a
-**2 workers / 2 vCPU**; también se contrastaron las solicitudes de 1 frente
-a 466 inferencias, ambas con 25 usuarios. Las pruebas fueron locales:
-los resultados no prueban igual rendimiento en infraestructura de nube.
-
-Para reproducir la configuración base en Docker Desktop (con el ZIP del
-modelo extraído en `models/api/p1/` y validado localmente):
-
-```bash
-uv sync --frozen --extra monitoreo --extra carga
-uv run --frozen python -m pruebas_carga.generar_peticiones \
-  --fecha 2026-09-10 --estacion 2 --hora 22
-MLFLOW_PORT=5001 MODEL_SOURCE=local docker compose up -d --build
-MLFLOW_PORT=5001 MODEL_SOURCE=local API_WORKERS=1 API_CPUS=1.0 API_MEMORY=1g \
-  docker compose up -d --no-deps --force-recreate api
-MLFLOW_PORT=5001 MODEL_SOURCE=local API_WORKERS=1 API_CPUS=1.0 API_MEMORY=1g \
-  uv run --frozen --extra monitoreo python -m pruebas_carga.ejecutar \
-  --runtime docker --prefijo champion_1worker_1cpu --tipo mixto \
-  --escalones 10:120,25:120,50:120,100:120
-```
-
-Para 2 workers, recrear la API con `API_WORKERS=2 API_CPUS=2.0` y
-repetir con el prefijo `champion_2workers_2cpu`. Para batching, usar
-`--escalones 25:120` y `--tipo una` o `--tipo sistema_hora`, con prefijos
-distintos. El punto exacto de saturación **no se ha confirmado** porque
-los p95 históricos por escalón son acumulados; ambos ensayos superan el
-umbral de 500 ms al aumentar la carga.
-
-Las tablas, gráficas, consumo de recursos y límites metodológicos están en
-[`operacion_entrega6.md §3.3`](docs/docs/operacion_entrega6.md).
-El modelo champion real permanece fuera de Git; el modelo sintético
-`humo` se utiliza únicamente para validar CI y arranque técnico.
-
-## Pruebas
-
-```bash
-uv run --frozen python -m pytest tests -q
-uv run --frozen ruff check proyecto_mibici tests
-```
-
-Las pruebas usan fuentes sintéticas y tracking temporal; no alteran los runs reales ni requieren viajes individuales publicados.
-
-La suite está organizada por responsabilidad: `test_dataset_ingestion.py` cubre
-limpieza, duplicados, fechas, manifiestos y privacidad; `test_feature_engineering.py`
-y `test_baselines.py` verifican features causales, casos límite y ausencia de fuga
-temporal; y `test_candidate_models.py` cubre hiperparámetros, métricas y
-entrenamiento. También se prueban los datasets de modelado, el tracking nested y
-el Model Registry. La prueba
-`test_random_forest_training_is_reproducible_with_same_seed` confirma que dos
-entrenamientos con la misma semilla producen las mismas predicciones y métricas
-dentro de una tolerancia numérica.
-
-### Ejecución reproducible y cobertura de PyTest (Entrega 3)
-
-Desde la raíz del repositorio, el **comando único** para ejecutar la suite es:
-
-```bash
-uv sync --frozen
-uv run --frozen python -m pytest tests -q
-# Alternativa en macOS/Linux: make test
-```
-
-`pyproject.toml` define `testpaths = ["tests"]`. Las pruebas usan fixtures sintéticos
-(`tests/conftest.py`) y almacenamiento temporal; **no necesitan** los CSV/Parquet
-históricos de MiBici ni un servidor MLflow levantado.
-
-| Archivo de pruebas | Casos normales que verifica | Casos límite / controles importantes |
-|---|---|---|
-| `test_dataset_ingestion.py` | Limpieza, duplicados y manifiesto | Mes faltante, descarga incompleta, encabezados dañados y rechazo de URL no HTTPS oficial |
-| `test_baselines.py` | Baselines P1/P2, métricas y ventanas horarias | Empates en clases, estaciones sin capacidad y splits temporales inválidos |
-| `test_data_quality.py` | Prechequeos de faltantes, duplicados y muestras | Esquemas train/test distintos, parámetros inválidos y P3 sin etiqueta |
-| `test_model_datasets.py` | Tablas de entrenamiento y perfiles P3 | Historia incompleta, cambios futuros y muestreo acotado |
-| `test_model_registry.py` | Vista previa, promoción y firma | Rechazo de baseline, firmas ausentes, pregunta incompatible y Git sucio |
-| `test_p3_baseline.py` | Normalización de perfiles y estabilidad | Horas sin cobertura, actividad cero y grupos degenerados |
-| `test_candidate_models.py` | Entrenamiento, hiperparámetros y métricas | Parámetros ajenos al modelo y predicciones divergentes |
-| `test_nested_tracking.py` | Runs padre/hijo, etiquetas y artefactos | Impedir selección usando métricas de test y parámetros inválidos |
-| `test_feature_engineering.py` | Calendario y perfiles semanales | Variables que no deben incorporar información actual o futura |
-| `test_tracking.py` | Contexto de proyectos y copia del código | Ausencia del ejecutable `git` |
-| `test_monitoreo_periodos.py` | Periodos de drift, entrenamiento y evaluación | Traslapes indebidos y cortes temporales inválidos |
-| `test_monitoreo_drift.py` | Resumen e interpretación estructurada de Evidently | Conteos de drift inconsistentes |
-| `test_monitoreo_reentrenamiento.py` | Preparación y trazabilidad del challenger | Configuración o ventana de reentrenamiento inválida |
-| `test_monitoreo_ab.py` | Métricas y predicción por lotes de la comparación A/B | Tamaños de lote no positivos |
-
-**Reproducibilidad:** `test_random_forest_training_is_reproducible_with_same_seed`
-en `test_candidate_models.py` repite el entrenamiento con la misma semilla y verifica
-predicciones y métricas consistentes. También existen pruebas de muestreo con semilla
-fija y de invariancia frente a datos futuros.
-
-**Evidencias y resultados:** consulta la
-[guía de ejecución y evidencias de la Entrega 3](docs/docs/evidencias_entrega3.md).
-Las capturas reales se incorporan en `reports/figures/entrega3/` después de ejecutar
-los comandos; nunca se deben sustituir por capturas simuladas.
-
-La validación de calidad se ejecuta con Deepchecks en un entorno separado porque
-Deepchecks 0.19.1 no es compatible con el Python 3.13 del proyecto principal:
-
-```bash
-uv run --no-project --python 3.12 \
-  --with-requirements requirements-quality.txt \
-  python -m proyecto_mibici.data_quality --question p1
-```
-
-El comando compara muestras reproducibles de train y test, revisa tipos, faltantes
-y duplicados, y ejecuta la `full_suite` de Deepchecks para detectar inconsistencias
-y drift. Los reportes se guardan por pregunta en
-`reports/data_quality/deepchecks.json`. Es necesario haber ejecutado la ingesta y
-la construcción de features.
-Para validar las tres preguntas:
+**Validación de calidad con Deepchecks** (en entorno aislado de Python 3.12 por compatibilidad de Deepchecks 0.19.1):
 
 ```bash
 for pregunta in p1 p2 p3; do
@@ -556,148 +125,270 @@ for pregunta in p1 p2 p3; do
 done
 ```
 
-La guía del equipo del 30 de octubre reporta P1/P2 sin faltantes ni duplicados y
-con drift multivariado bajo (AUC aproximada de 0.60–0.62); en P3 reporta drift
-en 5 de 336 columnas (AUC 0.74) y 22 columnas sin variación durante la madrugada.
-**Estos son resultados históricos del equipo, no una nueva ejecución local**;
-se deben comprobar contra los reportes HTML/JSON antes de entregar evidencias.
+---
 
-### Seguridad y registro de evidencias (Entrega 3)
+## 5. Experimentación con MLflow Projects
 
-La auditoría de seguridad se puede ejecutar con `make security` (macOS/Linux)
-o con los comandos detallados en
-[seguridad_entrega3.md](docs/docs/seguridad_entrega3.md). Incluye Bandit sobre
-`proyecto_mibici`, pip-audit sobre `requirements.txt` y pip-audit para el
-entorno aislado de Deepchecks. Nunca publicar `.env`, archivos de datos,
-`mlflow.db`, llaves ni reportes que contengan información individual. Copia
-`.env.example` a `.env` solo para configurar variables locales:
+`MLproject` expone los *entry points* `ingest`, `features`, `train`, `search` y `main`, ejecutados con `--env-manager uv` y los parámetros centralizados en `proyecto_mibici/config.py`.
 
 ```bash
-cp .env.example .env
+# Ingesta mediante MLflow Project
+uv run --frozen mlflow run . -e ingest --env-manager uv --experiment-name mibici-equipo25
+
+# Entrenar baseline o candidato con hiperparámetros individuales
+uv run --frozen mlflow run . -e train --env-manager uv \
+  --experiment-name mibici-equipo25 -P question=p1 -P model=baseline
+
+uv run --frozen mlflow run . -e train --env-manager uv \
+  --experiment-name mibici-equipo25 -P question=p1 -P model=rf -P n_estimators=300
+
+# Búsqueda de hiperparámetros como nested runs (rejillas definidas en SEARCH_SPACES)
+uv run --frozen mlflow run . -e search --env-manager uv \
+  --experiment-name mibici-equipo25 -P question=p1 -P model=hgb
 ```
 
-**Auditoría pendiente de corregir:** en la revisión local del PR #19, pip-audit
-detectó cuatro CVE en `pyasn1==0.6.4` (versión corregida indicada: `0.6.5`).
-No se debe declarar una auditoría limpia hasta actualizar el bloqueo/exportación
-de dependencias y volver a ejecutarla. La evidencia y el estado se registran
-en la [guía de evidencias](docs/docs/evidencias_entrega3.md).
+### Modelos disponibles por pregunta
 
+| Pregunta | Modelos (`model`) | Hiperparámetros principales |
+| :--- | :--- | :--- |
+| **P1** | `baseline`, `poisson`, `hgb`, `rf` | `alpha`, `max_iter` · `learning_rate`, `max_leaf_nodes`, `min_samples_leaf`, `l2_regularization` · `n_estimators`, `max_depth`, `max_features`, `max_samples` |
+| **P2** | `baseline`, `logistic`, `hgb`, `rf` | `c`, `class_weight`, `max_iter` · parámetros de `hgb` y `rf` más `class_weight` (`balanced` / `none`) |
+| **P3** | `baseline`, `kmeans`, `agglomerative`, `gmm` | `n_clusters`, `n_init` · `linkage` · `covariance_type`, `pca_components` (`0` = sin PCA) |
 
-## Seguridad y gobernanza
+### Resultados de experimentación
 
-Esta sección resume qué riesgos controla el proyecto y qué prueba respalda cada control. Puedes localizar la evidencia con `pytest tests -k "<nombre de la prueba>"`.
+Todos los candidatos ganadores superan a su *baseline* en la misma partición temporal. La selección se realiza exclusivamente sobre el conjunto de validación; las corridas registran métricas prefijadas (`train_`, `validation_`, `test_`) y etiquetas de linaje (`team`, `question`, `git_commit`, `data_version`, `model_family`, `stage_of_work`).
 
-| Riesgo | Control | Evidencia |
-|---|---|---|
-| Exposición de datos personales | Las columnas personales se eliminan en la ingesta y los identificadores privados no llegan al manifiesto | `test_cleaning_across_chunks_privacy_and_repeatability` |
-| Descargas desde fuentes no confiables | Solo se aceptan URLs HTTPS del dominio oficial de MiBici; se rechazan HTTP, `file://` y dominios que lo imitan | `test_requests_outside_official_https_domain_are_rejected` |
-| Archivos corruptos o parciales | Una descarga incompleta no reemplaza el archivo existente; si falta un mes no se publican salidas parciales; si la ingesta falla se conservan las salidas anteriores | `test_incomplete_download_does_not_replace_existing_file`, `test_missing_month_does_not_publish_partial_outputs`, `test_failure_preserves_previous_outputs` |
-| Alteración de datos crudos o procesados | Los archivos de origen no pueden usarse como salida, y el manifiesto con hashes SHA-256 detecta cambios manuales en el Parquet | `test_source_files_cannot_be_used_as_output_paths`, `test_manifest_detects_modified_parquet` |
-| Datos sin trazabilidad | `data_version` cambia cuando cambian los datos de origen o las reglas de normalización, y solo entonces (no depende de la ruta de salida ni del tamaño de bloque) | `test_version_changes_when_source_or_rules_change`, `test_version_does_not_depend_on_output_path_or_chunk_size` |
-| Fuga de información del futuro | Las variables solo usan datos disponibles al predecir; umbrales y filas de entrenamiento no cambian con datos futuros; los grupos de P3 se congelan con train | `test_features_do_not_see_the_current_or_future_hour`, `test_future_changes_do_not_alter_training_rows_or_thresholds`, `test_p3_candidates_freeze_groups_in_train` |
-| Selección sesgada del modelo | La búsqueda y el listado de candidatos no eligen con métricas de test | `test_search_refuses_to_select_with_test_metrics`, `test_lists_candidates_without_choosing_on_test_metric` |
-| Promoción indebida a `champion` | El modelo debe estar registrado, poder cargarse y tener firma; no puede ser un baseline; la pregunta debe coincidir y la justificación no puede ser trivial; la vista previa no escribe en el registro | `test_champion_requires_loadable_model_with_signature`, `test_unsigned_model_must_not_become_champion`, `test_rejects_baseline_and_missing_logged_model`, `test_rejects_mismatched_question_and_short_justification`, `test_selection_preview_does_not_write_to_registry` |
-| Modelos que no se pueden reconstruir | Se rechazan candidatos de un árbol de Git con cambios sin confirmar, y cada corrida guarda etiquetas y artefactos de reproducibilidad | `test_refuses_dirty_worktree_candidate`, `test_candidate_run_has_filter_tags_and_reproducibility_artifacts` |
+| Pregunta | Métrica | Baseline | Modelo ganador | Validación | Mejora vs. baseline |
+| :--- | :--- | :--- | :--- | :---: | :---: |
+| **P1** | RMSE *(menor es mejor)* | Persistencia semanal · `1.933` | HistGradientBoosting (pérdida Poisson) | `1.418` | **-26.6 %** *(prueba: `1.411`, -28.3 %)* |
+| **P2** | F1 macro *(mayor es mejor)* | Clase mayoritaria · `0.097` | HistGradientBoosting (clases balanceadas) | `0.364` | **+0.267** |
+| **P3** | Silhouette *(mayor es mejor)* | Mediana de fin de semana · `0.037` | GaussianMixture (2 grupos, PCA 5) | `0.189` | **+0.152** |
 
-### Del dato al modelo
+---
 
-La cadena de trazabilidad es: fuente oficial → manifiesto con hashes y `data_version` → Parquet verificable → corrida en MLflow con código y artefactos de reproducibilidad → registro con alias solo si pasa las reglas anteriores. Cada eslabón tiene al menos una prueba que falla si el control se rompe.
+## 6. Model Registry y linaje
 
-### Alcance
-
-Las pruebas validan que el **proceso** se comporta correctamente con entradas controladas y que las reglas de gobernanza se cumplen. Deepchecks agrega una revisión estadística de los datos y del modelo, y detecta drift entre train y test.
-
-## Equipo y roles
-
-Equipo 25, TC5061 — Operaciones de Aprendizaje Automático (MLOps).
-
-| Integrante | Matrícula | Rol / contribución principal |
-|---|---|---|
-| Alejandro Ramos Contreras | A01747461 | P3; integración del experimento y seguimiento de MLflow. |
-| Ángel Alexis Anaya Alamea | A01741351 | P2: clasificación de la etiqueta proxy de presión de flujo. |
-| Erick Fernando Carrillo Pineda | A01840029 | P1: predicción de demanda de viajes. |
-| Jose Rigoberto Cibrian Jacobo | A01740550 | Diagrama de arquitectura; módulo y documentación de Model Registry (Entrega 2). |
-
-## Flujo de trabajo con Git y GitHub
-
-`main` es la rama de integración. El equipo trabaja con ramas cortas, Pull Requests y revisión por otro integrante; no se deben integrar cambios directamente a `main`.
-
-1. Actualiza la rama principal y crea una rama con nombre descriptivo:
-
-   ```bash
-   git switch main
-   git pull --ff-only
-   git switch -c feature/p1-descripcion
-   ```
-
-   Convenciones recomendadas: `feature/p1-...`, `feature/p2-...`, `feature/p3-...`, `docs/...` y `fix/...`.
-2. Haz cambios pequeños, ejecuta las pruebas pertinentes y crea commits con [Conventional Commits](https://www.conventionalcommits.org/), por ejemplo `feat(p1): agregar baseline de demanda` o `docs(readme): actualizar instrucciones`.
-3. Publica la rama y abre un Pull Request hacia `main`:
-
-   ```bash
-   git push -u origin feature/p1-descripcion
-   gh pr create --base main
-   ```
-
-4. Solicita revisión a otro integrante, atiende comentarios y verifica las comprobaciones antes de integrar el Pull Request.
-
-La configuración de protección de `main`, las revisiones requeridas y la evidencia de contribuciones individuales deben confirmarse en GitHub; este README no presupone que las reglas estén activadas.
-
-## Model Registry: selección y promoción
-
-El proceso de promoción está documentado en [Registro de modelos y evidencia](docs/docs/registro_modelos_entrega2.md). Los modelos candidatos nuevos se guardan en MLflow con firma y ejemplo de entrada; el registro requiere elegir y justificar explícitamente un run de cada pregunta. Para inspeccionar, sin modificar el Registry:
+El registro de modelos está gobernado por `proyecto_mibici.registry`, que exige firma (*signature*), ejemplo de entrada, capacidad de carga, árbol de Git limpio, exclusión de *baselines* y justificación explícita. Sin la bandera `--approve`, el comando solo muestra una vista previa sin escribir en el Registry.
 
 ```bash
-export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
+export MLFLOW_TRACKING_URI=[http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+# Inspeccionar candidatos ordenados por métrica de validación
 uv run --frozen python -m proyecto_mibici.registry candidates --question p1
-uv run --frozen python -m proyecto_mibici.registry candidates --question p2
-uv run --frozen python -m proyecto_mibici.registry candidates --question p3
+
+# Promover un run aprobado a @champion (o @challenger)
+uv run --frozen python -m proyecto_mibici.registry promote \
+  --question p1 --run-id <RUN_ID> --alias champion \
+  --reason "Mejor RMSE en validación frente a baseline y candidatos" --approve
+
+# Verificar estado, versiones y linaje
+uv run --frozen python -m proyecto_mibici.registry status
 ```
 
-La promoción a `champion` debe realizarse **solo después de comparar y aprobar** los resultados, utilizando `python -m proyecto_mibici.registry promote --question p1 --run-id ID --reason "..." --approve`. Sin `--approve` el comando únicamente muestra una vista previa. Para verificar los tres modelos registrados y cargables: `uv run --frozen python -m proyecto_mibici.registry status`.
+Para el servicio de demanda P1 (`mibici-equipo25-p1-demanda`), el alias **`@champion`** apunta a la **v1** en producción y **`@challenger`** a la **v2** reentrenada en evaluación. El detalle de evidencias está en [registro_modelos_entrega2.md](docs/docs/registro_modelos_entrega2.md).
 
-**No declarar cumplido el Model Registry hasta que los tres alias existan realmente en el servidor y se hayan capturado sus evidencias.**
-
-### Reentrenamiento y versión challenger
-
-Para el monitoreo y la prueba A/B, el modelo de demanda P1 puede reentrenarse con la ventana ampliada de datos (octubre de 2023 a junio de 2026), heredando los hiperparámetros del *champion* vigente, y registrarse en el Model Registry con el alias `challenger` sin desplazar a `champion`. Con el servidor de MLflow abierto y `MLFLOW_TRACKING_URI` definida, el reentrenamiento se ejecuta con `uv run --frozen python -m proyecto_mibici.monitoreo.reentrenar` y la promoción con `uv run --frozen python -m proyecto_mibici.registry promote --question p1 --run-id <RUN_ID> --alias challenger --reason "<justificación>" --approve`. El detalle, las métricas y los errores comunes están en `docs/docs/entrenamiento_challenger.md`.
-
-La comparación reproducible sobre el mismo periodo `evaluacion_ab` se ejecuta con:
+### Exportación del modelo para el contenedor
 
 ```bash
-MLFLOW_TRACKING_URI=http://127.0.0.1:5000 \
-  uv run --frozen python -m proyecto_mibici.monitoreo.ab
+uv run --frozen python -m proyecto_mibici.api.modelo exportar \
+  --model-uri models:/mibici-equipo25-p1-demanda@champion \
+  --destino models/api/p1
+uv run --frozen python -m proyecto_mibici.api.modelo verificar
 ```
 
-El resultado se guarda en `reports/monitoreo/ab/resultado_ab.json` y
-`reports/monitoreo/ab/metricas_ab.csv`. También se genera la gráfica
-[`ab_metricas_modelos.png`](reports/figures/entrega5/ab_metricas_modelos.png),
-con un panel para RMSE, MAE y R².
+La exportación crea `models/api/p1/metadata_registro.json` con la versión, alias, `run_id`, `git_commit`, `data_version` y métrica de selección.
+
+---
+
+## 7. Despliegue y operación
+
+### Sistema completo con Docker Compose (recomendado)
+
+`docker-compose.yml` construye una única imagen (`Containerfile`) y orquesta tres servicios en una red privada con puertos expuestos solo en `127.0.0.1` y límites de CPU/memoria:
+1. **`mlflow`**: servidor de Tracking y Model Registry con volumen persistente.
+2. **`registrar-modelo`**: registra el modelo `@champion` exportado en `models/api/p1/` con su linaje y finaliza con código `0`.
+3. **`api`**: servicio FastAPI que carga `@champion` directamente desde el Registry (`"source": "registry"`).
+
+```bash
+# Levantar el sistema completo (usar docker compose o podman compose)
+docker compose up -d --build
+docker compose ps -a
+
+# Verificar salud, metadatos de linaje y predicción real
+curl [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+curl [http://127.0.0.1:8000/model-info](http://127.0.0.1:8000/model-info)
+curl -X POST [http://127.0.0.1:8000/predict](http://127.0.0.1:8000/predict) \
+  -H 'Content-Type: application/json' \
+  -d @peticion.json
+```
+
+La documentación interactiva OpenAPI queda en `http://127.0.0.1:8000/docs` y la UI de MLflow en `http://127.0.0.1:5000`. Las variables de entorno (`MLFLOW_PORT`, `MODEL_SOURCE`, `API_WORKERS`, `API_CPUS`, `API_MEMORY`) se documentan en `.env.example`.
+
+Para detener los servicios: `docker compose down` (conserva el Registry) o `docker compose down -v` (limpia volúmenes).
+
+### Ejecución aislada del contenedor de la API
+
+Si se requiere correr solo la API en modo `local` (sin servidor MLflow):
+
+```bash
+docker build -f Containerfile -t mibici-api:p1 .
+docker run --rm --name mibici-api -p 8000:8000 mibici-api:p1
+```
+
+*(En Podman, usar `podman build --format docker -f Containerfile -t mibici-api:p1 .` para conservar el `HEALTHCHECK`.)*
+
+### Cliente HTTP de prueba
+
+`proyecto_mibici/api/cliente.py` prepara un registro real desde `data/processed/tabla_supervisada.parquet` (fecha_hora más las 24 variables históricas de rezagos, medias y balances, a partir de las cuales se completan las 31 variables de entrada del modelo), lo valida con Pydantic y consulta `/predict`:
+
+```bash
+# Validación local sin levantar la API
+uv run --frozen python -m proyecto_mibici.api.cliente --solo-validar
+
+# Predicción real contra la API activa (muestra predicción, valor observado y error absoluto)
+uv run --frozen python -m proyecto_mibici.api.cliente
+```
+
+La justificación arquitectónica de inferencia en tiempo real frente a procesamiento por lotes está documentada en [despliegue_inferencia_entrega4.md](docs/docs/despliegue_inferencia_entrega4.md).
+
+---
+
+## 8. CI/CD, pruebas y seguridad
+
+### Pipeline de GitHub Actions
+
+`.github/workflows/ci.yml` se ejecuta en cada `push` y `pull_request` hacia `main` (y manualmente vía `workflow_dispatch`) con tres trabajos:
+1. **`calidad`**: ejecuta `ruff check`, `bandit -r proyecto_mibici` y `pip-audit -r requirements.txt` sin hallazgos.
+2. **`pruebas`**: ejecuta la suite completa de **195 pruebas en PyTest** sobre fixtures sintéticos con caché de `uv`.
+3. **`imagen`**: genera un modelo sintético de humo (`proyecto_mibici.api.modelo_humo`), levanta el stack con `docker compose up -d --build`, verifica `/health`, `/model-info` (`"source": "registry"`) y `/predict`, y limpia los volúmenes al terminar.
+
+### Ejecución local de pruebas y auditoría
+
+```bash
+# Suite completa de pruebas (no requiere CSV históricos ni servidor MLflow activo)
+uv run --frozen python -m pytest tests -q
+
+# Estilo y seguridad (o `make security` en macOS/Linux)
+uv run --frozen ruff check proyecto_mibici tests
+uv run --frozen bandit -r proyecto_mibici
+uv run --frozen pip-audit -r requirements.txt
+```
+
+### Controles de gobernanza verificados por pruebas
+
+| Riesgo | Control implementado | Prueba de respaldo (`pytest -k`) |
+| :--- | :--- | :--- |
+| Exposición de datos personales | Eliminación de IDs de usuario y demografía en ingesta | `test_cleaning_across_chunks_privacy_and_repeatability` |
+| Descargas no confiables | Solo URLs HTTPS del dominio oficial de MiBici | `test_requests_outside_official_https_domain_are_rejected` |
+| Archivos corruptos o alterados | Escritura atómica y verificación SHA-256 en manifiesto | `test_manifest_detects_modified_parquet` |
+| Fuga de información del futuro | Features causales y umbrales congelados en `train` | `test_features_do_not_see_the_current_or_future_hour` |
+| Selección sesgada por `test` | Búsqueda y listado bloquean métricas de prueba | `test_search_refuses_to_select_with_test_metrics` |
+| Promoción indebida a `champion` | Firma obligatoria, no baseline, Git limpio y `--approve` | `test_champion_requires_loadable_model_with_signature` |
+| No reproducibilidad | Semilla fija verificada en entrenamiento y muestreo | `test_random_forest_training_is_reproducible_with_same_seed` |
+
+---
+
+## 9. Pruebas de carga y análisis FinOps
+
+### Pruebas de carga con Locust
+
+`locustfile.py` y `pruebas_carga/` evalúan `/predict` con peticiones reales válidas, midiendo latencia, tasa de errores y consumo de CPU/memoria del contenedor (`make monitor-resources`):
+
+```bash
+uv sync --frozen --extra monitoreo --extra carga
+
+# Prueba estándar (20 usuarios, 60 s, lotes de 10)
+make load-test
+
+# Escenario escalonado con modelo champion real (10, 25, 50 y 100 usuarios, 120 s por escalón)
+uv run --frozen python -m pruebas_carga.generar_peticiones --fecha 2026-09-10 --estacion 2 --hora 22
+MLFLOW_PORT=5001 MODEL_SOURCE=local API_WORKERS=2 API_CPUS=2.0 API_MEMORY=1g \
+  docker compose up -d --no-deps --force-recreate api
+MLFLOW_PORT=5001 MODEL_SOURCE=local API_WORKERS=2 API_CPUS=2.0 API_MEMORY=1g \
+  uv run --frozen --extra monitoreo python -m pruebas_carga.ejecutar \
+  --runtime docker --prefijo champion_2workers_2cpu --tipo mixto \
+  --escalones 10:120,25:120,50:120,100:120
+```
+
+**Resultados principales (modelo `@champion` real P1 v1, 2 workers / 2 vCPU):**
+* **0 errores HTTP** entre 10 y 100 usuarios concurrentes.
+* **Individual (1 registro):** 18.01 pred/s (p95 = 610 ms).
+* **Lote de sistema completo (466 estaciones):** 6,401.79 pred/s (p95 = 2,200 ms), **355× más rendimiento**.
+* Ninguna modalidad mantiene p95 ≤ 500 ms bajo concurrencia alta; el uso recomendado es inferencia por lotes para pronóstico horario masivo y peticiones individuales para consultas puntuales.
+
+### Análisis FinOps
+
+* **Unidad de costo:** una predicción estación-hora.
+* **Demanda base modelada:** 450 estaciones × 24 h × 30 días = **324,000 predicciones/mes**.
+* **Fuentes:** `reports/finops/champion_una/`, `reports/finops/champion_batch466/` y `references/precios_nube_2vcpu.csv` (tarifas de referencia al 22-nov-2026, excluyendo red, discos e impuestos).
+
+| Escenario de demanda | EC2 `t3.small` (siempre encendida) | Cloud Run (2 vCPU + 1 GiB, 1 registro) | Cloud Run (2 vCPU + 1 GiB, lote de 466) |
+| :--- | :---: | :---: | :---: |
+| **Base** (324 mil pred./mes) | $15.26 USD | $2.48 USD | **$0.02 USD** |
+| **10×** (3.24 M pred./mes) | $15.26 USD | $24.79 USD | **$0.20 USD** |
+| **100×** (32.4 M pred./mes) | $15.26 USD | $247.91 USD | **$2.00 USD** |
+
+*(Son proyecciones de costo, no facturación real ni garantía de SLO con una sola instancia.)* Detalle completo en [operacion_entrega6.md](docs/docs/operacion_entrega6.md).
+
+---
+
+## 10. Monitoreo, A/B testing y gobernanza
 
 ### Monitoreo de drift con Evidently
 
-El reporte compara la referencia y el periodo actual, además de un control
-estacional:
-
 ```bash
 uv sync --frozen --extra monitoreo
-uv run --frozen --extra monitoreo \
-  python -m proyecto_mibici.monitoreo.drift --comparacion principal --sin-mlflow
-uv run --frozen --extra monitoreo \
-  python -m proyecto_mibici.monitoreo.drift --comparacion estacional --sin-mlflow
+uv run --frozen --extra monitoreo python -m proyecto_mibici.monitoreo.drift --comparacion principal --sin-mlflow
+uv run --frozen --extra monitoreo python -m proyecto_mibici.monitoreo.drift --comparacion estacional --sin-mlflow
 ```
 
-Los resultados JSON/CSV quedan en `reports/monitoreo/principal/` y
-`reports/monitoreo/estacional/`; las gráficas resumidas de Evidently están en
-[`reports/figures/entrega5/`](reports/figures/entrega5). La interpretación,
-los periodos y la recomendación de Continuous Training están documentados en
-[`drift_entrega5.md`](docs/docs/drift_entrega5.md).
+* **Hallazgo:** Drift detectado en **3 de 31 columnas** (`mes`, `balance_acumulado_24`, `salidas_media_168`) en la comparación principal, pero **0 de 31** en el control estacional (mismos meses), confirmando un patrón estacional y no degradación estructural.
+* **Disparadores definidos para Continuous Training:** ≥ 2 variables con drift durante dos meses consecutivos, > 10 % de filas provenientes de estaciones nuevas o incremento de RMSE > 5 % sobre la referencia.
 
-## Referencias
+### Reentrenamiento y evaluación A/B fuera de línea
 
-- [Contexto y requisitos del proyecto](docs/docs/context.md).
-- [Propuesta de solución y resultados](docs/docs/propuestaSolucion.md).
-- [ML Canvas](references/ml_canvas_mibici.pdf).
-- [Arquitectura propuesta — fuente Mermaid](references/arquitectura_propuesta_mibici.mmd).
-- [Auditoría reproducible de tamaño de datos](notebooks/1.3-ARC-verificacion-datos-punto2.ipynb).
-- [Exploración y decisiones de feature engineering](notebooks/1.5-eq25-exploracion-feature-engineering.ipynb).
+El modelo P1 se reentrenó sobre la ventana ampliada (octubre de 2023 – junio de 2026) como **`@challenger` (v2)** sin desplazar a `@champion` (v1):
+
+```bash
+export MLFLOW_TRACKING_URI=[http://127.0.0.1:5000](http://127.0.0.1:5000)
+uv run --frozen python -m proyecto_mibici.monitoreo.reentrenar
+uv run --frozen python -m proyecto_mibici.monitoreo.ab
+```
+
+Sobre **955,951 filas** de evaluación fuera de línea (julio–septiembre de 2026):
+* **Baseline semanal:** RMSE `1.9478` · MAE `0.9662` · R² `0.4139`
+* **`@champion` (v1):** RMSE `1.4398` · MAE `0.7745` · R² `0.6797`
+* **`@challenger` (v2):** RMSE `1.4078` (**-2.2 %**) · MAE `0.7715` · R² `0.6938`
+
+La promoción a `@champion` exige intervalo de confianza del 95 % de $\Delta\text{RMSE}$ completamente negativo sin empeorar más de 1 % en estaciones conocidas; el *rollback* consiste en reasignar el alias en el Registry. Resultados en `reports/monitoreo/ab/` y [ab_metricas_modelos.png](reports/figures/entrega5/ab_metricas_modelos.png).
+
+### Model Card
+
+La documentación responsable del modelo de demanda P1 (uso previsto, datos sin información personal, métricas, limitaciones, seguridad, monitoreo y responsables por componente) se encuentra en **[docs/docs/model_card.md](docs/docs/model_card.md)** y es coherente con los metadatos devueltos por `/model-info`.
+
+---
+
+## 11. Equipo, flujo de trabajo y referencias
+
+### Integrantes — Equipo 25
+
+| Integrante | Matrícula | Contribución principal |
+| :--- | :--- | :--- |
+| Alejandro Ramos Contreras | A01747461 | P3; integración del experimento y seguimiento de MLflow. |
+| Ángel Alexis Anaya Alamea | A01741351 | P2: clasificación de presión de flujo; CI/CD. |
+| Erick Fernando Carrillo Pineda | A01840029 | P1: predicción de demanda de viajes. |
+| Jose Rigoberto Cibrian Jacobo | A01740550 | Diagrama de arquitectura; módulo y documentación de Model Registry. |
+
+### Flujo de trabajo con Git
+
+`main` es la rama de integración protegida por Pull Requests y revisiones entre pares. Se utilizan ramas descriptivas (`feature/...`, `fix/...`, `docs/...`) y mensajes bajo [Conventional Commits](https://www.conventionalcommits.org/).
+
+### Índice de documentación
+
+* **Gobernanza y modelo:** [Model Card (P1)](docs/docs/model_card.md) · [Registro de modelos](docs/docs/registro_modelos_entrega2.md)
+* **Diseño y datos:** [Contexto y requisitos](docs/docs/context.md) · [Propuesta de solución](docs/docs/propuestaSolucion.md) · [ML Canvas](references/ml_canvas_mibici.pdf) · [Arquitectura (Mermaid)](references/arquitectura_propuesta_mibici.mmd)
+* **Calidad y seguridad:** [Evidencias de pruebas](docs/docs/evidencias_entrega3.md) · [Auditoría de seguridad](docs/docs/seguridad_entrega3.md)
+* **Despliegue, carga y FinOps:** [Estrategia de despliegue e inferencia](docs/docs/despliegue_inferencia_entrega4.md) · [Operación, Compose, Locust y FinOps](docs/docs/operacion_entrega6.md)
+* **Monitoreo:** [Análisis de drift y Continuous Training](docs/docs/drift_entrega5.md) · [Reentrenamiento challenger](docs/docs/entrenamiento_challenger.md)
+* **Notebooks de soporte:** [Auditoría de datos](notebooks/1.3-ARC-verificacion-datos-punto2.ipynb) · [Validación de ingesta](notebooks/1.4-ARC-validacion-ingesta-reproducible.ipynb) · [Exploración y feature engineering](notebooks/1.5-eq25-exploracion-feature-engineering.ipynb)
